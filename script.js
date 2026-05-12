@@ -1,12 +1,12 @@
 // CZEditor v2.0 — Main Init & Event Binding
-(function() {
+(function () {
     'use strict';
 
     function initApp() {
         const savedFiles = localStorage.getItem('cz_files');
         const savedActiveId = localStorage.getItem('cz_active_id');
         const savedFontWeight = localStorage.getItem('cz_font_weight') || "400";
-        const savedFontSize = localStorage.getItem('cz_font_size') || "15";
+        const savedFontSize = localStorage.getItem('cz_font_size') || "13";
 
         document.getElementById('font-weight-select').value = savedFontWeight;
         document.getElementById('font-size-input').value = savedFontSize;
@@ -82,7 +82,7 @@
         document.getElementById('close-prompt').onclick = () => CZUI.closePrompt(null);
         document.getElementById('btn-prompt-cancel').onclick = () => CZUI.closePrompt(null);
         document.getElementById('btn-prompt-ok').onclick = () => CZUI.closePrompt(document.getElementById('prompt-input').value);
-        document.getElementById('prompt-input').onkeydown = e => { if (e.key==='Enter') CZUI.closePrompt(document.getElementById('prompt-input').value); };
+        document.getElementById('prompt-input').onkeydown = e => { if (e.key === 'Enter') CZUI.closePrompt(document.getElementById('prompt-input').value); };
 
         document.getElementById('close-confirm').onclick = () => CZUI.closeConfirm(false);
         document.getElementById('btn-confirm-cancel').onclick = () => CZUI.closeConfirm(false);
@@ -100,8 +100,8 @@
             if (tab) {
                 e.preventDefault();
                 CZUI.targetContextTabId = tab.dataset.id;
-                CZUI.tabContextMenu.style.left = e.pageX+'px';
-                CZUI.tabContextMenu.style.top = e.pageY+'px';
+                CZUI.tabContextMenu.style.left = e.pageX + 'px';
+                CZUI.tabContextMenu.style.top = e.pageY + 'px';
                 CZUI.tabContextMenu.classList.remove('hidden');
             }
         });
@@ -207,7 +207,7 @@
             CZFeatures.renderCommandPalette(e.target.value);
         });
         document.getElementById('command-palette-input').addEventListener('keydown', e => {
-            if (e.key==='Escape') CZFeatures.toggleCommandPalette();
+            if (e.key === 'Escape') CZFeatures.toggleCommandPalette();
         });
 
         // Global listeners
@@ -231,7 +231,7 @@
 
             // Escape: close modals/popups
             if (e.key === 'Escape') {
-                const modals = ['custom-prompt-modal','custom-confirm-modal','custom-alert-modal','font-config-modal','shortcuts-modal','command-palette'];
+                const modals = ['custom-prompt-modal', 'custom-confirm-modal', 'custom-alert-modal', 'font-config-modal', 'shortcuts-modal', 'command-palette'];
                 let closed = false;
                 modals.forEach(id => {
                     const el = document.getElementById(id);
@@ -244,8 +244,8 @@
 
             // All Ctrl+ shortcuts — intercept browser defaults
             if (ctrl) {
-                const intercepted = ['n','s','d','p','l','/',']','['];
-                const interceptedShift = ['k','d'];
+                const intercepted = ['n', 's', 'd', 'p', 'l', '/', ']', '['];
+                const interceptedShift = ['k', 'd'];
 
                 if (shift && interceptedShift.includes(key)) {
                     e.preventDefault();
@@ -337,7 +337,7 @@
 
         // ===== PWA: Service Worker + Install Prompt =====
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js').catch(() => {});
+            navigator.serviceWorker.register('sw.js').catch(() => { });
         }
 
         let deferredPrompt = null;
