@@ -133,6 +133,15 @@ function setupTabDragging() {
         if (Math.abs(walk)>5) isDraggingTab=true;
         tabsContainer.scrollLeft = scrollLeft-walk;
     });
+    // Mouse wheel horizontal scroll
+    tabsContainer.addEventListener('wheel', e => {
+        if (Math.abs(e.deltaY) > 0) {
+            e.preventDefault();
+            tabsContainer.style.scrollBehavior = 'auto';
+            tabsContainer.scrollLeft += e.deltaY;
+            requestAnimationFrame(() => tabsContainer.style.scrollBehavior = 'smooth');
+        }
+    }, { passive: false });
 }
 
 // ===== FILE OPERATIONS =====

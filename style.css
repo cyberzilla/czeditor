@@ -74,10 +74,10 @@ body { background-color: var(--bg-main); color: var(--text-main); font-family: v
 
 /* ===== HEADER & TABS ===== */
 .editor-header { display: flex; background: var(--bg-header); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border-color); height: 36px; align-items: center; justify-content: space-between; z-index: 10; }
-.tabs-container { display: flex; height: 100%; flex-grow: 1; overflow-x: auto; scroll-behavior: smooth; }
+.tabs-container { display: flex; height: 100%; flex-grow: 1; overflow-x: auto; scroll-behavior: smooth; scrollbar-width: none; -ms-overflow-style: none; }
 .tabs-container::-webkit-scrollbar { display: none; }
 
-.tab { display: flex; align-items: center; padding: 0 12px; height: 100%; background-color: var(--bg-tab); color: var(--text-muted); border-right: 1px solid var(--border-color); cursor: pointer; font-size: 12.5px; user-select: none; transition: background-color 0.2s, color 0.2s; min-width: 120px; }
+.tab { display: flex; align-items: center; padding: 0 12px; height: 100%; background-color: var(--bg-tab); color: var(--text-muted); border-right: 1px solid var(--border-color); cursor: pointer; font-size: 12.5px; user-select: none; transition: background-color 0.2s, color 0.2s; min-width: 80px; max-width: 180px; flex-shrink: 0; }
 .tab:hover { background-color: var(--bg-tab-hover); }
 .tab.active { background-color: var(--bg-tab-active); color: var(--text-main); border-top: 2px solid var(--accent-color); }
 .tab-name { flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
