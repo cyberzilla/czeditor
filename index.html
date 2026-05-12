@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>czeditor - Modern Code Editor</title>
+    <meta name="description" content="czeditor - A powerful, modern web-based code editor with autocomplete, emmet, and syntax highlighting.">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="drop-overlay" id="drop-overlay">Jatuhkan File di Sini</div>
+
+    <header class="editor-header">
+        <div class="tabs-container" id="tabs-container"></div>
+        
+        <div class="action-btns">
+            <button class="action-btn" id="btn-new-file" title="File Baru (Ctrl+N)">+</button>
+            <button class="action-btn" id="btn-open-file" title="Buka File">&#128194;</button>
+            <input type="file" id="file-input" style="display: none;" multiple>
+        </div>
+        
+        <div class="toolbar" id="toolbar-right">
+            <div class="settings-wrapper">
+                <button class="settings-btn" id="btn-settings" title="Pengaturan">⚙️</button>
+                <div class="settings-popup hidden" id="settings-popup">
+                    <div class="settings-item" id="menu-font-config">🔡 Konfigurasi Font</div>
+                    <div class="settings-item" id="menu-shortcuts">⌨️ Keyboard Shortcuts</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="editor-main">
+        <div id="welcome-screen" class="welcome-screen">
+            <div class="cz-logo anim-fade-up" style="animation-delay: 0.1s"><span class="cz-highlight">cz</span>editor</div>
+            <div class="cz-version anim-fade-up" style="animation-delay: 0.3s">v2.0.0</div>
+            <div class="cz-hints anim-fade-up" style="animation-delay: 0.5s">
+                <p>Tekan <strong>Ctrl+N</strong> atau <strong>Drag & Drop</strong> file untuk mulai</p>
+                <div class="shortcut-hints">
+                    <span class="hint-badge">Ctrl+S</span> Save
+                    <span class="hint-badge">Tab</span> Emmet / Indent
+                    <span class="hint-badge">Ctrl+/</span> Comment
+                    <span class="hint-badge">Ctrl+P</span> Command Palette
+                </div>
+            </div>
+        </div>
+
+        <div id="editor-body" class="editor-body hidden">
+            <div class="line-numbers" id="line-numbers">1</div>
+            <div class="code-wrapper">
+                <div class="active-line-highlight" id="active-line-highlight"></div>
+                <textarea id="editing" spellcheck="false" wrap="off" autocapitalize="off" autocomplete="off" autocorrect="off"></textarea>
+                <pre id="highlighting" aria-hidden="true"><code id="highlighting-content"></code></pre>
+            </div>
+        </div>
+    </main>
+
+    <!-- Autocomplete Popup -->
+    <div id="autocomplete-popup" class="autocomplete-popup hidden">
+        <div class="autocomplete-list" id="autocomplete-list"></div>
+    </div>
+
+    <!-- Command Palette -->
+    <div id="command-palette" class="modal hidden">
+        <div class="command-palette-content">
+            <input type="text" id="command-palette-input" placeholder="Ketik perintah..." autocomplete="off">
+            <div class="command-palette-list" id="command-palette-list"></div>
+        </div>
+    </div>
+
+    <!-- Shortcuts Modal -->
+    <div id="shortcuts-modal" class="modal hidden">
+        <div class="modal-content" style="width: 480px;">
+            <div class="modal-header">
+                <h3>⌨️ Keyboard Shortcuts</h3>
+                <span class="close-modal" id="close-shortcuts">&times;</span>
+            </div>
+            <div class="modal-body shortcuts-body">
+                <div class="shortcut-row"><span class="shortcut-keys">Ctrl + N</span><span>File Baru</span></div>
+                <div class="shortcut-row"><span class="shortcut-keys">Ctrl + S</span><span>Simpan / Download</span></div>
+                <div class="shortcut-row"><span class="shortcut-keys">Ctrl + /</span><span>Toggle Komentar</span></div>
+                <div class="shortcut-row"><span class="shortcut-keys">Ctrl + D</span><span>Duplikat Baris</span></div>
+                <div class="shortcut-row"><span class="shortcut-keys">Ctrl + Shift + K</span><span>Hapus Baris</span></div>
+                <div class="shortcut-row"><span class="shortcut-keys">Alt + ↑/↓</span><span>Pindah Baris</span></div>
+                <div class="shortcut-row"><span class="shortcut-keys">Ctrl + ]</span><span>Indent</span></div>
+                <div class="shortcut-row"><span class="shortcut-keys">Ctrl + [</span><span>Outdent</span></div>
+                <div class="shortcut-row"><span class="shortcut-keys">Ctrl + L</span><span>Pilih Baris</span></div>
+                <div class="shortcut-row"><span class="shortcut-keys">Ctrl + P</span><span>Command Palette</span></div>
+                <div class="shortcut-row"><span class="shortcut-keys">Tab</span><span>Emmet Expand / Indent</span></div>
+                <div class="shortcut-row"><span class="shortcut-keys">Escape</span><span>Tutup Popup</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="font-config-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Konfigurasi Font</h3>
+                <span class="close-modal" id="close-font-config">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="config-group">
+                    <label>Jenis & Bobot Font (Maple Mono NF):</label>
+                    <select id="font-weight-select">
+                        <option value="100">Maple Mono NF Thin</option>
+                        <option value="200">Maple Mono NF ExtraLight</option>
+                        <option value="300">Maple Mono NF Light</option>
+                        <option value="400">Maple Mono NF Regular</option>
+                        <option value="500">Maple Mono NF Medium</option>
+                        <option value="600">Maple Mono NF SemiBold</option>
+                        <option value="700">Maple Mono NF Bold</option>
+                        <option value="800">Maple Mono NF ExtraBold</option>
+                    </select>
+                </div>
+                <div class="config-group">
+                    <label>Ukuran Font (px):</label>
+                    <input type="number" id="font-size-input" value="15" min="10" max="40">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="custom-prompt-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="prompt-title">Ubah Nama</h3>
+                <span class="close-modal" id="close-prompt">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="config-group">
+                    <input type="text" id="prompt-input" autocomplete="off">
+                </div>
+                <div class="dialog-actions">
+                    <button class="btn-cancel" id="btn-prompt-cancel">Batal</button>
+                    <button class="btn-ok" id="btn-prompt-ok">Ubah</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="custom-confirm-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="confirm-title">Konfirmasi</h3>
+                <span class="close-modal" id="close-confirm">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p id="confirm-message" style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;"></p>
+                <div class="dialog-actions">
+                    <button class="btn-cancel" id="btn-confirm-cancel">Batal</button>
+                    <button class="btn-danger" id="btn-confirm-ok">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="custom-alert-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="alert-title">Peringatan</h3>
+                <span class="close-modal" id="close-alert">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p id="alert-message" style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;"></p>
+                <div class="dialog-actions">
+                    <button class="btn-ok" id="btn-alert-ok">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="editor-footer hidden" id="editor-footer">
+        <div class="footer-left">
+            <div class="save-status saved" id="save-status">Tersimpan</div>
+            <span class="divider"></span>
+            <span id="stat-length">Length: 0</span>
+            <span id="stat-lines">Lines: 1</span>
+            <span class="divider"></span>
+            <span id="stat-cursor">Ln 1, Col 1</span>
+        </div>
+        <div class="footer-right">
+            <div class="lang-picker-wrapper">
+                <span id="stat-eol" class="footer-lang-btn">LF</span>
+                <div id="eol-picker" class="lang-picker hidden">
+                    <div class="lang-picker-item" data-eol="LF">LF (Unix)</div>
+                    <div class="lang-picker-item" data-eol="CRLF">CRLF (Windows)</div>
+                    <div class="lang-picker-item" data-eol="CR">CR (Classic Mac)</div>
+                </div>
+            </div>
+            <span class="divider"></span>
+            <div class="lang-picker-wrapper">
+                <span id="stat-encoding" class="footer-lang-btn">UTF-8</span>
+                <div id="encoding-picker" class="lang-picker hidden">
+                    <div class="lang-picker-item" data-enc="UTF-8">UTF-8</div>
+                    <div class="lang-picker-item" data-enc="UTF-8 BOM">UTF-8 with BOM</div>
+                    <div class="lang-picker-item" data-enc="UTF-16 LE BOM">UTF-16 LE with BOM</div>
+                    <div class="lang-picker-item" data-enc="UTF-16 BE BOM">UTF-16 BE with BOM</div>
+                    <div class="lang-picker-item" data-enc="ANSI">ANSI</div>
+                </div>
+            </div>
+            <span class="divider"></span>
+            <div class="lang-picker-wrapper">
+                <span id="stat-lang" class="footer-lang-btn">Plain Text</span>
+                <div id="lang-picker" class="lang-picker hidden">
+                    <div class="lang-picker-item" data-lang="plaintext">Plain Text</div>
+                    <div class="lang-picker-item" data-lang="javascript">JavaScript</div>
+                    <div class="lang-picker-item" data-lang="typescript">TypeScript</div>
+                    <div class="lang-picker-item" data-lang="html">HTML</div>
+                    <div class="lang-picker-item" data-lang="css">CSS</div>
+                    <div class="lang-picker-item" data-lang="python">Python</div>
+                    <div class="lang-picker-item" data-lang="php">PHP</div>
+                    <div class="lang-picker-item" data-lang="json">JSON</div>
+                    <div class="lang-picker-item" data-lang="markdown">Markdown</div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <div id="tab-context-menu" class="context-menu hidden">
+        <div class="context-menu-item" data-action="close">Close</div>
+        <div class="context-menu-item" data-action="close-other">Close Others</div>
+        <div class="context-menu-item" data-action="close-all">Close All</div>
+        <div class="context-menu-divider"></div>
+        <div class="context-menu-item" data-action="pin">Pin / Unpin File</div>
+        <div class="context-menu-item" data-action="rename">Rename File</div>
+    </div>
+    
+    <select class="hidden" id="lang-selector">
+        <option value="plaintext">Plain Text</option>
+        <option value="javascript">JavaScript</option>
+        <option value="html">HTML</option>
+        <option value="css">CSS</option>
+        <option value="python">Python</option>
+        <option value="php">PHP</option>
+        <option value="json">JSON</option>
+        <option value="typescript">TypeScript</option>
+        <option value="markdown">Markdown</option>
+    </select>
+
+    <script src="engine.js"></script>
+    <script src="editor-ui.js"></script>
+    <script src="editor-features.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

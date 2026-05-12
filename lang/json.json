@@ -1,0 +1,18 @@
+{
+  "id": "json",
+  "name": "JSON",
+  "extensions": ["json", "jsonc", "json5"],
+  "comment": { "line": null, "blockStart": null, "blockEnd": null },
+  "autoClosePairs": [
+    ["{", "}"], ["[", "]"], ["\"", "\""]
+  ],
+  "brackets": [["{", "}"], ["[", "]"]],
+  "syntax": [
+    { "match": "\"(?:[^\"\\\\]|\\\\.)*\"(?=\\s*:)", "scope": "property" },
+    { "match": "\"(?:[^\"\\\\]|\\\\.)*\"", "scope": "string" },
+    { "match": "\\b(?:true|false|null)\\b", "scope": "keyword" },
+    { "match": "-?\\b\\d+\\.?\\d*(?:e[+-]?\\d+)?\\b", "scope": "number" }
+  ],
+  "autocomplete": { "keywords": ["true", "false", "null"], "builtins": [] },
+  "snippets": {}
+}
