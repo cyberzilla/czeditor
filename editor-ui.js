@@ -315,6 +315,28 @@ function syncScroll() {
     updateActiveLine();
 }
 
+function ensureCursorVisible() {
+    const ta = editingArea;
+    if (!ta || !activeFileId) return;
+    const text = ta.value;
+    const pos = ta.selectionStart;
+    const lh = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--editor-line-height')) || 24;
+    const lineNum = text.substring(0, pos).split('\n').length - 1;
+    const cursorY = 20 + lineNum * lh; // 20 = editor padding-top
+    const viewTop = ta.scrollTop;
+    const viewBottom = ta.scrollTop + ta.clientHeight;
+    const margin = lh * 2; // keep 2 lines of margin
+
+    if (cursorY + lh > viewBottom - margin) {
+        // Cursor below visible area — scroll so cursor is near bottom with margin
+        ta.scrollTop = cursorY + lh + margin - ta.clientHeight;
+    } else if (cursorY < viewTop + margin) {
+        // Cursor above visible area — scroll so cursor is near top with margin
+        ta.scrollTop = Math.max(0, cursorY - margin);
+    }
+    syncScroll();
+}
+
 function handleInput() {
     const f = getActiveFile();
     if (!f) return;
@@ -323,7 +345,7 @@ function handleInput() {
         const det = CZEngine.detectLanguage(editingArea.value);
         if (det!=='plaintext') { f.language=det; langSelector.value=det; CZEngine.loadLanguage(det).then(() => updateEditorVisuals()); }
     }
-    updateEditorVisuals(); triggerAutosave(); updateFootbar();
+    updateEditorVisuals(); triggerAutosave(); updateFootbar(); ensureCursorVisible();
 }
 
 // ===== CONTEXT MENU =====
@@ -354,7 +376,7 @@ return {
     createNewFile, closeFile, renameFile, switchFile, processImportedFile,
     saveData, triggerAutosave, applyFontSettings,
     openPrompt, closePrompt, openConfirm, closeConfirm, openAlert, closeAlert,
-    handleInput, updateEditorVisuals, updateFootbar, syncScroll, updateActiveLine,
+    handleInput, updateEditorVisuals, updateFootbar, syncScroll, updateActiveLine, ensureCursorVisible,
     executeMenuAction,
     get targetContextTabId() { return targetContextTabId; },
     set targetContextTabId(v) { targetContextTabId = v; },
