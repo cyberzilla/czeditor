@@ -3,8 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>czeditor - Modern Code Editor</title>
+    <title id="app-title">czeditor - Modern Code Editor</title>
     <meta name="description" content="czeditor - A powerful, modern web-based code editor with autocomplete, emmet, and syntax highlighting.">
+    <meta name="theme-color" content="#1e1e2e">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -33,8 +37,9 @@
 
     <main class="editor-main">
         <div id="welcome-screen" class="welcome-screen">
-            <div class="cz-logo anim-fade-up" style="animation-delay: 0.1s"><span class="cz-highlight">cz</span>editor</div>
-            <div class="cz-version anim-fade-up" style="animation-delay: 0.3s">v2.0.0</div>
+            <div class="cz-logo anim-fade-up" style="animation-delay: 0.1s" id="app-logo"></div>
+            <div class="cz-version anim-fade-up" style="animation-delay: 0.3s" id="app-version"></div>
+            <div class="cz-description anim-fade-up" style="animation-delay: 0.4s" id="app-description"></div>
             <div class="cz-hints anim-fade-up" style="animation-delay: 0.5s">
                 <p>Tekan <strong>Ctrl+N</strong> atau <strong>Drag & Drop</strong> file untuk mulai</p>
                 <div class="shortcut-hints">
@@ -44,6 +49,9 @@
                     <span class="hint-badge">Ctrl+P</span> Command Palette
                 </div>
             </div>
+            <button class="pwa-install-btn anim-fade-up hidden" id="pwa-install-btn" style="animation-delay: 0.7s">
+                📥 Install sebagai Aplikasi
+            </button>
         </div>
 
         <div id="editor-body" class="editor-body hidden">

@@ -223,8 +223,8 @@
         });
 
         // ===== GLOBAL SHORTCUT INTERCEPTOR =====
-        // Uses capture phase to fire BEFORE browser default handlers
-        document.addEventListener('keydown', e => {
+        // Uses window-level capture phase — fires BEFORE document and browser defaults
+        window.addEventListener('keydown', e => {
             const ctrl = e.ctrlKey || e.metaKey;
             const shift = e.shiftKey;
             const key = e.key.toLowerCase();
@@ -238,7 +238,7 @@
                     if (!el.classList.contains('hidden')) { el.classList.add('hidden'); closed = true; }
                 });
                 if (CZFeatures.acVisible) { CZFeatures.hideAutocomplete(); closed = true; }
-                if (closed) { e.preventDefault(); e.stopPropagation(); }
+                if (closed) { e.preventDefault(); e.stopImmediatePropagation(); }
                 return;
             }
 
@@ -249,7 +249,7 @@
 
                 if (shift && interceptedShift.includes(key)) {
                     e.preventDefault();
-                    e.stopPropagation();
+                    e.stopImmediatePropagation();
                     // Delegate to features handler if editor is active
                     if (CZUI.getActiveId()) {
                         CZUI.getEditingArea().focus();
@@ -260,7 +260,7 @@
 
                 if (!shift && intercepted.includes(key)) {
                     e.preventDefault();
-                    e.stopPropagation();
+                    e.stopImmediatePropagation();
 
                     // Ctrl+N: always works (new file)
                     if (key === 'n') { CZUI.createNewFile(); return; }
@@ -280,7 +280,7 @@
             // Alt+Arrow: move line (intercept browser focus navigation)
             if (e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
                 e.preventDefault();
-                e.stopPropagation();
+                e.stopImmediatePropagation();
                 if (CZUI.getActiveId()) {
                     CZUI.getEditingArea().focus();
                     CZFeatures.handleKeydown(e);
@@ -301,6 +301,64 @@
                 e.preventDefault(); CZUI.dropOverlay.classList.remove('active');
                 Array.from(e.dataTransfer.files).forEach(f => CZUI.processImportedFile(f));
             }
+        });
+
+        // ===== PWA: Manifest Loader =====
+        function applyManifest(m) {
+            const shortName = m.short_name || 'CZEditor';
+            const version = m.version || '2.0.0';
+            const fullName = m.name || shortName;
+            const description = m.description || '';
+
+            // Update document title
+            const titleEl = document.getElementById('app-title');
+            if (titleEl) titleEl.textContent = fullName;
+            document.title = fullName;
+
+            // Update welcome screen logo
+            const logo = document.getElementById('app-logo');
+            if (logo) {
+                const highlight = shortName.substring(0, 2).toLowerCase();
+                const rest = shortName.substring(2).toLowerCase();
+                logo.innerHTML = `<span class="cz-highlight">${highlight}</span>${rest}`;
+            }
+
+            // Update version
+            const ver = document.getElementById('app-version');
+            if (ver) ver.textContent = `v${version}`;
+
+            // Update description
+            const desc = document.getElementById('app-description');
+            if (desc && description) desc.textContent = description;
+        }
+
+        fetch('manifest.json', { cache: 'no-store' }).then(r => r.json()).then(applyManifest)
+            .catch(() => applyManifest({ short_name: 'CZEditor', version: '2.0.0', name: 'CZEditor - Modern Code Editor' }));
+
+        // ===== PWA: Service Worker + Install Prompt =====
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').catch(() => {});
+        }
+
+        let deferredPrompt = null;
+        window.addEventListener('beforeinstallprompt', e => {
+            e.preventDefault();
+            deferredPrompt = e;
+            const btn = document.getElementById('pwa-install-btn');
+            if (btn) btn.classList.remove('hidden');
+        });
+        document.getElementById('pwa-install-btn')?.addEventListener('click', async () => {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            const result = await deferredPrompt.userChoice;
+            if (result.outcome === 'accepted') {
+                document.getElementById('pwa-install-btn').classList.add('hidden');
+            }
+            deferredPrompt = null;
+        });
+        window.addEventListener('appinstalled', () => {
+            document.getElementById('pwa-install-btn')?.classList.add('hidden');
+            deferredPrompt = null;
         });
     }
 
