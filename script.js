@@ -2,7 +2,9 @@
 (function () {
     'use strict';
 
-    function initApp() {
+    async function initApp() {
+        // Initialize i18n first
+        await CZi18n.init();
         const savedFiles = localStorage.getItem('cz_files');
         const savedActiveId = localStorage.getItem('cz_active_id');
         const savedFontWeight = localStorage.getItem('cz_font_weight') || "400";
@@ -72,6 +74,23 @@
             document.getElementById('shortcuts-modal').classList.remove('hidden');
             CZUI.settingsPopup.classList.add('hidden');
         };
+        document.getElementById('menu-language').onclick = () => {
+            const list = document.getElementById('language-list');
+            const langs = CZi18n.getAvailableLanguages();
+            const current = CZi18n.getCurrentLang();
+            list.innerHTML = langs.map(l => 
+                `<div class="lang-picker-item${l.code === current ? ' active' : ''}" data-ui-lang="${l.code}">${l.name}</div>`
+            ).join('');
+            list.querySelectorAll('.lang-picker-item').forEach(el => {
+                el.onclick = async () => {
+                    await CZi18n.loadLanguage(el.dataset.uiLang);
+                    document.getElementById('language-modal').classList.add('hidden');
+                };
+            });
+            document.getElementById('language-modal').classList.remove('hidden');
+            CZUI.settingsPopup.classList.add('hidden');
+        };
+        document.getElementById('close-language').onclick = () => document.getElementById('language-modal').classList.add('hidden');
 
         // Font config
         document.getElementById('font-weight-select').onchange = () => CZUI.applyFontSettings();

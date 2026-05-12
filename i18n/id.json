@@ -1,0 +1,70 @@
+{
+    "_lang": "Bahasa Indonesia",
+    "_code": "id",
+
+    "drop_overlay": "Jatuhkan File di Sini",
+    "btn_new_file_title": "File Baru (Ctrl+N)",
+    "btn_open_file_title": "Buka File",
+    "btn_settings_title": "Pengaturan",
+    "menu_font_config": "🔡 Konfigurasi Font",
+    "menu_shortcuts": "⌨️ Keyboard Shortcuts",
+    "menu_language": "Bahasa",
+
+    "welcome_hint": "Tekan <strong>Ctrl+N</strong> atau <strong>Drag & Drop</strong> file untuk mulai",
+    "pwa_install": "📥 Install sebagai Aplikasi",
+
+    "shortcut_save": "Save",
+    "shortcut_emmet": "Emmet / Indent",
+    "shortcut_comment": "Comment",
+    "shortcut_palette": "Command Palette",
+
+    "shortcuts_title": "⌨️ Keyboard Shortcuts",
+    "sc_new_file": "File Baru",
+    "sc_save": "Simpan / Download",
+    "sc_comment": "Toggle Komentar",
+    "sc_duplicate": "Duplikat Baris",
+    "sc_delete_line": "Hapus Baris",
+    "sc_move_line": "Pindah Baris",
+    "sc_indent": "Indent",
+    "sc_outdent": "Outdent",
+    "sc_select_line": "Pilih Baris",
+    "sc_palette": "Command Palette",
+    "sc_emmet": "Emmet Expand / Indent",
+    "sc_close_popup": "Tutup Popup",
+
+    "font_config_title": "Konfigurasi Font",
+    "font_weight_label": "Jenis & Bobot Font (Maple Mono NF):",
+    "font_size_label": "Ukuran Font (px):",
+
+    "prompt_rename_title": "Ubah Nama",
+    "btn_cancel": "Batal",
+    "btn_rename": "Ubah",
+    "confirm_title": "Konfirmasi",
+    "btn_close": "Tutup",
+    "alert_title": "Peringatan",
+    "btn_ok": "OK",
+
+    "status_saved": "Tersimpan",
+    "status_saving": "Menyimpan...",
+    "stat_length": "Length: {0}",
+    "stat_lines": "Lines: {0}",
+
+    "ctx_close": "Tutup",
+    "ctx_close_other": "Tutup Lainnya",
+    "ctx_close_all": "Tutup Semua",
+    "ctx_pin": "Pin / Unpin File",
+    "ctx_rename": "Ganti Nama File",
+
+    "confirm_close_file": "Tutup file '{0}'?",
+    "confirm_close_other": "Tutup semua kecuali '{0}'?",
+    "confirm_close_all": "Tutup seluruh file?",
+    "confirm_close_title": "Tutup File",
+    "confirm_close_other_title": "Tutup Lainnya",
+    "confirm_close_all_title": "Tutup Semua",
+
+    "cmd_new_file": "File Baru",
+    "cmd_save": "Simpan / Download",
+    "cmd_toggle_comment": "Toggle Komentar",
+    "cmd_delete_line": "Hapus Baris",
+    "cmd_palette_placeholder": "Ketik perintah..."
+}

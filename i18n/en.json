@@ -1,0 +1,70 @@
+{
+    "_lang": "English",
+    "_code": "en",
+
+    "drop_overlay": "Drop Files Here",
+    "btn_new_file_title": "New File (Ctrl+N)",
+    "btn_open_file_title": "Open File",
+    "btn_settings_title": "Settings",
+    "menu_font_config": "🔡 Font Configuration",
+    "menu_shortcuts": "⌨️ Keyboard Shortcuts",
+    "menu_language": "Language",
+
+    "welcome_hint": "Press <strong>Ctrl+N</strong> or <strong>Drag & Drop</strong> files to start",
+    "pwa_install": "📥 Install as Application",
+
+    "shortcut_save": "Save",
+    "shortcut_emmet": "Emmet / Indent",
+    "shortcut_comment": "Comment",
+    "shortcut_palette": "Command Palette",
+
+    "shortcuts_title": "⌨️ Keyboard Shortcuts",
+    "sc_new_file": "New File",
+    "sc_save": "Save / Download",
+    "sc_comment": "Toggle Comment",
+    "sc_duplicate": "Duplicate Line",
+    "sc_delete_line": "Delete Line",
+    "sc_move_line": "Move Line",
+    "sc_indent": "Indent",
+    "sc_outdent": "Outdent",
+    "sc_select_line": "Select Line",
+    "sc_palette": "Command Palette",
+    "sc_emmet": "Emmet Expand / Indent",
+    "sc_close_popup": "Close Popup",
+
+    "font_config_title": "Font Configuration",
+    "font_weight_label": "Font Type & Weight (Maple Mono NF):",
+    "font_size_label": "Font Size (px):",
+
+    "prompt_rename_title": "Rename",
+    "btn_cancel": "Cancel",
+    "btn_rename": "Rename",
+    "confirm_title": "Confirm",
+    "btn_close": "Close",
+    "alert_title": "Warning",
+    "btn_ok": "OK",
+
+    "status_saved": "Saved",
+    "status_saving": "Saving...",
+    "stat_length": "Length: {0}",
+    "stat_lines": "Lines: {0}",
+
+    "ctx_close": "Close",
+    "ctx_close_other": "Close Others",
+    "ctx_close_all": "Close All",
+    "ctx_pin": "Pin / Unpin File",
+    "ctx_rename": "Rename File",
+
+    "confirm_close_file": "Close file '{0}'?",
+    "confirm_close_other": "Close all except '{0}'?",
+    "confirm_close_all": "Close all files?",
+    "confirm_close_title": "Close File",
+    "confirm_close_other_title": "Close Others",
+    "confirm_close_all_title": "Close All",
+
+    "cmd_new_file": "New File",
+    "cmd_save": "Save / Download",
+    "cmd_toggle_comment": "Toggle Comment",
+    "cmd_delete_line": "Delete Line",
+    "cmd_palette_placeholder": "Type a command..."
+}

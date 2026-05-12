@@ -81,11 +81,11 @@ function saveData() {
     else localStorage.removeItem('cz_active_id');
 }
 function triggerAutosave() {
-    saveStatus.textContent = 'Menyimpan...';
+    saveStatus.textContent = CZi18n.t('status_saving');
     saveStatus.className = 'save-status saving';
     clearTimeout(saveTimeout);
     saveTimeout = setTimeout(() => {
-        saveData(); saveStatus.textContent = 'Tersimpan';
+        saveData(); saveStatus.textContent = CZi18n.t('status_saved');
         saveStatus.className = 'save-status saved';
     }, 800);
 }
@@ -166,7 +166,7 @@ async function closeFile(id) {
     const f = files.find(x=>x.id===id);
     if (!f) return;
     if (f.content && f.content.length > 0) {
-        const ok = await openConfirm("Tutup File", `Tutup file '${f.name}'?`);
+        const ok = await openConfirm(CZi18n.t('confirm_close_title'), CZi18n.t('confirm_close_file', f.name));
         if (!ok) return;
     }
     const idx = files.findIndex(x=>x.id===id);
@@ -268,8 +268,8 @@ function updateFootbar() {
     if (!activeFileId || !files.length) return;
     const text = editingArea.value, pos = editingArea.selectionStart;
     const lines = text.split('\n'), before = text.substring(0,pos).split('\n');
-    $('stat-length').textContent = `Length: ${text.length}`;
-    $('stat-lines').textContent = `Lines: ${lines.length}`;
+    $('stat-length').textContent = CZi18n.t('stat_length', text.length);
+    $('stat-lines').textContent = CZi18n.t('stat_lines', lines.length);
     $('stat-cursor').textContent = `Ln ${before.length}, Col ${before[before.length-1].length+1}`;
     const f = getActiveFile();
     if (f) {
@@ -355,12 +355,12 @@ async function executeMenuAction(action) {
     const tf = files.find(f=>f.id===targetContextTabId);
     if (action==='close') closeFile(targetContextTabId);
     else if (action==='close-other') {
-        if (!await openConfirm("Tutup Lainnya",`Tutup semua kecuali '${tf.name}'?`)) return;
+        if (!await openConfirm(CZi18n.t('confirm_close_other_title'), CZi18n.t('confirm_close_other', tf.name))) return;
         files = files.filter(f=>f.id===targetContextTabId||f.isPinned);
         if (!files.find(f=>f.id===activeFileId)) activeFileId=targetContextTabId;
         saveData(); switchFile(activeFileId);
     } else if (action==='close-all') {
-        if (!await openConfirm("Tutup Semua","Tutup seluruh file?")) return;
+        if (!await openConfirm(CZi18n.t('confirm_close_all_title'), CZi18n.t('confirm_close_all'))) return;
         files = files.filter(f=>f.isPinned);
         activeFileId = files.length?files[0].id:null;
         saveData(); renderTabs(); checkEmptyState();

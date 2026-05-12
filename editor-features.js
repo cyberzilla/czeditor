@@ -439,15 +439,17 @@ function moveLine(dir) {
 }
 
 // ===== COMMAND PALETTE =====
-const commands = [
-    { name:'File Baru', shortcut:'Ctrl+N', action:()=>CZUI.createNewFile() },
-    { name:'Simpan / Download', shortcut:'Ctrl+S', action:()=>{ const f=CZUI.getActiveFile(); if(f) downloadFile(f); }},
-    { name:'Toggle Komentar', shortcut:'Ctrl+/', action:()=>toggleComment(CZEngine.getLangConfig(CZUI.getActiveFile()?.language)) },
-    { name:'Duplikat Baris', shortcut:'Ctrl+D', action:()=>duplicateLine() },
-    { name:'Hapus Baris', shortcut:'Ctrl+Shift+K', action:()=>deleteLine() },
-    { name:'Keyboard Shortcuts', shortcut:'', action:()=>document.getElementById('shortcuts-modal').classList.remove('hidden') },
-    { name:'Konfigurasi Font', shortcut:'', action:()=>{ CZUI.fontConfigModal.classList.remove('hidden'); CZUI.settingsPopup.classList.add('hidden'); }},
-];
+function getCommands() {
+    return [
+        { name: CZi18n.t('cmd_new_file'), shortcut:'Ctrl+N', action:()=>CZUI.createNewFile() },
+        { name: CZi18n.t('cmd_save'), shortcut:'Ctrl+S', action:()=>{ const f=CZUI.getActiveFile(); if(f) downloadFile(f); }},
+        { name: CZi18n.t('cmd_toggle_comment'), shortcut:'Ctrl+/', action:()=>toggleComment(CZEngine.getLangConfig(CZUI.getActiveFile()?.language)) },
+        { name: CZi18n.t('sc_duplicate'), shortcut:'Ctrl+D', action:()=>duplicateLine() },
+        { name: CZi18n.t('cmd_delete_line'), shortcut:'Ctrl+Shift+K', action:()=>deleteLine() },
+        { name: CZi18n.t('shortcuts_title'), shortcut:'', action:()=>document.getElementById('shortcuts-modal').classList.remove('hidden') },
+        { name: CZi18n.t('font_config_title'), shortcut:'', action:()=>{ CZUI.fontConfigModal.classList.remove('hidden'); CZUI.settingsPopup.classList.add('hidden'); }},
+    ];
+}
 let cpVisible = false, cpIndex = 0;
 function toggleCommandPalette() {
     const modal = document.getElementById('command-palette');
@@ -462,7 +464,7 @@ function toggleCommandPalette() {
 function renderCommandPalette(query) {
     const list = document.getElementById('command-palette-list');
     const q = query.toLowerCase();
-    const filtered = commands.filter(c => c.name.toLowerCase().includes(q));
+    const filtered = getCommands().filter(c => c.name.toLowerCase().includes(q));
     cpIndex = 0;
     list.innerHTML = filtered.map((c,i) =>
         `<div class="cp-item${i===0?' active':''}" data-idx="${i}">
