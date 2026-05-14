@@ -591,6 +591,9 @@ const CZUI = (() => {
         // Clear persisted folder and folder state
         CZFS.clearFolder();
         localStorage.removeItem('cz_expanded_folders');
+        // Hide sidebar action buttons
+        const sidebarActions = document.querySelector('.sidebar-actions');
+        if (sidebarActions) sidebarActions.classList.add('hidden');
         // Re-render recent folders
         renderRecentFolders();
         // Re-render
@@ -745,15 +748,20 @@ const CZUI = (() => {
     function renderSidebar(tree, folderName) {
         sidebarTree.innerHTML = '';
         sidebarEmpty.style.display = 'none';
+        const sidebarActions = document.querySelector('.sidebar-actions');
 
         if (!tree || tree.length === 0) {
             if (!CZFS.getDirectoryHandle()) {
                 sidebarEmpty.style.display = 'flex';
                 sidebarTree.appendChild(sidebarEmpty);
+                if (sidebarActions) sidebarActions.classList.add('hidden');
                 renderRecentFolders();
             }
             return;
         }
+
+        // Folder is open — show action buttons
+        if (sidebarActions) sidebarActions.classList.remove('hidden');
 
         // Restore folder expand/collapse state from localStorage
         applyExpandedPaths(tree, folderName || '');

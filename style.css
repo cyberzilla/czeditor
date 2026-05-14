@@ -616,7 +616,7 @@ body.sidebar-resizing {
 .recent-folder-item {
     display: flex;
     align-items: center;
-    padding: 4px 8px;
+    padding: 4px;
     border-radius: 4px;
     cursor: pointer;
     font-size: 12px;
@@ -1828,6 +1828,8 @@ body.sidebar-resizing {
     right: 0;
     margin-bottom: 8px;
     min-width: 180px;
+    max-height: 320px;
+    overflow-y: auto;
     background: rgba(30, 30, 46, 0.97);
     backdrop-filter: blur(16px);
     border: 1px solid var(--border-color);
@@ -1835,6 +1837,21 @@ body.sidebar-resizing {
     box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.03);
     padding: 4px;
     z-index: 100;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(137, 180, 250, 0.3) transparent;
+}
+
+.lang-picker::-webkit-scrollbar {
+    width: 5px;
+}
+
+.lang-picker::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.lang-picker::-webkit-scrollbar-thumb {
+    background: rgba(137, 180, 250, 0.3);
+    border-radius: 3px;
 }
 
 .lang-picker-item {
