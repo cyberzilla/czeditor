@@ -16,7 +16,45 @@ function replaceRange(textarea, start, end, text) {
     document.execCommand('insertText', false, text);
 }
 
-// ===== FILE DOWNLOAD (respects encoding & EOL) =====
+// ===== FILE SAVE (native filesystem first, fallback to download) =====
+async function saveFile(f) {
+    if (!f) return;
+
+    // 1. If file has a native handle, save directly to disk
+    if (f.fileHandle) {
+        const ok = await CZFS.saveFile(f.fileHandle, f.content, f.encoding || 'UTF-8', f.eol || 'LF');
+        if (ok) return true;
+        // If save failed (permission revoked?), fall through
+    }
+
+    // 2. If File System Access is supported, try Save As picker
+    if (CZFS.isSupported()) {
+        const handle = await CZFS.saveFileAs(
+            f.name.includes('.') ? f.name : f.name + '.txt',
+            f.content,
+            f.encoding || 'UTF-8',
+            f.eol || 'LF'
+        );
+        if (handle) {
+            f.fileHandle = handle; // Store handle for future saves
+            // Update name from picked file if different
+            const file = await handle.getFile();
+            if (file.name !== f.name) {
+                f.name = file.name;
+                CZUI.renderTabs();
+                CZUI.updateFootbar();
+            }
+            CZUI.saveData();
+            return true;
+        }
+        return false; // User cancelled
+    }
+
+    // 3. Fallback: download file
+    downloadFile(f);
+    return true;
+}
+
 function downloadFile(f) {
     let content = f.content;
     const eol = f.eol || 'LF';
@@ -33,14 +71,12 @@ function downloadFile(f) {
         blobParts = [bom, content];
     } else if (enc === 'UTF-16 LE BOM') {
         const bom = new Uint8Array([0xFF, 0xFE]);
-        // Encode content as UTF-16 LE
         const buf = new ArrayBuffer(content.length * 2);
         const view = new Uint16Array(buf);
         for (let i = 0; i < content.length; i++) view[i] = content.charCodeAt(i);
         blobParts = [bom, new Uint8Array(buf)];
     } else if (enc === 'UTF-16 BE BOM') {
         const bom = new Uint8Array([0xFE, 0xFF]);
-        // Encode content as UTF-16 BE (swap bytes)
         const buf = new Uint8Array(content.length * 2);
         for (let i = 0; i < content.length; i++) {
             const code = content.charCodeAt(i);
@@ -49,7 +85,6 @@ function downloadFile(f) {
         }
         blobParts = [bom, buf];
     } else {
-        // UTF-8 (no BOM) and ANSI — browser Blob uses UTF-8 by default
         blobParts = [content];
     }
 
@@ -314,7 +349,7 @@ function handleKeydown(e) {
     if ((e.ctrlKey||e.metaKey) && e.key==='s') {
         e.preventDefault();
         if (f) {
-            downloadFile(f);
+            saveFile(f);
         }
         return;
     }
@@ -442,12 +477,14 @@ function moveLine(dir) {
 function getCommands() {
     return [
         { name: CZi18n.t('cmd_new_file'), shortcut:'Ctrl+N', action:()=>CZUI.createNewFile() },
-        { name: CZi18n.t('cmd_save'), shortcut:'Ctrl+S', action:()=>{ const f=CZUI.getActiveFile(); if(f) downloadFile(f); }},
+        { name: CZi18n.t('cmd_save'), shortcut:'Ctrl+S', action:()=>{ const f=CZUI.getActiveFile(); if(f) saveFile(f); }},
         { name: CZi18n.t('cmd_toggle_comment'), shortcut:'Ctrl+/', action:()=>toggleComment(CZEngine.getLangConfig(CZUI.getActiveFile()?.language)) },
         { name: CZi18n.t('sc_duplicate'), shortcut:'Ctrl+D', action:()=>duplicateLine() },
         { name: CZi18n.t('cmd_delete_line'), shortcut:'Ctrl+Shift+K', action:()=>deleteLine() },
         { name: CZi18n.t('shortcuts_title'), shortcut:'', action:()=>document.getElementById('shortcuts-modal').classList.remove('hidden') },
         { name: CZi18n.t('font_config_title'), shortcut:'', action:()=>{ CZUI.fontConfigModal.classList.remove('hidden'); CZUI.settingsPopup.classList.add('hidden'); }},
+        { name: CZi18n.t('cmd_open_folder'), shortcut:'', action:()=>document.getElementById('btn-open-folder').click() },
+        { name: CZi18n.t('cmd_toggle_sidebar'), shortcut:'Ctrl+B', action:()=>CZUI.toggleSidebar() },
     ];
 }
 let cpVisible = false, cpIndex = 0;
@@ -503,6 +540,7 @@ function onInput() {
 return {
     handleKeydown, handleCursorMove, onInput,
     hideAutocomplete, toggleCommandPalette, renderCommandPalette,
+    saveFile,
     get acVisible() { return acVisible; }
 };
 })();

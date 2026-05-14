@@ -15,7 +15,9 @@
         CZUI.applyFontSettings();
 
         if (savedFiles) {
-            const files = JSON.parse(savedFiles);
+            let files = JSON.parse(savedFiles);
+            // Filter out binary image files that can't be restored (no fileHandle after reload)
+            files = files.filter(f => !f.isImage);
             if (files.length > 0) {
                 files.forEach(f => { if (f.isPinned === undefined) f.isPinned = false; });
                 CZUI.setFiles(files);
@@ -28,7 +30,42 @@
         CZUI.renderTabs();
         CZUI.setupTabDragging();
         CZUI.checkEmptyState();
+        CZUI.restoreSidebarState();
         bindEvents();
+
+        // Restore last folder from IndexedDB
+        if (CZFS.isSupported()) {
+            CZFS.restoreLastFolder().then(result => {
+                if (result) {
+                    if (result.needsPermission) {
+                        // Show a "click to re-grant permission" in sidebar
+                        CZUI.renderSidebar([], null);
+                        const container = document.getElementById('sidebar-tree');
+                        const banner = document.createElement('div');
+                        banner.className = 'sidebar-empty';
+                        banner.style.display = 'flex';
+                        banner.innerHTML = `<p>${CZEngine.escapeHTML(result.name)}</p>
+                            <button class="sidebar-open-btn" id="btn-regrant">${CZi18n.t('btn_regrant_permission') || '🔓 Grant Access'}</button>`;
+                        container.innerHTML = '';
+                        container.appendChild(banner);
+                        document.getElementById('btn-regrant').onclick = async () => {
+                            const r = await CZFS.requestPermission(result.handle);
+                            if (r) {
+                                CZUI.renderSidebar(r.tree, r.name);
+                                if (!CZUI.isSidebarOpen()) CZUI.toggleSidebar();
+                            }
+                        };
+                    } else if (result.tree) {
+                        CZUI.renderSidebar(result.tree, result.name);
+                    }
+                } else {
+                    // No stored folder — show recent folders
+                    CZUI.renderRecentFolders();
+                }
+            }).catch(() => {
+                CZUI.renderRecentFolders();
+            });
+        }
     }
 
     function bindEvents() {
@@ -64,6 +101,50 @@
             e.target.value = '';
         };
         document.getElementById('btn-settings').onclick = () => CZUI.settingsPopup.classList.toggle('hidden');
+        document.getElementById('btn-toggle-sidebar').onclick = () => CZUI.toggleSidebar();
+
+        // Sidebar buttons
+        document.getElementById('btn-open-folder').onclick = async () => {
+            if (!CZFS.isSupported()) {
+                CZUI.openAlert(CZi18n.t('alert_title'), CZi18n.t('fs_not_supported') || 'File System Access API is not supported in this browser. Use Chrome or Edge.');
+                return;
+            }
+            try {
+                const result = await CZFS.openFolder();
+                if (result) {
+                    CZUI.renderSidebar(result.tree, result.name);
+                    if (CZUI.isSidebarOpen() === false) CZUI.toggleSidebar();
+                }
+            } catch (e) {
+                CZUI.openAlert(CZi18n.t('alert_title'), 'Failed to open folder: ' + e.message);
+            }
+        };
+        document.getElementById('btn-new-fs-file').onclick = () => {
+            if (CZFS.getDirectoryHandle()) {
+                CZUI.executeSidebarAction('new-file');
+            }
+        };
+        document.getElementById('btn-new-fs-folder').onclick = () => {
+            if (CZFS.getDirectoryHandle()) {
+                CZUI.executeSidebarAction('new-folder');
+            }
+        };
+        document.getElementById('btn-refresh-tree').onclick = async () => {
+            await CZUI.refreshSidebar();
+        };
+        document.getElementById('btn-collapse-all').onclick = () => {
+            CZUI.collapseAllFolders();
+        };
+
+        // Sidebar context menu
+        document.querySelectorAll('#sidebar-context-menu .context-menu-item').forEach(el => {
+            el.onclick = () => CZUI.executeSidebarAction(el.dataset.action);
+        });
+
+        // Explorer settings modal
+        document.getElementById('close-explorer-settings').onclick = () => CZUI.explorerSettingsModal.classList.add('hidden');
+        document.getElementById('btn-explorer-settings-cancel').onclick = () => CZUI.explorerSettingsModal.classList.add('hidden');
+        document.getElementById('btn-explorer-settings-ok').onclick = () => CZUI.applyExplorerSettings();
 
         // Settings menu items
         document.getElementById('menu-font-config').onclick = () => {
@@ -235,6 +316,8 @@
                 CZUI.settingsPopup.classList.add('hidden');
             if (!e.target.closest('#tab-context-menu'))
                 CZUI.tabContextMenu.classList.add('hidden');
+            if (!e.target.closest('#sidebar-context-menu'))
+                CZUI.sidebarContextMenu.classList.add('hidden');
             if (!e.target.closest('.autocomplete-popup') && !e.target.closest('#editing'))
                 CZFeatures.hideAutocomplete();
             if (!e.target.closest('.lang-picker-wrapper'))
@@ -250,7 +333,7 @@
 
             // Escape: close modals/popups
             if (e.key === 'Escape') {
-                const modals = ['custom-prompt-modal', 'custom-confirm-modal', 'custom-alert-modal', 'font-config-modal', 'shortcuts-modal', 'command-palette'];
+                const modals = ['custom-prompt-modal', 'custom-confirm-modal', 'custom-alert-modal', 'font-config-modal', 'shortcuts-modal', 'command-palette', 'explorer-settings-modal'];
                 let closed = false;
                 modals.forEach(id => {
                     const el = document.getElementById(id);
@@ -263,7 +346,7 @@
 
             // All Ctrl+ shortcuts — intercept browser defaults
             if (ctrl) {
-                const intercepted = ['n', 's', 'd', 'p', 'l', '/', ']', '['];
+                const intercepted = ['n', 's', 'd', 'p', 'l', '/', ']', '[', 'b'];
                 const interceptedShift = ['k', 'd'];
 
                 if (shift && interceptedShift.includes(key)) {
@@ -286,6 +369,9 @@
 
                     // Ctrl+P: always works (command palette)
                     if (key === 'p') { CZFeatures.toggleCommandPalette(); return; }
+
+                    // Ctrl+B: toggle sidebar
+                    if (key === 'b') { CZUI.toggleSidebar(); return; }
 
                     // Other shortcuts need active file + focus on textarea
                     if (CZUI.getActiveId()) {

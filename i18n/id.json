@@ -63,8 +63,37 @@
     "confirm_close_all_title": "Tutup Semua",
 
     "cmd_new_file": "File Baru",
-    "cmd_save": "Simpan / Download",
+    "cmd_save": "Simpan",
     "cmd_toggle_comment": "Toggle Komentar",
     "cmd_delete_line": "Hapus Baris",
-    "cmd_palette_placeholder": "Ketik perintah..."
+    "cmd_open_folder": "Buka Folder",
+    "cmd_toggle_sidebar": "Toggle Sidebar",
+    "cmd_palette_placeholder": "Ketik perintah...",
+
+    "sidebar_explorer": "Explorer",
+    "btn_open_folder_title": "📂 Buka Folder",
+    "btn_toggle_sidebar_title": "Toggle Sidebar (Ctrl+B)",
+    "sidebar_no_folder": "Belum ada folder dibuka",
+    "recent_folders_title": "Folder Terbaru",
+    "btn_regrant_permission": "🔓 Izinkan Akses",
+
+    "ctx_new_file": "📄 File Baru",
+    "ctx_new_folder": "📁 Folder Baru",
+    "ctx_rename_entry": "✏️ Ganti Nama",
+    "ctx_delete_entry": "🗑️ Hapus",
+    "ctx_close_folder": "❌ Tutup Folder",
+    "ctx_explorer_settings": "⚙️ Pengaturan Explorer",
+
+    "prompt_new_file_title": "File Baru",
+    "prompt_new_folder_title": "Folder Baru",
+    "confirm_delete_title": "Hapus",
+    "confirm_delete_entry": "Hapus '{0}'?",
+
+    "explorer_settings_title": "⚙️ Pengaturan Explorer",
+    "explorer_depth_label": "Kedalaman Folder Maksimal:",
+    "explorer_filter_label": "Pola Pengecualian (satu per baris):",
+
+    "fs_not_supported": "File System Access API tidak didukung di browser ini. Gunakan Chrome atau Edge.",
+    "sc_toggle_sidebar": "Toggle Sidebar",
+    "svg_preview_title": "Preview SVG"
 }

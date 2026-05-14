@@ -63,8 +63,37 @@
     "confirm_close_all_title": "Close All",
 
     "cmd_new_file": "New File",
-    "cmd_save": "Save / Download",
+    "cmd_save": "Save",
     "cmd_toggle_comment": "Toggle Comment",
     "cmd_delete_line": "Delete Line",
-    "cmd_palette_placeholder": "Type a command..."
+    "cmd_open_folder": "Open Folder",
+    "cmd_toggle_sidebar": "Toggle Sidebar",
+    "cmd_palette_placeholder": "Type a command...",
+
+    "sidebar_explorer": "Explorer",
+    "btn_open_folder_title": "📂 Open Folder",
+    "btn_toggle_sidebar_title": "Toggle Sidebar (Ctrl+B)",
+    "sidebar_no_folder": "No folder opened",
+    "recent_folders_title": "Recent Folders",
+    "btn_regrant_permission": "🔓 Grant Access",
+
+    "ctx_new_file": "📄 New File",
+    "ctx_new_folder": "📁 New Folder",
+    "ctx_rename_entry": "✏️ Rename",
+    "ctx_delete_entry": "🗑️ Delete",
+    "ctx_close_folder": "❌ Close Folder",
+    "ctx_explorer_settings": "⚙️ Explorer Settings",
+
+    "prompt_new_file_title": "New File",
+    "prompt_new_folder_title": "New Folder",
+    "confirm_delete_title": "Delete",
+    "confirm_delete_entry": "Delete '{0}'?",
+
+    "explorer_settings_title": "⚙️ Explorer Settings",
+    "explorer_depth_label": "Max Folder Depth:",
+    "explorer_filter_label": "Exclude Patterns (one per line):",
+
+    "fs_not_supported": "File System Access API is not supported in this browser. Use Chrome or Edge.",
+    "sc_toggle_sidebar": "Toggle Sidebar",
+    "svg_preview_title": "SVG Preview"
 }
