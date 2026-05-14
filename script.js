@@ -16,8 +16,8 @@
 
         if (savedFiles) {
             let files = JSON.parse(savedFiles);
-            // Filter out binary image files that can't be restored (no fileHandle after reload)
-            files = files.filter(f => !f.isImage);
+            // Filter out binary files that can't be restored (no fileHandle after reload)
+            files = files.filter(f => !f.isImage && !f.isBinary);
             if (files.length > 0) {
                 files.forEach(f => { if (f.isPinned === undefined) f.isPinned = false; });
                 CZUI.setFiles(files);
@@ -57,14 +57,21 @@
                         };
                     } else if (result.tree) {
                         CZUI.renderSidebar(result.tree, result.name);
+                        // Re-highlight active file and re-attach handles
+                        CZUI.highlightActiveInTree();
+                        CZUI.reattachFileHandles();
                     }
                 } else {
                     // No stored folder — show recent folders
                     CZUI.renderRecentFolders();
                 }
+                CZUI.removePreloadStyles();
             }).catch(() => {
                 CZUI.renderRecentFolders();
+                CZUI.removePreloadStyles();
             });
+        } else {
+            CZUI.removePreloadStyles();
         }
     }
 
@@ -394,9 +401,14 @@
             }
         }, true); // <-- capture phase = fires before any other handler
 
-        // File drag & drop
+        // File drag & drop — only trigger for external files, not internal drags
         document.body.addEventListener('dragover', e => {
-            if (e.dataTransfer.types.includes('Files')) { e.preventDefault(); CZUI.dropOverlay.classList.add('active'); }
+            if (!e.dataTransfer.types.includes('Files')) return;
+            // Ignore drags from inside image-viewer or binary-panel
+            const src = e.target;
+            if (src.closest && (src.closest('#image-viewer') || src.closest('#binary-file-panel'))) return;
+            e.preventDefault();
+            CZUI.dropOverlay.classList.add('active');
         });
         document.body.addEventListener('dragleave', e => {
             if (e.relatedTarget === null) CZUI.dropOverlay.classList.remove('active');

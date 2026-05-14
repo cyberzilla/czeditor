@@ -10,6 +10,28 @@
     <link rel="icon" type="image/png" href="icon-192.png">
     <link rel="apple-touch-icon" href="icon-192.png">
     <link rel="stylesheet" href="style.css">
+    <script>
+        // Apply saved sidebar state BEFORE first paint to prevent visual flash
+        (function() {
+            var w = localStorage.getItem('cz_sidebar_width');
+            var c = localStorage.getItem('cz_sidebar_collapsed');
+            var css = '';
+            if (c === 'true') {
+                css += '#sidebar{width:0!important;min-width:0!important;border-right:none;opacity:0;pointer-events:none;transition:none}';
+                css += '.sidebar-resize-handle{display:none}';
+            } else if (w) {
+                css += '#sidebar{width:' + w + 'px;transition:none}';
+            }
+            // Hide sidebar-empty initially to prevent flash when folder restores
+            css += '#sidebar-empty{display:none}';
+            if (css) {
+                var s = document.createElement('style');
+                s.id = 'cz-preload-styles';
+                s.textContent = css;
+                document.head.appendChild(s);
+            }
+        })();
+    </script>
 </head>
 <body>
 
@@ -56,6 +78,7 @@
                 </div>
             </div>
         </aside>
+        <div class="sidebar-resize-handle" id="sidebar-resize-handle"></div>
 
         <div class="editor-content" id="editor-content">
             <div id="welcome-screen" class="welcome-screen">
@@ -92,6 +115,26 @@
                 </div>
                 <div class="image-viewer-bar">
                     <span id="image-viewer-info"></span>
+                </div>
+            </div>
+
+            <!-- Binary File Info Panel (for non-text, non-image files) -->
+            <div id="binary-file-panel" class="binary-file-panel hidden">
+                <div class="binary-file-card">
+                    <div class="binary-file-icon" id="binary-file-icon">📄</div>
+                    <div class="binary-file-name" id="binary-file-name"></div>
+                    <div class="binary-file-size" id="binary-file-size"></div>
+                    <p class="binary-file-msg" data-i18n="binary_file_msg">This file is in binary format and cannot be displayed as text.</p>
+                    <div class="binary-file-actions">
+                        <button class="binary-btn binary-btn-code" id="btn-binary-open-code" onclick="CZUI.openBinaryAsCode()">
+                            <span class="binary-btn-icon">&lt;/&gt;</span>
+                            <span data-i18n="binary_open_code">Open as Code</span>
+                        </button>
+                        <button class="binary-btn binary-btn-external" id="btn-binary-open-external" onclick="CZUI.openBinaryExternal()">
+                            <span class="binary-btn-icon">↗</span>
+                            <span data-i18n="binary_open_external">Open External</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 

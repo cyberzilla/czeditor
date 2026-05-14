@@ -67,9 +67,31 @@ function setFileIcons(icons) {
 loadFileIcons();
 
 const IMAGE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'gif', 'ico', 'webp', 'bmp', 'avif']);
+const BINARY_EXTENSIONS = new Set([
+    // Fonts
+    'woff2', 'woff', 'ttf', 'otf', 'eot',
+    // Archives
+    'zip', 'tar', 'gz', 'rar', '7z', 'bz2', 'xz', 'jar',
+    // Audio
+    'mp3', 'wav', 'ogg', 'flac', 'aac', 'wma', 'm4a',
+    // Video
+    'mp4', 'avi', 'mkv', 'webm', 'mov', 'wmv', 'flv',
+    // Documents
+    'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',
+    // Executables
+    'exe', 'dll', 'so', 'dylib', 'class', 'pyc', 'msi',
+    // Database
+    'db', 'sqlite', 'sqlite3',
+    // Other binary
+    'bin', 'dat', 'iso', 'img', 'o', 'obj', 'lib', 'a'
+]);
 function isImageFile(name) {
     const ext = name.split('.').pop().toLowerCase();
     return IMAGE_EXTENSIONS.has(ext);
+}
+function isBinaryFile(name) {
+    const ext = name.split('.').pop().toLowerCase();
+    return BINARY_EXTENSIONS.has(ext) || IMAGE_EXTENSIONS.has(ext);
 }
 function isSvgFile(name) {
     return name.split('.').pop().toLowerCase() === 'svg';
@@ -77,6 +99,33 @@ function isSvgFile(name) {
 // Check if a fileHandle is a real FileSystemFileHandle (not a stale deserialized object)
 function isValidHandle(h) {
     return h && typeof h.getFile === 'function';
+}
+function formatFileSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1048576).toFixed(1) + ' MB';
+}
+function getBinaryIcon(name) {
+    const ext = name.split('.').pop().toLowerCase();
+    const iconMap = {
+        // Fonts
+        woff2: '🔤', woff: '🔤', ttf: '🔤', otf: '🔤', eot: '🔤',
+        // Archives
+        zip: '📦', tar: '📦', gz: '📦', rar: '📦', '7z': '📦', bz2: '📦', xz: '📦', jar: '📦',
+        // Audio
+        mp3: '🎵', wav: '🎵', ogg: '🎵', flac: '🎵', aac: '🎵', wma: '🎵', m4a: '🎵',
+        // Video
+        mp4: '🎬', avi: '🎬', mkv: '🎬', webm: '🎬', mov: '🎬', wmv: '🎬', flv: '🎬',
+        // Documents
+        pdf: '📕', doc: '📘', docx: '📘', xls: '📗', xlsx: '📗', ppt: '📙', pptx: '📙',
+        // Executables
+        exe: '⚙️', dll: '⚙️', so: '⚙️', msi: '⚙️',
+        // Database
+        db: '🗄️', sqlite: '🗄️', sqlite3: '🗄️',
+        // Images
+        png: '🖼️', jpg: '🖼️', jpeg: '🖼️', gif: '🖼️', ico: '🖼️', webp: '🖼️', bmp: '🖼️', avif: '🖼️',
+    };
+    return iconMap[ext] || '📄';
 }
 
 function getFiles() { return files; }
@@ -90,17 +139,20 @@ function getActiveFile() { return files.find(f => f.id === activeFileId); }
 function checkEmptyState() {
     const empty = files.length === 0;
     const activeFile = getActiveFile();
-    const isImageActive = activeFile && activeFile.isImage;
+    const isNonEditor = activeFile && (activeFile.isImage || activeFile.isBinary);
 
     welcomeScreen.classList.toggle('active', empty);
-    // Don't show editor-body if active file is a binary image
-    editorBody.classList.toggle('hidden', empty || isImageActive);
+    // Don't show editor-body if active file is a binary/image
+    editorBody.classList.toggle('hidden', empty || isNonEditor);
     toolbarRight.classList.toggle('hidden', empty);
     editorFooter.classList.toggle('hidden', empty);
-    if (activeLineHL) activeLineHL.style.display = (empty || isImageActive) ? 'none' : 'block';
+    if (activeLineHL) activeLineHL.style.display = (empty || isNonEditor) ? 'none' : 'block';
     // Show/hide image viewer based on whether active file is a binary image
     const iv = $('image-viewer');
-    if (iv) iv.classList.toggle('hidden', empty || !isImageActive);
+    if (iv) iv.classList.toggle('hidden', empty || !activeFile?.isImage);
+    // Show/hide binary panel
+    const bp = $('binary-file-panel');
+    if (bp) bp.classList.toggle('hidden', empty || !activeFile?.isBinary);
 }
 
 // ===== DIALOGS =====
@@ -148,8 +200,8 @@ function applyFontSettings() {
 
 // ===== SAVE =====
 function saveData() {
-    // Filter out binary image files, strip non-serializable fileHandle from all
-    const saveable = files.filter(f => !f.isImage).map(f => {
+    // Filter out binary and image files — they can't be serialized
+    const saveable = files.filter(f => !f.isImage && !f.isBinary).map(f => {
         const { fileHandle, imageUrl, ...rest } = f;
         return rest;
     });
@@ -161,10 +213,35 @@ function triggerAutosave() {
     saveStatus.textContent = CZi18n.t('status_saving');
     saveStatus.className = 'save-status saving';
     clearTimeout(saveTimeout);
-    saveTimeout = setTimeout(() => {
-        saveData(); saveStatus.textContent = CZi18n.t('status_saved');
+    saveTimeout = setTimeout(async () => {
+        saveData();
+        // Also save to disk for files with fileHandle
+        const f = getActiveFile();
+        if (f && f.fileHandle && f.dirty && isValidHandle(f.fileHandle)) {
+            const ok = await CZFS.saveFile(f.fileHandle, f.content, f.encoding || 'UTF-8', f.eol || 'LF');
+            if (ok) f.dirty = false;
+        }
+        saveStatus.textContent = CZi18n.t('status_saved');
         saveStatus.className = 'save-status saved';
-    }, 800);
+        // Lightweight dot update — avoid full renderTabs which triggers checkEmptyState
+        updateTabDirtyDot();
+    }, 1200);
+}
+
+function updateTabDirtyDot() {
+    tabsContainer.querySelectorAll('.tab').forEach(tab => {
+        const id = tab.dataset.id;
+        const file = files.find(f => f.id === id);
+        if (!file) return;
+        const nameEl = tab.querySelector('.tab-name');
+        if (!nameEl) return;
+        const dot = nameEl.querySelector('.tab-dot');
+        if (file.dirty && !dot) {
+            nameEl.insertAdjacentHTML('afterbegin', '<span class="tab-dot">●</span>');
+        } else if (!file.dirty && dot) {
+            dot.remove();
+        }
+    });
 }
 
 // ===== TABS =====
@@ -178,7 +255,8 @@ function renderTabs() {
         tab.onclick = e => { if (!isDraggingTab && e.button !== 2) switchFile(file.id); };
         tab.ondblclick = () => { if (!isDraggingTab) renameFile(file.id); };
         const pin = file.isPinned ? '<span class="tab-pin-icon">📌</span>' : '';
-        tab.innerHTML = `<span class="tab-name">${pin}${CZEngine.escapeHTML(file.name)}</span>
+        const dot = file.dirty ? '<span class="tab-dot">●</span>' : '';
+        tab.innerHTML = `<span class="tab-name">${pin}${dot}${CZEngine.escapeHTML(file.name)}</span>
             <span class="tab-close" data-close="${file.id}">&times;</span>`;
         tabsContainer.appendChild(tab);
     });
@@ -243,7 +321,8 @@ function createNewFile() {
 async function closeFile(id) {
     const f = files.find(x=>x.id===id);
     if (!f) return;
-    if (f.content && f.content.length > 0) {
+    // Only confirm if file has unsaved changes
+    if (f.dirty) {
         const ok = await openConfirm(CZi18n.t('confirm_close_title'), CZi18n.t('confirm_close_file', f.name));
         if (!ok) return;
     }
@@ -285,13 +364,19 @@ function switchFile(id) {
     const svgPreviewOverlay = $('svg-preview-overlay');
     const svgPreviewBtn = $('btn-svg-preview-toggle');
 
+    const binaryPanel = $('binary-file-panel');
+
     // Hide all viewers first
     if (imageViewer) imageViewer.classList.add('hidden');
     if (svgPreviewOverlay) svgPreviewOverlay.classList.add('hidden');
     if (svgPreviewBtn) svgPreviewBtn.classList.add('hidden');
+    if (binaryPanel) binaryPanel.classList.add('hidden');
     editorBody.classList.add('hidden');
 
-    if (f.isImage) {
+    if (f.isBinary) {
+        // Show binary file info panel
+        showBinaryPanel(f);
+    } else if (f.isImage) {
         // Show full-tab image viewer for binary images only
         showImageViewer(f);
     } else {
@@ -319,6 +404,7 @@ async function showImageViewer(f) {
 
     // Set image source — always create fresh blob URL
     if (img) {
+        img.draggable = false; // Prevent native drag triggering drop overlay
         try {
             if (f.fileHandle) {
                 const file = await f.fileHandle.getFile();
@@ -346,6 +432,79 @@ async function showImageViewer(f) {
     // NOTE: editor-body hide/show is handled by switchFile, not here
     toolbarRight.classList.remove('hidden');
     editorFooter.classList.remove('hidden');
+}
+
+// ===== BINARY FILE PANEL =====
+async function showBinaryPanel(f) {
+    const panel = $('binary-file-panel');
+    if (!panel) return;
+    panel.classList.remove('hidden');
+
+    $('binary-file-icon').textContent = getBinaryIcon(f.name);
+    $('binary-file-name').textContent = f.name;
+
+    // Get file size
+    if (isValidHandle(f.fileHandle)) {
+        try {
+            const file = await f.fileHandle.getFile();
+            $('binary-file-size').textContent = formatFileSize(file.size);
+        } catch (e) {
+            $('binary-file-size').textContent = '';
+        }
+    } else {
+        $('binary-file-size').textContent = '';
+    }
+
+    toolbarRight.classList.remove('hidden');
+    editorFooter.classList.remove('hidden');
+}
+
+async function openBinaryAsCode() {
+    const f = getActiveFile();
+    if (!f || !f.isBinary) return;
+
+    try {
+        if (isValidHandle(f.fileHandle)) {
+            const data = await CZFS.readFile(f.fileHandle);
+            f.content = data.content;
+            f.encoding = data.encoding;
+            f.eol = data.eol;
+        }
+        // Convert to normal text file
+        f.isBinary = false;
+        f.isImage = false;
+        const extM = f.name.match(/\.([a-z0-9]+)$/i);
+        f.language = extM ? (CZEngine.detectByExtension(extM[1].toLowerCase()) || 'plaintext') : 'plaintext';
+        switchFile(f.id);
+    } catch (e) {
+        console.error('[CZUI] Failed to read binary as code:', e);
+        openAlert(CZi18n.t('alert_title'), CZi18n.t('binary_open_error') || 'Failed to read file: ' + e.message);
+    }
+}
+
+async function openBinaryExternal() {
+    const f = getActiveFile();
+    if (!f) return;
+
+    try {
+        if (isValidHandle(f.fileHandle)) {
+            const file = await f.fileHandle.getFile();
+            const url = URL.createObjectURL(file);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = f.name;
+            a.target = '_blank';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 5000);
+        } else {
+            openAlert(CZi18n.t('alert_title'), CZi18n.t('binary_no_handle') || 'File handle not available. Re-open the folder.');
+        }
+    } catch (e) {
+        console.error('[CZUI] Failed to open externally:', e);
+        openAlert(CZi18n.t('alert_title'), 'Failed: ' + e.message);
+    }
 }
 
 // ===== SVG FLOATING PREVIEW =====
@@ -388,8 +547,9 @@ function closeFolder() {
     sidebarTree.innerHTML = '';
     sidebarEmpty.style.display = 'flex';
     sidebarTree.appendChild(sidebarEmpty);
-    // Clear persisted folder
+    // Clear persisted folder and folder state
     CZFS.clearFolder();
+    localStorage.removeItem('cz_expanded_folders');
     // Re-render recent folders
     renderRecentFolders();
     // Re-render
@@ -449,6 +609,91 @@ function isSidebarOpen() {
 function restoreSidebarState() {
     const collapsed = localStorage.getItem('cz_sidebar_collapsed');
     if (collapsed === 'true') sidebar.classList.add('collapsed');
+    // Restore sidebar width (already applied via preload script, but ensure inline style is set)
+    const savedWidth = localStorage.getItem('cz_sidebar_width');
+    if (savedWidth) sidebar.style.width = savedWidth + 'px';
+    // Setup resize handle drag
+    setupSidebarResize();
+}
+
+// Remove preload flash-prevention styles after sidebar is fully initialized
+function removePreloadStyles() {
+    const preload = document.getElementById('cz-preload-styles');
+    if (preload) preload.remove();
+}
+
+function setupSidebarResize() {
+    const handle = $('sidebar-resize-handle');
+    if (!handle) return;
+    let isDragging = false, startX, startWidth;
+
+    handle.addEventListener('mousedown', (e) => {
+        if (e.button !== 0) return;
+        e.preventDefault();
+        isDragging = true;
+        startX = e.clientX;
+        startWidth = sidebar.getBoundingClientRect().width;
+        handle.classList.add('active');
+        document.body.classList.add('sidebar-resizing');
+        // Disable transitions during drag for instant feedback
+        sidebar.style.transition = 'none';
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        const newWidth = startWidth + (e.clientX - startX);
+        const clamped = Math.max(180, Math.min(450, newWidth));
+        sidebar.style.width = clamped + 'px';
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (!isDragging) return;
+        isDragging = false;
+        handle.classList.remove('active');
+        document.body.classList.remove('sidebar-resizing');
+        sidebar.style.transition = '';
+        // Save width
+        localStorage.setItem('cz_sidebar_width', parseInt(sidebar.getBoundingClientRect().width));
+    });
+}
+
+// ===== FOLDER EXPAND/COLLAPSE STATE =====
+function getExpandedPaths() {
+    try {
+        const raw = localStorage.getItem('cz_expanded_folders');
+        return raw ? new Set(JSON.parse(raw)) : new Set();
+    } catch { return new Set(); }
+}
+
+function saveExpandedPaths(tree, parentPath) {
+    const expanded = new Set();
+    function collect(nodes, prefix) {
+        nodes.forEach(n => {
+            if (n.kind === 'directory') {
+                const path = prefix + '/' + n.name;
+                if (n.expanded) expanded.add(path);
+                if (n.children) collect(n.children, path);
+            }
+        });
+    }
+    collect(tree, parentPath || '');
+    localStorage.setItem('cz_expanded_folders', JSON.stringify([...expanded]));
+}
+
+function applyExpandedPaths(tree, parentPath) {
+    // If no saved state exists, keep default (first level expanded)
+    if (!localStorage.getItem('cz_expanded_folders')) return;
+    const expanded = getExpandedPaths();
+    function apply(nodes, prefix) {
+        nodes.forEach(n => {
+            if (n.kind === 'directory') {
+                const path = prefix + '/' + n.name;
+                n.expanded = expanded.has(path);
+                if (n.children) apply(n.children, path);
+            }
+        });
+    }
+    apply(tree, parentPath || '');
 }
 
 function getFileIcon(name) {
@@ -468,6 +713,9 @@ function renderSidebar(tree, folderName) {
         }
         return;
     }
+
+    // Restore folder expand/collapse state from localStorage
+    applyExpandedPaths(tree, folderName || '');
 
     // Render folder name header
     if (folderName) {
@@ -511,6 +759,9 @@ function renderTreeNodes(nodes, container, depth, parentHandle) {
                 const arrowEl = item.querySelector('.folder-arrow');
                 arrowEl.classList.toggle('expanded', node.expanded);
                 childrenDiv.classList.toggle('collapsed', !node.expanded);
+                // Persist folder state
+                const tree = CZFS.getCurrentTree();
+                if (tree) saveExpandedPaths(tree, CZFS.getDirectoryHandle()?.name || '');
             };
 
             item.oncontextmenu = (e) => {
@@ -559,43 +810,88 @@ function renderTreeNodes(nodes, container, depth, parentHandle) {
 }
 
 function showSidebarContextMenu(x, y) {
-    sidebarContextMenu.style.left = x + 'px';
-    sidebarContextMenu.style.top = y + 'px';
+    const kind = sidebarContextTarget?.kind; // 'file', 'directory', or 'root'
+
+    // Show/hide items based on target kind
+    sidebarContextMenu.querySelectorAll('[data-action]').forEach(el => {
+        const action = el.dataset.action;
+        let show = true;
+        if (kind === 'file') {
+            // Files: no "new-file", "new-folder", "close-folder"
+            if (['new-file', 'new-folder', 'close-folder'].includes(action)) show = false;
+        } else if (kind === 'directory') {
+            // Folders: no "close-folder" (that's for root only)
+            if (action === 'close-folder') show = false;
+        } else if (kind === 'root') {
+            // Root folder: no "rename", "delete"
+            if (['rename', 'delete'].includes(action)) show = false;
+        }
+        el.style.display = show ? '' : 'none';
+    });
+
+    // Hide dividers adjacent to hidden items
+    sidebarContextMenu.querySelectorAll('.context-menu-divider').forEach(div => {
+        const prev = div.previousElementSibling;
+        const next = div.nextElementSibling;
+        const prevHidden = !prev || prev.style.display === 'none' || prev.classList.contains('context-menu-divider');
+        const nextHidden = !next || next.style.display === 'none' || next.classList.contains('context-menu-divider');
+        div.style.display = (prevHidden || nextHidden) ? 'none' : '';
+    });
+
+    // Position menu, then clamp within viewport
     sidebarContextMenu.classList.remove('hidden');
+    const rect = sidebarContextMenu.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    let mx = x, my = y;
+    if (mx + rect.width > vw - 4) mx = vw - rect.width - 4;
+    if (my + rect.height > vh - 4) my = vh - rect.height - 4;
+    if (mx < 4) mx = 4;
+    if (my < 4) my = 4;
+    sidebarContextMenu.style.left = mx + 'px';
+    sidebarContextMenu.style.top = my + 'px';
 }
 
 async function openFileFromTree(fileHandle, fileName) {
-    // Check if already open (match by fileHandle identity OR by fileName for restored tabs)
+    // Check if already open — match by fileHandle identity OR by fileName for folder files
     const existing = files.find(f => {
+        // Exact handle identity (same session, same object)
         if (isValidHandle(f.fileHandle) && f.fileHandle === fileHandle) return true;
+        // Match by name for folder-originated files (handles change after refresh)
+        if (f.fromFolder && f.name === fileName) return true;
         // After page reload, fileHandle is lost/stale — match by name
         if (!isValidHandle(f.fileHandle) && f.name === fileName) return true;
         return false;
     });
     if (existing) {
-        // Re-attach fileHandle if missing (restored tab)
-        if (!existing.fileHandle) existing.fileHandle = fileHandle;
+        // Re-attach fresh fileHandle
+        if (fileHandle) existing.fileHandle = fileHandle;
         switchFile(existing.id);
         return;
     }
 
     try {
-        // Check if it's a binary image file (NOT SVG — SVG is text-based)
-        if (isImageFile(fileName)) {
-            const file = await fileHandle.getFile();
-            const url = URL.createObjectURL(file);
+        // Check if it's a binary file (images, fonts, archives, video, etc.)
+        if (isBinaryFile(fileName)) {
+            const isImg = isImageFile(fileName);
             const nf = {
                 id: 'file_' + Math.random().toString(36).substr(2, 9),
                 name: fileName,
-                language: 'image',
+                language: isImg ? 'image' : 'binary',
                 content: '',
                 isPinned: false,
                 encoding: 'binary',
                 eol: 'LF',
                 fileHandle: fileHandle,
-                imageUrl: url,
-                isImage: true
+                isBinary: !isImg, // images go to image viewer, others to binary panel
+                isImage: isImg,
+                fromFolder: true
             };
+            // For images, create a blob URL for the viewer
+            if (isImg) {
+                const file = await fileHandle.getFile();
+                nf.imageUrl = URL.createObjectURL(file);
+            }
             if (files.length === 1 && files[0].name.startsWith('Untitled') && !files[0].content && !files[0].isPinned) {
                 files[0] = { ...nf, id: files[0].id };
                 activeFileId = files[0].id;
@@ -607,6 +903,7 @@ async function openFileFromTree(fileHandle, fileName) {
             return;
         }
 
+        // Text-based file (code, SVG, config, etc.)
         const data = await CZFS.readFile(fileHandle);
         const extM = fileName.match(/\.([a-z0-9]+)$/i);
         let lang = 'plaintext';
@@ -646,13 +943,35 @@ function highlightActiveInTree() {
     if (!sidebarTree) return;
     sidebarTree.querySelectorAll('.tree-item.active').forEach(el => el.classList.remove('active'));
     const activeFile = getActiveFile();
-    if (!activeFile || !activeFile.fileHandle) return;
-    // Find matching tree item
+    if (!activeFile) return;
+    // Find matching tree item by handle OR by name
     sidebarTree.querySelectorAll('.tree-item[data-kind="file"]').forEach(el => {
-        if (el._fileHandle === activeFile.fileHandle) {
+        if (activeFile.fileHandle && el._fileHandle === activeFile.fileHandle) {
+            el.classList.add('active');
+        } else if (el.dataset.name === activeFile.name) {
             el.classList.add('active');
         }
     });
+}
+
+// Re-attach fileHandles to open tabs after folder restore (browser refresh)
+function reattachFileHandles() {
+    const tree = CZFS.getCurrentTree();
+    if (!tree) return;
+    function walkTree(nodes) {
+        nodes.forEach(n => {
+            if (n.kind === 'file') {
+                const openFile = files.find(f => f.name === n.name && !isValidHandle(f.fileHandle));
+                if (openFile) {
+                    openFile.fileHandle = n.handle;
+                    openFile.fromFolder = true;
+                }
+            } else if (n.kind === 'directory' && n.children) {
+                walkTree(n.children);
+            }
+        });
+    }
+    walkTree(tree);
 }
 
 function collapseAllFolders() {
@@ -666,6 +985,8 @@ function collapseAllFolders() {
         });
     }
     collapseRecursive(tree);
+    // Save empty state so all folders stay collapsed after refresh
+    localStorage.setItem('cz_expanded_folders', '[]');
     renderSidebar(tree, CZFS.getDirectoryHandle()?.name);
 }
 
@@ -691,15 +1012,30 @@ async function executeSidebarAction(action) {
     if (action === 'new-file') {
         const name = await openPrompt(CZi18n.t('prompt_new_file_title') || 'New File', 'untitled.txt');
         if (!name || !name.trim()) return;
-        const handle = await CZFS.createFile(parentHandle, name.trim());
+        const trimmed = name.trim();
+        // Check if file already exists
+        try {
+            await parentHandle.getFileHandle(trimmed);
+            // If no error, file exists
+            openAlert(CZi18n.t('alert_title'), CZi18n.t('alert_file_exists') || `File '${trimmed}' already exists in this folder.`);
+            return;
+        } catch { /* file doesn't exist — good */ }
+        const handle = await CZFS.createFile(parentHandle, trimmed);
         if (handle) {
             await refreshSidebar();
-            await openFileFromTree(handle, name.trim());
+            await openFileFromTree(handle, trimmed);
         }
     } else if (action === 'new-folder') {
         const name = await openPrompt(CZi18n.t('prompt_new_folder_title') || 'New Folder', 'new-folder');
         if (!name || !name.trim()) return;
-        const handle = await CZFS.createFolder(parentHandle, name.trim());
+        const trimmed = name.trim();
+        // Check if folder already exists
+        try {
+            await parentHandle.getDirectoryHandle(trimmed);
+            openAlert(CZi18n.t('alert_title'), CZi18n.t('alert_folder_exists') || `Folder '${trimmed}' already exists.`);
+            return;
+        } catch { /* folder doesn't exist — good */ }
+        const handle = await CZFS.createFolder(parentHandle, trimmed);
         if (handle) await refreshSidebar();
     } else if (action === 'rename') {
         const newName = await openPrompt(CZi18n.t('prompt_rename_title'), target.name);
@@ -747,6 +1083,9 @@ async function executeSidebarAction(action) {
 }
 
 async function refreshSidebar() {
+    // Save current expanded state before tree is rebuilt
+    const oldTree = CZFS.getCurrentTree();
+    if (oldTree) saveExpandedPaths(oldTree, CZFS.getDirectoryHandle()?.name || '');
     const tree = await CZFS.refreshTree();
     if (tree) renderSidebar(tree, CZFS.getDirectoryHandle()?.name);
 }
@@ -770,8 +1109,39 @@ async function applyExplorerSettings() {
 }
 
 function processImportedFile(fileObj) {
+    const name = fileObj.name;
+
+    // Handle image files — open in image viewer
+    if (isImageFile(name)) {
+        const url = URL.createObjectURL(fileObj);
+        const nf = {
+            id: 'file_' + Math.random().toString(36).substr(2, 9),
+            name, language: 'image', content: '', isPinned: false,
+            encoding: 'binary', eol: 'LF', isImage: true, imageUrl: url
+        };
+        if (files.length === 1 && files[0].name.startsWith('Untitled') && !files[0].content && !files[0].isPinned) {
+            files[0] = { ...nf, id: files[0].id }; activeFileId = files[0].id;
+        } else { files.push(nf); activeFileId = nf.id; }
+        saveData(); switchFile(activeFileId);
+        return;
+    }
+
+    // Handle other binary files — open in binary panel
+    if (isBinaryFile(name)) {
+        const nf = {
+            id: 'file_' + Math.random().toString(36).substr(2, 9),
+            name, language: 'binary', content: '', isPinned: false,
+            encoding: 'binary', eol: 'LF', isBinary: true
+        };
+        if (files.length === 1 && files[0].name.startsWith('Untitled') && !files[0].content && !files[0].isPinned) {
+            files[0] = { ...nf, id: files[0].id }; activeFileId = files[0].id;
+        } else { files.push(nf); activeFileId = nf.id; }
+        saveData(); switchFile(activeFileId);
+        return;
+    }
+
+    // Text file — detect BOM and encoding
     const reader = new FileReader();
-    // Read as ArrayBuffer first to detect BOM
     const bomReader = new FileReader();
     bomReader.onload = be => {
         const bytes = new Uint8Array(be.target.result);
@@ -780,12 +1150,10 @@ function processImportedFile(fileObj) {
         else if (bytes[0]===0xFF && bytes[1]===0xFE) { encoding = 'UTF-16 LE BOM'; bomLen = 2; }
         else if (bytes[0]===0xFE && bytes[1]===0xFF) { encoding = 'UTF-16 BE BOM'; bomLen = 2; }
         else {
-            // Heuristic: check if all bytes are < 128 (ASCII/ANSI)
             let isAscii = true;
             for (let i = 0; i < Math.min(bytes.length, 8192); i++) {
                 if (bytes[i] > 127) { isAscii = false; break; }
             }
-            // Check for valid UTF-8 sequences
             if (!isAscii) {
                 let isUTF8 = true;
                 for (let i = 0; i < Math.min(bytes.length, 8192); i++) {
@@ -800,23 +1168,20 @@ function processImportedFile(fileObj) {
                 if (!isUTF8) encoding = 'ANSI';
             }
         }
-        // Now read as text
         reader.onload = e => {
             let content = e.target.result;
-            // Detect EOL
             let eol = 'LF';
             if (content.includes('\r\n')) eol = 'CRLF';
             else if (content.includes('\r')) eol = 'CR';
-            // Normalize to LF internally
             content = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 
-            const extM = fileObj.name.match(/\.([a-z0-9]+)$/i);
+            const extM = name.match(/\.([a-z0-9]+)$/i);
             let lang = 'plaintext';
             if (extM) { lang = CZEngine.detectByExtension(extM[1].toLowerCase()) || CZEngine.detectLanguage(content); }
             else { lang = CZEngine.detectLanguage(content); }
             const nf = { id:'file_'+Math.random().toString(36).substr(2,9),
-                name:fileObj.name, language:lang, content, isPinned:false,
-                encoding, eol };
+                name, language:lang, content, isPinned:false,
+                encoding, eol, isSvg: isSvgFile(name) };
             if (files.length===1 && files[0].name.startsWith('Untitled') && !files[0].content && !files[0].isPinned) {
                 files[0] = {...nf, id:files[0].id}; activeFileId=files[0].id;
             } else { files.push(nf); activeFileId=nf.id; }
@@ -905,6 +1270,7 @@ function handleInput() {
     const f = getActiveFile();
     if (!f) return;
     f.content = editingArea.value;
+    f.dirty = true;
     if (!f.name.includes('.') && f.language==='plaintext') {
         const det = CZEngine.detectLanguage(editingArea.value);
         if (det!=='plaintext') { f.language=det; langSelector.value=det; CZEngine.loadLanguage(det).then(() => updateEditorVisuals()); }
@@ -945,12 +1311,13 @@ return {
     handleInput, updateEditorVisuals, updateFootbar, syncScroll, updateActiveLine, ensureCursorVisible,
     executeMenuAction,
     // Sidebar
-    toggleSidebar, isSidebarOpen, restoreSidebarState,
+    toggleSidebar, isSidebarOpen, restoreSidebarState, removePreloadStyles,
     renderSidebar, refreshSidebar, collapseAllFolders, closeFolder,
-    openFileFromTree, highlightActiveInTree, renderRecentFolders,
+    openFileFromTree, highlightActiveInTree, renderRecentFolders, reattachFileHandles,
     executeSidebarAction, openExplorerSettings, applyExplorerSettings,
-    // Image / SVG
+    // Image / SVG / Binary
     updateSvgPreview, toggleSvgPreview,
+    openBinaryAsCode, openBinaryExternal,
     // Icons
     getFileIcons, setFileIcons, getFileIcon,
     get targetContextTabId() { return targetContextTabId; },

@@ -95,5 +95,14 @@
 
     "fs_not_supported": "File System Access API is not supported in this browser. Use Chrome or Edge.",
     "sc_toggle_sidebar": "Toggle Sidebar",
-    "svg_preview_title": "SVG Preview"
+    "svg_preview_title": "SVG Preview",
+
+    "binary_file_msg": "This file is in binary format and cannot be displayed as text.",
+    "binary_open_code": "Open as Code",
+    "binary_open_external": "Open External",
+    "binary_open_error": "Failed to read the binary file.",
+    "binary_no_handle": "File handle not available. Please re-open the folder.",
+
+    "alert_file_exists": "A file with that name already exists in this folder.",
+    "alert_folder_exists": "A folder with that name already exists."
 }

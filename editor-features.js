@@ -23,7 +23,11 @@ async function saveFile(f) {
     // 1. If file has a native handle, save directly to disk
     if (f.fileHandle) {
         const ok = await CZFS.saveFile(f.fileHandle, f.content, f.encoding || 'UTF-8', f.eol || 'LF');
-        if (ok) return true;
+        if (ok) {
+            f.dirty = false;
+            CZUI.renderTabs();
+            return true;
+        }
         // If save failed (permission revoked?), fall through
     }
 

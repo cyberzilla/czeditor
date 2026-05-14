@@ -95,5 +95,14 @@
 
     "fs_not_supported": "File System Access API tidak didukung di browser ini. Gunakan Chrome atau Edge.",
     "sc_toggle_sidebar": "Toggle Sidebar",
-    "svg_preview_title": "Preview SVG"
+    "svg_preview_title": "Preview SVG",
+
+    "binary_file_msg": "File ini dalam format biner dan tidak bisa ditampilkan sebagai teks.",
+    "binary_open_code": "Buka sebagai Kode",
+    "binary_open_external": "Buka Eksternal",
+    "binary_open_error": "Gagal membaca file biner.",
+    "binary_no_handle": "File handle tidak tersedia. Silakan buka ulang foldernya.",
+
+    "alert_file_exists": "File dengan nama tersebut sudah ada di folder ini.",
+    "alert_folder_exists": "Folder dengan nama tersebut sudah ada."
 }
