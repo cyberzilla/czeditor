@@ -1261,6 +1261,31 @@ const CZUI = (() => {
         const lh = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--editor-line-height')) || 24;
         activeLineHL.style.display = 'block';
         activeLineHL.style.top = (20 + lineNum * lh - editingArea.scrollTop) + 'px';
+        activeLineHL.style.left = -editingArea.scrollLeft + 'px';
+    }
+
+    // ===== SCROLL PAST END =====
+    function updateScrollPastEnd() {
+        const wrapper = editingArea.parentElement;
+        if (!wrapper) return;
+        const lh = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--editor-line-height')) || 24;
+        // Scrollbar eats into textarea viewport, so subtract it from padding
+        const scrollbarH = editingArea.offsetHeight - editingArea.clientHeight;
+        const taPad = Math.max(50, wrapper.clientHeight - lh - scrollbarH);
+        editingArea.style.paddingBottom = taPad + 'px';
+        // Line-numbers has no scrollbar, needs extra padding to scroll same distance
+        lineNumbers.style.paddingBottom = (taPad + scrollbarH) + 'px';
+        // Highlighting (no scrollbar) uses a spacer div to avoid border-box overflow
+        let spacer = highlighting.querySelector('.scroll-spacer');
+        if (!spacer) {
+            spacer = document.createElement('div');
+            spacer.className = 'scroll-spacer';
+            highlighting.appendChild(spacer);
+        }
+        spacer.style.height = taPad + 'px';
+        if (activeLineHL) {
+            activeLineHL.style.width = Math.max(editingArea.scrollWidth, wrapper.clientWidth) + 'px';
+        }
     }
 
     // ===== EDITOR VISUALS =====
@@ -1291,6 +1316,7 @@ const CZUI = (() => {
         }
         highlightingContent.innerHTML = html + (text.endsWith('\n') ? ' ' : '');
         updateActiveLine();
+        updateScrollPastEnd();
     }
 
     function applySearchHighlights(text, tokens, matches, currentIdx, brackets) {
@@ -1411,7 +1437,7 @@ const CZUI = (() => {
         createNewFile, closeFile, renameFile, switchFile, processImportedFile,
         saveData, triggerAutosave, applyFontSettings,
         openPrompt, closePrompt, openConfirm, closeConfirm, openAlert, closeAlert,
-        handleInput, updateEditorVisuals, updateFootbar, syncScroll, updateActiveLine, ensureCursorVisible,
+        handleInput, updateEditorVisuals, updateFootbar, syncScroll, updateActiveLine, ensureCursorVisible, updateScrollPastEnd,
         executeMenuAction,
         // Sidebar
         toggleSidebar, isSidebarOpen, restoreSidebarState, removePreloadStyles,

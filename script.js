@@ -16,7 +16,7 @@
 
         if (savedFiles) {
             let files = JSON.parse(savedFiles);
-            // Filter out binary files that can't be restored (no fileHandle after reload)
+            // Filter out binary image files that can't be restored (no fileHandle after reload)
             files = files.filter(f => !f.isImage && !f.isBinary);
             if (files.length > 0) {
                 files.forEach(f => { if (f.isPinned === undefined) f.isPinned = false; });
@@ -100,6 +100,9 @@
             CZUI.updateActiveLine();
         });
 
+        // Recalculate scroll-past-end padding on window resize
+        window.addEventListener('resize', () => CZUI.updateScrollPastEnd());
+
         // Header buttons
         document.getElementById('btn-new-file').onclick = () => CZUI.createNewFile();
         document.getElementById('btn-open-file').onclick = () => document.getElementById('file-input').click();
@@ -166,7 +169,7 @@
             const list = document.getElementById('language-list');
             const langs = CZi18n.getAvailableLanguages();
             const current = CZi18n.getCurrentLang();
-            list.innerHTML = langs.map(l =>
+            list.innerHTML = langs.map(l => 
                 `<div class="lang-picker-item${l.code === current ? ' active' : ''}" data-ui-lang="${l.code}">${l.name}</div>`
             ).join('');
             list.querySelectorAll('.lang-picker-item').forEach(el => {
@@ -401,14 +404,9 @@
             }
         }, true); // <-- capture phase = fires before any other handler
 
-        // File drag & drop — only trigger for external files, not internal drags
+        // File drag & drop
         document.body.addEventListener('dragover', e => {
-            if (!e.dataTransfer.types.includes('Files')) return;
-            // Ignore drags from inside image-viewer or binary-panel
-            const src = e.target;
-            if (src.closest && (src.closest('#image-viewer') || src.closest('#binary-file-panel'))) return;
-            e.preventDefault();
-            CZUI.dropOverlay.classList.add('active');
+            if (e.dataTransfer.types.includes('Files')) { e.preventDefault(); CZUI.dropOverlay.classList.add('active'); }
         });
         document.body.addEventListener('dragleave', e => {
             if (e.relatedTarget === null) CZUI.dropOverlay.classList.remove('active');

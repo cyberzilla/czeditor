@@ -1206,10 +1206,10 @@ body.sidebar-resizing {
 
 .line-numbers {
     min-width: 55px;
+    box-sizing: border-box;
     background-color: rgba(0, 0, 0, 0.1);
     color: var(--text-muted);
-    padding: 20px 0 500px 0;
-    padding-right: 15px;
+    padding: 20px 15px 20px 0;
     text-align: right;
     font-family: var(--font-mono);
     font-size: var(--editor-font-size);
@@ -1230,18 +1230,19 @@ body.sidebar-resizing {
 .active-line-highlight {
     position: absolute;
     left: 0;
-    right: 0;
     height: var(--editor-line-height);
     background: var(--active-line-bg);
     pointer-events: none;
     z-index: 0;
     display: none;
+    min-width: 100%;
 }
 
 #editing,
 #highlighting {
     margin: 0;
     border: 0;
+    box-sizing: border-box;
     width: 100%;
     height: 100%;
     font-family: var(--font-mono) !important;
@@ -1262,7 +1263,7 @@ body.sidebar-resizing {
 }
 
 #editing {
-    padding: 20px 20px 50px 20px;
+    padding: 20px;
     color: transparent;
     background: transparent;
     caret-color: var(--text-main);
@@ -1278,7 +1279,7 @@ body.sidebar-resizing {
 }
 
 #highlighting {
-    padding: 20px 20px 500px 20px;
+    padding: 20px;
     z-index: 0;
     color: var(--text-main);
     pointer-events: none;
