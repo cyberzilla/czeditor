@@ -147,9 +147,9 @@ function getAvailableLanguages() {
 
 ```
 ┌──────────────────────────────────────────────────┐
-│                    index.html                     │
-│              (Structure & data-i18n)              │
-└──────────────┬───────────────────────────────────-┘
+│                    index.html                    │
+│              (Structure & data-i18n)             │
+└──────────────┬───────────────────────────────────┘
                │
     ┌──────────┼──────────┬──────────┬──────────┐
     ▼          ▼          ▼          ▼          ▼
@@ -157,7 +157,7 @@ function getAvailableLanguages() {
  (Tokenizer) (i18n)   (UI/Tabs/    features   (Init &
               │        Dialogs)    (Keys/AC/   Events)
               │           │        Emmet)         │
-              ▼           ▼           │            ▼
+              ▼           ▼           │           ▼
           i18n/*.json  style.css      └──────► manifest.json
                       (Design)                   sw.js
 ```

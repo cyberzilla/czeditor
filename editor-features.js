@@ -25,7 +25,8 @@ async function saveFile(f) {
         const ok = await CZFS.saveFile(f.fileHandle, f.content, f.encoding || 'UTF-8', f.eol || 'LF');
         if (ok) {
             f.dirty = false;
-            CZUI.renderTabs();
+            CZUI.updateTabDirtyDot();
+            CZUI.saveData();
             return true;
         }
         // If save failed (permission revoked?), fall through
@@ -49,6 +50,7 @@ async function saveFile(f) {
                 CZUI.updateFootbar();
             }
             CZUI.saveData();
+            CZUI.checkEmptyState();
             return true;
         }
         return false; // User cancelled

@@ -153,6 +153,11 @@ const CZUI = (() => {
         // Show/hide binary panel
         const bp = $('binary-file-panel');
         if (bp) bp.classList.toggle('hidden', empty || !activeFile?.isBinary);
+        // Hide SVG preview button & overlay when not viewing an SVG
+        const svgBtn = $('btn-svg-preview-toggle');
+        if (svgBtn) svgBtn.classList.toggle('hidden', empty || !activeFile?.isSvg);
+        const svgOvl = $('svg-preview-overlay');
+        if (svgOvl) svgOvl.classList.add('hidden');
     }
 
     // ===== DIALOGS =====
@@ -200,9 +205,13 @@ const CZUI = (() => {
 
     // ===== SAVE =====
     function saveData() {
-        // Filter out binary and image files — they can't be serialized
-        const saveable = files.filter(f => !f.isImage && !f.isBinary).map(f => {
-            const { fileHandle, imageUrl, ...rest } = f;
+        // Save all files — strip non-serializable and runtime-only properties
+        const saveable = files.map(f => {
+            const { fileHandle, dirty, ...rest } = f;
+            // Strip blob: URLs (non-persistent), keep data: URLs (base64)
+            if (rest.imageUrl && rest.imageUrl.startsWith('blob:')) {
+                delete rest.imageUrl;
+            }
             return rest;
         });
         localStorage.setItem('cz_files', JSON.stringify(saveable));
@@ -438,10 +447,15 @@ const CZUI = (() => {
                     img.src = URL.createObjectURL(file);
                 } else if (f.imageUrl) {
                     img.src = f.imageUrl;
+                } else {
+                    // No handle or URL (e.g. after refresh) — show placeholder
+                    img.removeAttribute('src');
+                    if (info) info.textContent = f.name + ' — re-open folder to view';
                 }
             } catch (e) {
                 console.warn('[CZUI] Failed to load image:', e.message);
                 if (f.imageUrl) img.src = f.imageUrl;
+                else if (info) info.textContent = f.name + ' — re-open folder to view';
             }
             img.onload = () => {
                 if (info) {
@@ -1002,6 +1016,11 @@ const CZUI = (() => {
             });
         }
         walkTree(tree);
+        // Refresh active tab if it's an image/binary that now has a handle
+        const active = getActiveFile();
+        if (active && (active.isImage || active.isBinary) && isValidHandle(active.fileHandle)) {
+            switchFile(activeFileId);
+        }
     }
 
     function collapseAllFolders() {
@@ -1155,16 +1174,21 @@ const CZUI = (() => {
 
         // Handle image files — open in image viewer
         if (isImageFile(name)) {
-            const url = URL.createObjectURL(fileObj);
-            const nf = {
-                id: 'file_' + Math.random().toString(36).substr(2, 9),
-                name, language: 'image', content: '', isPinned: false,
-                encoding: 'binary', eol: 'LF', isImage: true, imageUrl: url
+            // Read as data URL (base64) so it persists in localStorage across refreshes
+            const reader = new FileReader();
+            reader.onload = () => {
+                const url = reader.result; // data:image/...;base64,...
+                const nf = {
+                    id: 'file_' + Math.random().toString(36).substr(2, 9),
+                    name, language: 'image', content: '', isPinned: false,
+                    encoding: 'binary', eol: 'LF', isImage: true, imageUrl: url
+                };
+                if (files.length === 1 && files[0].name.startsWith('Untitled') && !files[0].content && !files[0].isPinned) {
+                    files[0] = { ...nf, id: files[0].id }; activeFileId = files[0].id;
+                } else { files.push(nf); activeFileId = nf.id; }
+                saveData(); switchFile(activeFileId);
             };
-            if (files.length === 1 && files[0].name.startsWith('Untitled') && !files[0].content && !files[0].isPinned) {
-                files[0] = { ...nf, id: files[0].id }; activeFileId = files[0].id;
-            } else { files.push(nf); activeFileId = nf.id; }
-            saveData(); switchFile(activeFileId);
+            reader.readAsDataURL(fileObj);
             return;
         }
 
@@ -1427,7 +1451,7 @@ const CZUI = (() => {
             saveData(); renderTabs(); checkEmptyState();
         } else if (action === 'pin') {
             if (tf) tf.isPinned = !tf.isPinned;
-            saveData(); renderTabs(); scrollToActiveTab();
+            saveData(); renderTabs(); checkEmptyState(); scrollToActiveTab();
         } else if (action === 'rename') renameFile(targetContextTabId);
     }
 
@@ -1435,7 +1459,7 @@ const CZUI = (() => {
         getFiles, setFiles, getActiveId, setActiveId, getEditingArea, getActiveFile,
         checkEmptyState, renderTabs, scrollToActiveTab, setupTabDragging,
         createNewFile, closeFile, renameFile, switchFile, processImportedFile,
-        saveData, triggerAutosave, applyFontSettings,
+        saveData, triggerAutosave, applyFontSettings, updateTabDirtyDot,
         openPrompt, closePrompt, openConfirm, closeConfirm, openAlert, closeAlert,
         handleInput, updateEditorVisuals, updateFootbar, syncScroll, updateActiveLine, ensureCursorVisible, updateScrollPastEnd,
         executeMenuAction,
