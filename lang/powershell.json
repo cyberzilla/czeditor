@@ -1,0 +1,38 @@
+{
+  "id": "powershell",
+  "name": "PowerShell",
+  "extensions": ["ps1", "psm1", "psd1", "ps1xml"],
+  "comment": { "line": "#", "blockStart": "<#", "blockEnd": "#>" },
+  "autoClosePairs": [["{", "}"], ["[", "]"], ["(", ")"], ["\"", "\""], ["'", "'"]],
+  "brackets": [["{", "}"], ["[", "]"], ["(", ")"]],
+  "syntax": [
+    { "match": "#(?!>).*$", "scope": "comment", "flags": "m" },
+    { "match": "<#[\\s\\S]*?#>", "scope": "comment" },
+    { "match": "@\"[\\s\\S]*?\"@|@'[\\s\\S]*?'@", "scope": "string" },
+    { "match": "\"(?:[^\"\\\\`]|\\\\.|`[^])*\"", "scope": "string" },
+    { "match": "'[^']*'", "scope": "string" },
+    { "match": "\\$(?:[a-zA-Z_][a-zA-Z0-9_]*|\\{[^}]+\\}|_|\\$|\\?|\\^|true|false|null|env:[a-zA-Z_]+)", "scope": "variable" },
+    { "match": "@[a-zA-Z_][a-zA-Z0-9_]*", "scope": "variable" },
+    { "match": "\\[(?:string|int|int32|int64|long|double|float|decimal|bool|boolean|byte|char|array|hashtable|object|void|datetime|timespan|regex|scriptblock|switch|xml|type|psobject|pscustomobject|nullable|guid|uri|version|ipaddress|mailaddress)\\]", "scope": "type", "flags": "i" },
+    { "match": "\\b(?:Begin|Break|Catch|Class|Continue|Data|Define|Do|DynamicParam|Else|ElseIf|End|Enum|Exit|Filter|Finally|For|ForEach|From|Function|Hidden|If|In|InlineScript|Parallel|Param|Process|Return|Sequence|Switch|Throw|Trap|Try|Until|Using|Var|While|Workflow)\\b", "scope": "keyword", "flags": "i" },
+    { "match": "-(?:eq|ne|gt|ge|lt|le|like|notlike|match|notmatch|contains|notcontains|in|notin|replace|split|join|is|isnot|as|band|bor|bxor|bnot|shl|shr|and|or|xor|not|f)\\b", "scope": "operator", "flags": "i" },
+    { "match": "\\b(?:Get|Set|New|Remove|Add|Clear|Write|Read|Out|Start|Stop|Invoke|Import|Export|Enable|Disable|Test|Update|Format|Select|Where|Sort|Group|Measure|Compare|Copy|Move|Rename|Join|Split|ConvertTo|ConvertFrom|ForEach|Tee|Wait|Debug|Verbose|Warning|Error|Information)(?:-[a-zA-Z]+)+\\b", "scope": "function", "flags": "i" },
+    { "match": "\\b(?:Write-Host|Write-Output|Write-Error|Write-Warning|Write-Verbose|Write-Debug|Write-Information|Write-Progress|Read-Host|Get-Content|Set-Content|Add-Content|Out-File|Get-ChildItem|Get-Item|Get-ItemProperty|Set-ItemProperty|Remove-Item|Copy-Item|Move-Item|Rename-Item|New-Item|Test-Path|Join-Path|Split-Path|Resolve-Path|Get-Location|Set-Location|Push-Location|Pop-Location|Get-Process|Stop-Process|Start-Process|Get-Service|Start-Service|Stop-Service|Restart-Service|Get-Command|Get-Help|Get-Module|Import-Module|Get-Member|Select-Object|Where-Object|ForEach-Object|Sort-Object|Group-Object|Measure-Object|Compare-Object|Format-Table|Format-List|Out-String|Out-Null|Out-GridView|ConvertTo-Json|ConvertFrom-Json|ConvertTo-Csv|ConvertFrom-Csv|ConvertTo-Html|Invoke-Command|Invoke-Expression|Invoke-WebRequest|Invoke-RestMethod|New-Object|Add-Type|Get-Date|Start-Sleep|Get-Random|Test-Connection|Get-WmiObject|Get-CimInstance|Get-EventLog|Get-Counter|Get-Credential|Get-Acl|Set-Acl|Get-ExecutionPolicy|Set-ExecutionPolicy|Enter-PSSession|Exit-PSSession|New-PSSession|Remove-PSSession)\\b", "scope": "function", "flags": "i" },
+    { "match": "\\b(?:True|False|Null)\\b", "scope": "constant", "flags": "i" },
+    { "match": "\\b0[xX][0-9a-fA-F]+(?:l|L)?\\b|\\b\\d+(?:\\.\\d+)?(?:e[+-]?\\d+)?(?:d|D|l|L|kb|mb|gb|tb|pb)?\\b", "scope": "number" },
+    { "match": "=>|\\+=|-=|\\*=|/=|%=|\\+\\+|--|&&|\\|\\||[|]|>>|<<", "scope": "operator" }
+  ],
+  "autocomplete": {
+    "keywords": ["Begin", "Break", "Catch", "Class", "Continue", "Do", "Else", "ElseIf", "End", "Enum", "Exit", "Filter", "Finally", "For", "ForEach", "Function", "If", "In", "Param", "Process", "Return", "Switch", "Throw", "Trap", "Try", "Until", "While"],
+    "builtins": ["Write-Host", "Write-Output", "Write-Error", "Write-Warning", "Read-Host", "Get-Content", "Set-Content", "Get-ChildItem", "Get-Item", "Remove-Item", "Copy-Item", "Move-Item", "New-Item", "Test-Path", "Join-Path", "Get-Process", "Start-Process", "Get-Service", "Get-Command", "Get-Help", "Get-Module", "Import-Module", "Get-Member", "Select-Object", "Where-Object", "ForEach-Object", "Sort-Object", "Format-Table", "Format-List", "ConvertTo-Json", "ConvertFrom-Json", "Invoke-WebRequest", "Invoke-RestMethod", "Invoke-Expression", "New-Object", "Add-Type", "Get-Date", "Start-Sleep", "Get-Random", "Get-ExecutionPolicy", "Set-ExecutionPolicy"]
+  },
+  "snippets": {
+    "func": { "body": "function $1 {\n\tparam(\n\t\t$2\n\t)\n\t$3\n}", "description": "Function with param" },
+    "if": { "body": "if ($1) {\n\t$2\n}", "description": "If block" },
+    "ifelse": { "body": "if ($1) {\n\t$2\n} else {\n\t$3\n}", "description": "If-Else" },
+    "foreach": { "body": "foreach ($1 in $2) {\n\t$3\n}", "description": "ForEach loop" },
+    "try": { "body": "try {\n\t$1\n} catch {\n\tWrite-Error $_.Exception.Message\n}", "description": "Try-Catch" },
+    "switch": { "body": "switch ($1) {\n\t'$2' { $3 }\n\tdefault { $4 }\n}", "description": "Switch" },
+    "param": { "body": "[CmdletBinding()]\nparam(\n\t[Parameter(Mandatory)]\n\t[string]$1\n)", "description": "CmdletBinding param" }
+  }
+}

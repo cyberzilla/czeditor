@@ -1,0 +1,32 @@
+{
+  "id": "sql",
+  "name": "SQL",
+  "extensions": ["sql", "ddl", "dml"],
+  "comment": { "line": "--", "blockStart": "/*", "blockEnd": "*/" },
+  "autoClosePairs": [["(", ")"], ["'", "'"], ["\"", "\""]],
+  "brackets": [["(", ")"]],
+  "syntax": [
+    { "match": "--.*$", "scope": "comment", "flags": "m" },
+    { "match": "/\\*[\\s\\S]*?\\*/", "scope": "comment" },
+    { "match": "'(?:[^']|'')*'", "scope": "string" },
+    { "match": "\"(?:[^\"]|\"\")*\"", "scope": "string" },
+    { "match": "\\b(?:SELECT|FROM|WHERE|AND|OR|NOT|IN|EXISTS|BETWEEN|LIKE|IS|NULL|AS|ON|JOIN|INNER|LEFT|RIGHT|FULL|OUTER|CROSS|NATURAL|UNION|ALL|DISTINCT|ORDER|BY|GROUP|HAVING|LIMIT|OFFSET|INSERT|INTO|VALUES|UPDATE|SET|DELETE|CREATE|ALTER|DROP|TABLE|INDEX|VIEW|DATABASE|SCHEMA|COLUMN|ADD|MODIFY|RENAME|TRUNCATE|CASCADE|CONSTRAINT|PRIMARY|KEY|FOREIGN|REFERENCES|UNIQUE|CHECK|DEFAULT|AUTO_INCREMENT|IDENTITY|IF|ELSE|BEGIN|END|DECLARE|CURSOR|FETCH|OPEN|CLOSE|EXEC|EXECUTE|PROCEDURE|FUNCTION|TRIGGER|GRANT|REVOKE|COMMIT|ROLLBACK|SAVEPOINT|TRANSACTION|WITH|RECURSIVE|CASE|WHEN|THEN|OVER|PARTITION|WINDOW|ROWS|RANGE|PRECEDING|FOLLOWING|UNBOUNDED|CURRENT|ROW|MERGE|USING|MATCHED|EXCEPT|INTERSECT|PIVOT|UNPIVOT|TOP|RETURNING|EXPLAIN|ANALYZE|TEMP|TEMPORARY)\\b", "scope": "keyword", "flags": "i" },
+    { "match": "\\b(?:INT|INTEGER|BIGINT|SMALLINT|TINYINT|FLOAT|DOUBLE|DECIMAL|NUMERIC|REAL|CHAR|VARCHAR|NCHAR|NVARCHAR|TEXT|NTEXT|CLOB|BLOB|BINARY|VARBINARY|DATE|TIME|DATETIME|DATETIME2|TIMESTAMP|BOOLEAN|BIT|SERIAL|UUID|JSON|JSONB|XML|MONEY|ARRAY)\\b", "scope": "type", "flags": "i" },
+    { "match": "\\b(?:COUNT|SUM|AVG|MIN|MAX|COALESCE|NULLIF|CAST|CONVERT|IFNULL|NVL|ISNULL|IIF|CONCAT|SUBSTRING|SUBSTR|LENGTH|LEN|TRIM|LTRIM|RTRIM|UPPER|LOWER|REPLACE|REVERSE|LEFT|RIGHT|ROUND|FLOOR|CEILING|ABS|POWER|SQRT|GETDATE|NOW|CURRENT_TIMESTAMP|DATEADD|DATEDIFF|DATEPART|YEAR|MONTH|DAY|HOUR|MINUTE|SECOND|ROW_NUMBER|RANK|DENSE_RANK|NTILE|LAG|LEAD|FIRST_VALUE|LAST_VALUE|STRING_AGG|GROUP_CONCAT|LISTAGG)\\b", "scope": "function", "flags": "i" },
+    { "match": "\\b(?:TRUE|FALSE|NULL)\\b", "scope": "constant", "flags": "i" },
+    { "match": "\\b\\d+\\.?\\d*(?:[eE][+-]?\\d+)?\\b", "scope": "number" },
+    { "match": "<>|!=|<=|>=|\\|\\||::|\\+|-|\\*|/|%|=|<|>", "scope": "operator" }
+  ],
+  "autocomplete": {
+    "keywords": ["SELECT", "FROM", "WHERE", "AND", "OR", "INSERT", "INTO", "VALUES", "UPDATE", "SET", "DELETE", "CREATE", "TABLE", "ALTER", "DROP", "JOIN", "INNER", "LEFT", "RIGHT", "FULL", "OUTER", "ON", "GROUP", "BY", "ORDER", "HAVING", "LIMIT", "OFFSET", "UNION", "ALL", "DISTINCT", "AS", "IN", "EXISTS", "BETWEEN", "LIKE", "IS", "NULL", "NOT", "CASE", "WHEN", "THEN", "ELSE", "END", "INDEX", "VIEW", "PRIMARY", "KEY", "FOREIGN", "REFERENCES", "CONSTRAINT", "DEFAULT", "CASCADE", "WITH"],
+    "builtins": ["COUNT", "SUM", "AVG", "MIN", "MAX", "COALESCE", "CAST", "CONCAT", "SUBSTRING", "LENGTH", "TRIM", "UPPER", "LOWER", "REPLACE", "ROUND", "NOW", "CURRENT_TIMESTAMP", "ROW_NUMBER", "RANK", "DENSE_RANK", "LAG", "LEAD"]
+  },
+  "snippets": {
+    "sel": { "body": "SELECT $1\nFROM $2\nWHERE $3;", "description": "Select query" },
+    "ins": { "body": "INSERT INTO $1 ($2)\nVALUES ($3);", "description": "Insert" },
+    "upd": { "body": "UPDATE $1\nSET $2\nWHERE $3;", "description": "Update" },
+    "del": { "body": "DELETE FROM $1\nWHERE $2;", "description": "Delete" },
+    "crt": { "body": "CREATE TABLE $1 (\n\tid INT PRIMARY KEY AUTO_INCREMENT,\n\t$2\n);", "description": "Create table" },
+    "join": { "body": "SELECT $1\nFROM $2\nINNER JOIN $3 ON $4;", "description": "Join query" }
+  }
+}

@@ -371,23 +371,70 @@ const CZEngine = (() => {
     // ===== LANGUAGE DETECTION =====
     function detectLanguage(content) {
         if (!content || !content.trim()) return 'plaintext';
+        if (/(<\?xml|<svg|<xsl:|xmlns[:=])/i.test(content)) return 'xml';
         if (/(<html|<body|<div|<p|<span|<!DOCTYPE)/i.test(content)) return 'html';
         if (/([\\.#][a-zA-Z0-9\-_]+\s*\{|[a-zA-Z\-]+\s*:\s*[^;]+;)/.test(content) && !/<[^>]+>/.test(content)) return 'css';
         if (/(function\s+|const\s+|let\s+|var\s+|=>|console\.log|window\.|document\.)/.test(content)) return 'javascript';
         if (/(<\?php|namespace\s|use\s.*\\|\$[a-zA-Z])/.test(content)) return 'php';
         if (/(def\s+\w+|import\s+\w+|class\s+\w+.*:|print\s*\(|if\s+.*:$)/m.test(content)) return 'python';
+        if (/\b(public\s+class|private\s+static|System\.out\.println|import\s+java\.)/m.test(content)) return 'java';
+        if (/\b(fun\s+\w+|val\s+|var\s+|companion\s+object|data\s+class|suspend\s+fun)/m.test(content)) return 'kotlin';
+        if (/\b(using\s+System|namespace\s+\w+|Console\.Write|async\s+Task)/m.test(content)) return 'csharp';
+        if (/(#include\s*<|#define\s+|int\s+main\s*\(|std::)/m.test(content)) return 'c';
+        if (/\b(SELECT\s+.*\s+FROM|INSERT\s+INTO|CREATE\s+TABLE|ALTER\s+TABLE)/im.test(content)) return 'sql';
+        if (/^#!\s*\/(?:bin|usr\/bin)\/(?:ba)?sh/m.test(content)) return 'shell';
+        if (/\b(Sub\s+\w+|Dim\s+\w+|End\s+Sub|Module\s+\w+)/m.test(content)) return 'vb';
+        if (/^---\s*$/m.test(content) && /^\s*[a-zA-Z_]+\s*:/m.test(content)) return 'yaml';
+        if (/@echo\s+off|\bSETLOCAL\b|\bENDLOCAL\b|%%[a-zA-Z]/im.test(content)) return 'batch';
+        if (/\$[a-zA-Z_]+\s*=|\b(?:Get|Set|New|Remove|Write)-[A-Z][a-z]+|\[CmdletBinding\(\)\]|\bparam\s*\(/m.test(content)) return 'powershell';
         return 'plaintext';
     }
 
     function detectByExtension(ext) {
-        const map = { js:'javascript', mjs:'javascript', cjs:'javascript', jsx:'javascript',
+        const map = {
+            // JavaScript
+            js:'javascript', mjs:'javascript', cjs:'javascript', jsx:'javascript',
+            // TypeScript
             ts:'typescript', tsx:'typescript', mts:'typescript',
+            // Web
             html:'html', htm:'html', xhtml:'html',
             css:'css', scss:'css', less:'css',
+            // XML/SVG
+            xml:'xml', svg:'xml', xsl:'xml', xslt:'xml', xsd:'xml',
+            rss:'xml', atom:'xml', xaml:'xml', plist:'xml',
+            csproj:'xml', fsproj:'xml', vbproj:'xml', vcxproj:'xml',
+            props:'xml', targets:'xml', resx:'xml', nuspec:'xml', wsdl:'xml',
+            // Python
             py:'python', pyw:'python',
+            // PHP
             php:'php', phtml:'php',
-            json:'json', jsonc:'json',
-            md:'markdown', markdown:'markdown' };
+            // Java
+            java:'java',
+            // Kotlin
+            kt:'kotlin', kts:'kotlin',
+            // C#
+            cs:'csharp',
+            // C/C++
+            c:'c', h:'c', cpp:'c', hpp:'c', cc:'c', cxx:'c', hh:'c', hxx:'c', ino:'c',
+            // Visual Basic
+            vb:'vb', vbs:'vb', bas:'vb', cls:'vb', frm:'vb',
+            // SQL
+            sql:'sql', ddl:'sql', dml:'sql',
+            // Shell
+            sh:'shell', bash:'shell', zsh:'shell', fish:'shell', ksh:'shell',
+            // Windows scripting
+            bat:'batch', cmd:'batch',
+            ps1:'powershell', psm1:'powershell', psd1:'powershell', ps1xml:'powershell',
+            // Data formats
+            json:'json', jsonc:'json', json5:'json',
+            yml:'yaml', yaml:'yaml',
+            // Markdown
+            md:'markdown', markdown:'markdown',
+            // Config (treat as YAML or relevant)
+            toml:'yaml', ini:'yaml', cfg:'yaml',
+            // Dockerfile / Makefile (shell-like)
+            dockerfile:'shell', makefile:'shell'
+        };
         return map[ext] || null;
     }
 

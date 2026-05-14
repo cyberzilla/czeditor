@@ -1,0 +1,30 @@
+{
+  "id": "batch",
+  "name": "Batch (CMD)",
+  "extensions": ["bat", "cmd"],
+  "comment": { "line": "REM", "blockStart": null, "blockEnd": null },
+  "autoClosePairs": [["(", ")"], ["\"", "\""], ["%", "%"]],
+  "brackets": [["(", ")"]],
+  "syntax": [
+    { "match": "(?:^|\\s)(?:REM|rem|::).*$", "scope": "comment", "flags": "m" },
+    { "match": "\"[^\"]*\"", "scope": "string" },
+    { "match": "%%?~?[a-zA-Z0-9]|%[a-zA-Z_][a-zA-Z0-9_]*%|![a-zA-Z_][a-zA-Z0-9_]*!", "scope": "variable" },
+    { "match": "\\b(?:ECHO|echo|SET|set|IF|if|ELSE|else|FOR|for|IN|in|DO|do|GOTO|goto|CALL|call|EXIT|exit|PAUSE|pause|CLS|cls|REM|rem|SETLOCAL|setlocal|ENDLOCAL|endlocal|ENABLEDELAYEDEXPANSION|DISABLEDELAYEDEXPANSION|ERRORLEVEL|errorlevel|NOT|not|EXIST|exist|DEFINED|defined|EQU|equ|NEQ|neq|LSS|lss|LEQ|leq|GTR|gtr|GEQ|geq|NUL|nul|CON|con|SHIFT|shift|PUSHD|pushd|POPD|popd|TITLE|title|COLOR|color|PROMPT|prompt|START|start|CHOICE|choice|TIMEOUT|timeout|FIND|find|FINDSTR|findstr|SORT|sort|MORE|more|TYPE|type|COPY|copy|MOVE|move|DEL|del|REN|ren|MKDIR|mkdir|RMDIR|rmdir|XCOPY|xcopy|ROBOCOPY|robocopy|ATTRIB|attrib|TASKLIST|tasklist|TASKKILL|taskkill|NET|net|REG|reg|WMIC|wmic|SC|sc|PING|ping|IPCONFIG|ipconfig|NETSTAT|netstat|WHOAMI|whoami|SYSTEMINFO|systeminfo)\\b", "scope": "keyword", "flags": "i" },
+    { "match": "^\\s*:[a-zA-Z_][a-zA-Z0-9_]*", "scope": "function", "flags": "m" },
+    { "match": "@(?=echo|ECHO)", "scope": "decorator", "flags": "i" },
+    { "match": "\\b\\d+\\b", "scope": "number" },
+    { "match": ">>|>|<|\\|\\||&&|&|\\|", "scope": "operator" }
+  ],
+  "autocomplete": {
+    "keywords": ["ECHO", "SET", "IF", "ELSE", "FOR", "IN", "DO", "GOTO", "CALL", "EXIT", "PAUSE", "CLS", "SETLOCAL", "ENDLOCAL", "ERRORLEVEL", "NOT", "EXIST", "DEFINED", "EQU", "NEQ", "LSS", "LEQ", "GTR", "GEQ", "NUL", "SHIFT", "PUSHD", "POPD", "TITLE", "COLOR", "START", "CHOICE", "TIMEOUT"],
+    "builtins": ["ECHO OFF", "ECHO ON", "ECHO.", "SET /P", "SET /A", "IF EXIST", "IF NOT EXIST", "IF DEFINED", "IF ERRORLEVEL", "FOR /L", "FOR /F", "FOR /R", "FOR /D", "GOTO :EOF", "CALL :label", "EXIT /B", "COPY /Y", "XCOPY /S /E", "DEL /F /Q", "MKDIR", "RMDIR /S /Q", "FIND /I", "FINDSTR /I", "TASKLIST /FI", "TASKKILL /F /IM", "REG QUERY", "REG ADD", "NET START", "NET STOP", "PING -n", "IPCONFIG /ALL"]
+  },
+  "snippets": {
+    "header": { "body": "@echo off\nsetlocal enabledelayedexpansion\n$1\nendlocal", "description": "Batch file header" },
+    "if": { "body": "if $1 (\n\t$2\n)", "description": "If block" },
+    "ifelse": { "body": "if $1 (\n\t$2\n) else (\n\t$3\n)", "description": "If-Else block" },
+    "for": { "body": "for /L %%i in (1,1,$1) do (\n\t$2\n)", "description": "For /L loop" },
+    "forf": { "body": "for /F \"tokens=* delims=\" %%a in ('$1') do (\n\t$2\n)", "description": "For /F loop" },
+    "func": { "body": ":$1\n$2\ngoto :eof", "description": "Label/function" }
+  }
+}

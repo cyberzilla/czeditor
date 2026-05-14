@@ -1,0 +1,32 @@
+{
+  "id": "xml",
+  "name": "XML",
+  "extensions": ["xml", "svg", "xsl", "xslt", "xsd", "rss", "atom", "xaml", "plist", "csproj", "fsproj", "vbproj", "vcxproj", "props", "targets", "resx", "config", "nuspec", "wsdl"],
+  "comment": { "line": null, "blockStart": "<!--", "blockEnd": "-->" },
+  "autoClosePairs": [
+    ["<", ">"], ["\"", "\""], ["'", "'"]
+  ],
+  "brackets": [["<", ">"]],
+  "syntax": [
+    { "match": "<!--[\\s\\S]*?-->", "scope": "comment" },
+    { "match": "<!\\[CDATA\\[[\\s\\S]*?\\]\\]>", "scope": "string" },
+    { "match": "<\\?[\\s\\S]*?\\?>", "scope": "decorator" },
+    { "match": "<!DOCTYPE[^>]*>", "scope": "keyword" },
+    { "match": "</[a-zA-Z][a-zA-Z0-9:.\\-]*\\s*>", "scope": "tag" },
+    { "match": "<[a-zA-Z][a-zA-Z0-9:.\\-]*", "scope": "tag" },
+    { "match": "/?>", "scope": "tag" },
+    { "match": "\\b[a-zA-Z_][a-zA-Z0-9_.:\\-]*(?=\\s*=)", "scope": "property" },
+    { "match": "\"[^\"]*\"", "scope": "string" },
+    { "match": "'[^']*'", "scope": "string" },
+    { "match": "&[a-zA-Z]+;|&#\\d+;|&#x[0-9a-fA-F]+;", "scope": "number" }
+  ],
+  "autocomplete": {
+    "keywords": ["xml", "version", "encoding", "standalone", "xmlns", "xsi", "schemaLocation"],
+    "builtins": []
+  },
+  "snippets": {
+    "xmldec": { "body": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "description": "XML declaration" },
+    "cdata": { "body": "<![CDATA[$1]]>", "description": "CDATA section" },
+    "comment": { "body": "<!-- $1 -->", "description": "XML comment" }
+  }
+}

@@ -167,6 +167,8 @@
     --syn-punctuation: #6c7086;
     --syn-bold: #cdd6f4;
     --syn-italic: #cdd6f4;
+    --syn-type: #f9e2af;
+    --syn-constant: #fab387;
 }
 
 /* ===== CUSTOM SCROLLBAR ===== */
@@ -1861,6 +1863,15 @@ body.sidebar-resizing {
 
 .syn-italic {
     color: var(--syn-italic);
+    font-style: italic;
+}
+
+.syn-type {
+    color: var(--syn-type);
+}
+
+.syn-constant {
+    color: var(--syn-constant);
     font-style: italic;
 }
 

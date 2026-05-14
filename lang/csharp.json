@@ -1,0 +1,37 @@
+{
+  "id": "csharp",
+  "name": "C#",
+  "extensions": ["cs"],
+  "comment": { "line": "//", "blockStart": "/*", "blockEnd": "*/" },
+  "autoClosePairs": [["{", "}"], ["[", "]"], ["(", ")"], ["\"", "\""], ["'", "'"]],
+  "brackets": [["{", "}"], ["[", "]"], ["(", ")"]],
+  "syntax": [
+    { "match": "//.*$", "scope": "comment", "flags": "m" },
+    { "match": "/\\*[\\s\\S]*?\\*/", "scope": "comment" },
+    { "match": "@\"(?:[^\"]|\"\")*\"", "scope": "string" },
+    { "match": "\\$\"(?:[^\"\\\\]|\\\\.)*\"", "scope": "string" },
+    { "match": "\"(?:[^\"\\\\]|\\\\.)*\"", "scope": "string" },
+    { "match": "'(?:[^'\\\\]|\\\\.)*'", "scope": "string" },
+    { "match": "#\\s*(?:if|else|elif|endif|define|undef|region|endregion|pragma|nullable|error|warning|line)\\b.*$", "scope": "decorator", "flags": "m" },
+    { "match": "\\[(?:Serializable|Obsolete|DllImport|Conditional|STAThread|Flags|AttributeUsage|DebuggerStepThrough)[^\\]]*\\]", "scope": "decorator" },
+    { "match": "\\b(?:abstract|as|base|bool|break|byte|case|catch|char|checked|class|const|continue|decimal|default|delegate|do|double|else|enum|event|explicit|extern|false|finally|fixed|float|for|foreach|goto|if|implicit|in|int|interface|internal|is|lock|long|namespace|new|null|object|operator|out|override|params|private|protected|public|readonly|record|ref|return|sbyte|sealed|short|sizeof|stackalloc|static|string|struct|switch|this|throw|true|try|typeof|uint|ulong|unchecked|unsafe|ushort|using|var|virtual|void|volatile|while|async|await|dynamic|nameof|when|and|or|not|with|init|required|global|file|scoped)\\b", "scope": "keyword" },
+    { "match": "\\b(?:true|false|null)\\b", "scope": "constant" },
+    { "match": "\\b(?:String|Int32|Int64|Boolean|Double|Single|Byte|Char|Object|Decimal|DateTime|TimeSpan|Guid|Task|Action|Func|List|Dictionary|HashSet|Queue|Stack|IEnumerable|IList|ICollection|Console|Math|Convert|Array|Tuple|ValueTuple|Span|Memory|Nullable|Exception|ArgumentException|InvalidOperationException|StringBuilder|StreamReader|StreamWriter|HttpClient)\\b", "scope": "type" },
+    { "match": "\\b[A-Z][a-zA-Z0-9_]*\\b", "scope": "type" },
+    { "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*(?=\\s*[<(])", "scope": "function" },
+    { "match": "\\b0[xX][0-9a-fA-F_]+[uUlL]*\\b|\\b\\d[\\d_]*\\.?[\\d_]*(?:[eE][+-]?\\d+)?[fFdDmMuUlL]*\\b", "scope": "number" },
+    { "match": "=>|\\?\\?|\\?\\.|\\.\\.|&&|\\|\\||!=|==|<=|>=|\\+\\+|--|<<=|>>=", "scope": "operator" }
+  ],
+  "autocomplete": {
+    "keywords": ["abstract", "async", "await", "base", "bool", "break", "byte", "case", "catch", "char", "class", "const", "continue", "decimal", "default", "do", "double", "else", "enum", "event", "false", "finally", "float", "for", "foreach", "if", "in", "int", "interface", "internal", "is", "lock", "long", "namespace", "new", "null", "object", "override", "params", "private", "protected", "public", "readonly", "ref", "return", "sealed", "short", "static", "string", "struct", "switch", "this", "throw", "true", "try", "typeof", "uint", "ulong", "using", "var", "virtual", "void", "while"],
+    "builtins": ["Console.WriteLine", "Console.ReadLine", "Console.Write", "Math.Max", "Math.Min", "Math.Abs", "String.IsNullOrEmpty", "String.Format", "Convert.ToInt32", "Task.Run", "Task.Delay", "Enumerable.Range", "Enumerable.Select", "Enumerable.Where"]
+  },
+  "snippets": {
+    "cw": { "body": "Console.WriteLine($1);", "description": "Console.WriteLine" },
+    "class": { "body": "public class $1\n{\n\t$2\n}", "description": "Class" },
+    "prop": { "body": "public $1 $2 { get; set; }", "description": "Property" },
+    "ctor": { "body": "public $1()\n{\n\t$2\n}", "description": "Constructor" },
+    "foreach": { "body": "foreach (var $1 in $2)\n{\n\t$3\n}", "description": "Foreach loop" },
+    "try": { "body": "try\n{\n\t$1\n}\ncatch (Exception ex)\n{\n\t$2\n}", "description": "Try-catch" }
+  }
+}
