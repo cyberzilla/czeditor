@@ -1304,6 +1304,135 @@ body.sidebar-resizing {
     box-shadow: 0 0 0 1px rgba(249, 226, 175, 0.6);
 }
 
+/* ===== SEARCH & REPLACE PANEL ===== */
+.search-panel {
+    position: absolute;
+    top: 0;
+    right: 18px;
+    z-index: 50;
+    background: rgba(30, 30, 46, 0.97);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(137, 180, 250, 0.15);
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    min-width: 340px;
+    animation: searchSlideDown 0.15s ease-out;
+}
+
+@keyframes searchSlideDown {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.search-panel.hidden {
+    display: none !important;
+}
+
+.search-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.search-field {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    padding: 5px 8px;
+    color: var(--text-main);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    outline: none;
+    min-width: 0;
+    transition: border-color 0.15s;
+}
+
+.search-field:focus {
+    border-color: var(--accent-color);
+}
+
+.search-count {
+    font-size: 11px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    min-width: 60px;
+    text-align: center;
+    padding: 0 4px;
+}
+
+.search-count.has-results {
+    color: var(--accent-color);
+}
+
+.search-count.no-results {
+    color: #f38ba8;
+}
+
+.search-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 26px;
+    height: 26px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    color: var(--text-muted);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+    padding: 0 5px;
+    font-family: var(--font-mono);
+}
+
+.search-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-main);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.search-btn.active {
+    background: rgba(137, 180, 250, 0.2);
+    color: var(--accent-color);
+    border-color: var(--accent-color);
+}
+
+.search-btn.search-close {
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+.search-btn.search-close:hover {
+    color: #f38ba8;
+    background: rgba(243, 139, 168, 0.1);
+}
+
+.replace-row {
+    padding-left: 0;
+}
+
+/* Search match highlights in code */
+.search-hl {
+    background: rgba(249, 226, 175, 0.25);
+    border-radius: 2px;
+    color: inherit;
+    outline: 1px solid rgba(249, 226, 175, 0.35);
+    outline-offset: -1px;
+}
+
 /* ===== AUTOCOMPLETE POPUP ===== */
 .autocomplete-popup {
     position: fixed;

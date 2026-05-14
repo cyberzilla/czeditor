@@ -376,6 +376,16 @@ function handleKeydown(e) {
         e.preventDefault(); deleteLine(); return;
     }
 
+    // Ctrl+F: Find
+    if ((e.ctrlKey||e.metaKey) && e.key==='f' && !e.shiftKey) {
+        e.preventDefault(); openSearch(false); return;
+    }
+
+    // Ctrl+H: Find & Replace
+    if ((e.ctrlKey||e.metaKey) && e.key==='h') {
+        e.preventDefault(); openSearch(true); return;
+    }
+
     // Alt+Up/Down: Move line
     if (e.altKey && (e.key==='ArrowUp'||e.key==='ArrowDown')) {
         e.preventDefault(); moveLine(e.key==='ArrowUp'?-1:1); return;
@@ -477,6 +487,366 @@ function moveLine(dir) {
     CZUI.handleInput();
 }
 
+// ===== CURSOR MOVE =====
+function handleCursorMove() {
+    CZUI.updateFootbar();
+    CZUI.updateActiveLine();
+    if (!CZUI.getActiveId()) return;
+    const ta = CZUI.getEditingArea();
+    const text = ta.value, pos = ta.selectionStart;
+    const cfg = CZEngine.getLangConfig(CZUI.getActiveFile()?.language);
+    const brackets = CZEngine.getMatchingBrackets(text, pos, cfg);
+    const key = brackets.join(',');
+    if (key !== CZUI.lastBracketKey) { CZUI.lastBracketKey = key; CZUI.updateEditorVisuals(); }
+}
+
+// ===== INPUT HANDLER (triggers autocomplete) =====
+function onInput() {
+    CZUI.handleInput();
+    const ta = CZUI.getEditingArea();
+    const text = ta.value, pos = ta.selectionStart;
+    const cfg = CZEngine.getLangConfig(CZUI.getActiveFile()?.language);
+    CZUI.lastBracketKey = CZEngine.getMatchingBrackets(text, pos, cfg).join(',');
+    // Trigger autocomplete after a short delay
+    clearTimeout(onInput._timer);
+    onInput._timer = setTimeout(showAutocomplete, 100);
+    // Live search update
+    if (searchVisible) updateSearchMatches();
+}
+
+// ===== SEARCH & REPLACE =====
+let searchVisible = false, searchCaseSensitive = false, searchUseRegex = false;
+let searchMatches = [], searchCurrentIdx = -1;
+
+const searchPanel = document.getElementById('search-panel');
+const searchInput = document.getElementById('search-input');
+const replaceInput = document.getElementById('replace-input');
+const searchCount = document.getElementById('search-count');
+const replaceRow = document.getElementById('replace-row');
+
+function openSearch(withReplace) {
+    searchVisible = true;
+    searchPanel.classList.remove('hidden');
+    if (withReplace) replaceRow.classList.remove('hidden');
+    else replaceRow.classList.add('hidden');
+    // Pre-fill with selection
+    const ta = CZUI.getEditingArea();
+    if (ta) {
+        const sel = ta.value.substring(ta.selectionStart, ta.selectionEnd);
+        if (sel && !sel.includes('\n')) searchInput.value = sel;
+    }
+    searchInput.focus();
+    searchInput.select();
+    updateSearchMatches();
+}
+
+function closeSearch() {
+    searchVisible = false;
+    searchPanel.classList.add('hidden');
+    searchMatches = [];
+    searchCurrentIdx = -1;
+    searchCount.textContent = '';
+    searchCount.className = 'search-count';
+    CZUI.updateEditorVisuals(); // Clear highlights
+    const ta = CZUI.getEditingArea();
+    if (ta) ta.focus();
+}
+
+function updateSearchMatches() {
+    const query = searchInput.value;
+    searchMatches = [];
+    searchCurrentIdx = -1;
+
+    if (!query) {
+        searchCount.textContent = '';
+        searchCount.className = 'search-count';
+        CZUI.updateEditorVisuals();
+        return;
+    }
+
+    const ta = CZUI.getEditingArea();
+    if (!ta) return;
+    const text = ta.value;
+
+    try {
+        let flags = 'g';
+        if (!searchCaseSensitive) flags += 'i';
+        const pattern = searchUseRegex ? query : query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const re = new RegExp(pattern, flags);
+        let m;
+        while ((m = re.exec(text)) !== null) {
+            if (m[0].length === 0) { re.lastIndex++; continue; }
+            searchMatches.push({ start: m.index, end: m.index + m[0].length });
+        }
+    } catch (e) {
+        searchCount.textContent = 'Invalid regex';
+        searchCount.className = 'search-count no-results';
+        return;
+    }
+
+    if (searchMatches.length === 0) {
+        searchCount.textContent = '0 results';
+        searchCount.className = 'search-count no-results';
+    } else {
+        // Find closest match to cursor
+        const cursorPos = ta.selectionStart;
+        searchCurrentIdx = 0;
+        for (let i = 0; i < searchMatches.length; i++) {
+            if (searchMatches[i].start >= cursorPos) { searchCurrentIdx = i; break; }
+        }
+        updateSearchCountDisplay();
+    }
+    CZUI.updateEditorVisuals();
+}
+
+function updateSearchCountDisplay() {
+    if (searchMatches.length === 0) {
+        searchCount.textContent = '0 results';
+        searchCount.className = 'search-count no-results';
+    } else {
+        searchCount.textContent = `${searchCurrentIdx + 1} of ${searchMatches.length}`;
+        searchCount.className = 'search-count has-results';
+    }
+}
+
+function searchNext() {
+    if (searchMatches.length === 0) return;
+    searchCurrentIdx = (searchCurrentIdx + 1) % searchMatches.length;
+    goToMatch();
+}
+
+function searchPrev() {
+    if (searchMatches.length === 0) return;
+    searchCurrentIdx = (searchCurrentIdx - 1 + searchMatches.length) % searchMatches.length;
+    goToMatch();
+}
+
+function goToMatch() {
+    const match = searchMatches[searchCurrentIdx];
+    if (!match) return;
+    const ta = CZUI.getEditingArea();
+    ta.focus();
+    ta.setSelectionRange(match.start, match.end);
+    updateSearchCountDisplay();
+    // Scroll into view
+    const text = ta.value.substring(0, match.start);
+    const lineNum = text.split('\n').length - 1;
+    const lh = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--editor-line-height')) || 24;
+    const targetScroll = lineNum * lh - ta.clientHeight / 2;
+    ta.scrollTop = Math.max(0, targetScroll);
+    CZUI.syncScroll();
+}
+
+function replaceOne() {
+    if (searchMatches.length === 0 || searchCurrentIdx < 0) return;
+    const match = searchMatches[searchCurrentIdx];
+    const ta = CZUI.getEditingArea();
+    ta.focus();
+    ta.setSelectionRange(match.start, match.end);
+    document.execCommand('insertText', false, replaceInput.value);
+    CZUI.handleInput();
+    updateSearchMatches();
+}
+
+function replaceAll() {
+    if (searchMatches.length === 0) return;
+    const ta = CZUI.getEditingArea();
+    const replacement = replaceInput.value;
+    // Replace from end to start to preserve indices
+    ta.focus();
+    const sorted = [...searchMatches].sort((a, b) => b.start - a.start);
+    for (const match of sorted) {
+        ta.setSelectionRange(match.start, match.end);
+        document.execCommand('insertText', false, replacement);
+    }
+    CZUI.handleInput();
+    updateSearchMatches();
+}
+
+function getSearchMatches() { return searchVisible ? searchMatches : []; }
+function getSearchCurrentIdx() { return searchCurrentIdx; }
+
+// Setup search panel events
+if (searchInput) {
+    searchInput.addEventListener('input', () => updateSearchMatches());
+    searchInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && e.shiftKey) { e.preventDefault(); searchPrev(); }
+        else if (e.key === 'Enter') { e.preventDefault(); searchNext(); }
+        else if (e.key === 'Escape') { e.preventDefault(); closeSearch(); }
+        else if (e.altKey && e.key === 'c') { e.preventDefault(); toggleSearchCase(); }
+        else if (e.altKey && e.key === 'r') { e.preventDefault(); toggleSearchRegex(); }
+    });
+}
+if (replaceInput) {
+    replaceInput.addEventListener('keydown', e => {
+        if (e.key === 'Escape') { e.preventDefault(); closeSearch(); }
+        else if (e.key === 'Enter') { e.preventDefault(); replaceOne(); }
+    });
+}
+
+function toggleSearchCase() {
+    searchCaseSensitive = !searchCaseSensitive;
+    document.getElementById('search-toggle-case').classList.toggle('active', searchCaseSensitive);
+    updateSearchMatches();
+}
+function toggleSearchRegex() {
+    searchUseRegex = !searchUseRegex;
+    document.getElementById('search-toggle-regex').classList.toggle('active', searchUseRegex);
+    updateSearchMatches();
+}
+
+// Button bindings
+document.getElementById('search-toggle-case')?.addEventListener('click', toggleSearchCase);
+document.getElementById('search-toggle-regex')?.addEventListener('click', toggleSearchRegex);
+document.getElementById('search-prev')?.addEventListener('click', searchPrev);
+document.getElementById('search-next')?.addEventListener('click', searchNext);
+document.getElementById('search-close')?.addEventListener('click', closeSearch);
+document.getElementById('replace-one')?.addEventListener('click', replaceOne);
+document.getElementById('replace-all')?.addEventListener('click', replaceAll);
+
+// ===== MINIFY & BEAUTIFY =====
+function minifyCode() {
+    const f = CZUI.getActiveFile();
+    if (!f) return;
+    const ta = CZUI.getEditingArea();
+    const text = ta.value;
+    let result = text;
+    const lang = f.language;
+
+    if (lang === 'json') {
+        try { result = JSON.stringify(JSON.parse(text)); } catch (e) { return; }
+    } else if (lang === 'css') {
+        result = text
+            .replace(/\/\*[\s\S]*?\*\//g, '')
+            .replace(/\s*([{}:;,>~+])\s*/g, '$1')
+            .replace(/;\}/g, '}')
+            .replace(/\s+/g, ' ')
+            .trim();
+    } else if (lang === 'javascript' || lang === 'typescript') {
+        result = text
+            .replace(/\/\/.*$/gm, '')
+            .replace(/\/\*[\s\S]*?\*\//g, '')
+            .replace(/\s*([{}():;,=<>!&|?+\-*\/])\s*/g, '$1')
+            .replace(/\s+/g, ' ')
+            .trim();
+    } else if (lang === 'html' || lang === 'xml') {
+        result = text
+            .replace(/<!--[\s\S]*?-->/g, '')
+            .replace(/>\s+</g, '><')
+            .replace(/\s+/g, ' ')
+            .trim();
+    } else if (lang === 'sql') {
+        result = text
+            .replace(/--.*$/gm, '')
+            .replace(/\/\*[\s\S]*?\*\//g, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+    } else {
+        result = text.replace(/\s+/g, ' ').trim();
+    }
+
+    ta.focus();
+    ta.select();
+    document.execCommand('insertText', false, result);
+    CZUI.handleInput();
+}
+
+function beautifyCode() {
+    const f = CZUI.getActiveFile();
+    if (!f) return;
+    const ta = CZUI.getEditingArea();
+    const text = ta.value;
+    let result = text;
+    const lang = f.language;
+    const indent = '\t';
+
+    if (lang === 'json') {
+        try { result = JSON.stringify(JSON.parse(text), null, indent); } catch (e) { return; }
+    } else if (lang === 'css') {
+        result = beautifyCSS(text, indent);
+    } else if (lang === 'html' || lang === 'xml') {
+        result = beautifyHTML(text, indent);
+    } else if (lang === 'sql') {
+        result = beautifySQL(text);
+    } else {
+        // Generic: re-indent based on braces
+        result = beautifyGeneric(text, indent);
+    }
+
+    ta.focus();
+    ta.select();
+    document.execCommand('insertText', false, result);
+    CZUI.handleInput();
+}
+
+function beautifyCSS(text, indent) {
+    let result = text
+        .replace(/\/\*[\s\S]*?\*\//g, m => '\n' + m + '\n')
+        .replace(/\s*{\s*/g, ' {\n')
+        .replace(/\s*}\s*/g, '\n}\n')
+        .replace(/\s*;\s*/g, ';\n')
+        .replace(/\n\s*\n/g, '\n');
+
+    const lines = result.split('\n');
+    let depth = 0;
+    const out = [];
+    for (const raw of lines) {
+        const line = raw.trim();
+        if (!line) continue;
+        if (line.startsWith('}')) depth = Math.max(0, depth - 1);
+        out.push(indent.repeat(depth) + line);
+        if (line.endsWith('{')) depth++;
+    }
+    return out.join('\n');
+}
+
+function beautifyHTML(text, indent) {
+    const voidTags = /^(area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr)$/i;
+    let result = text.replace(/>\s*</g, '>\n<');
+    const lines = result.split('\n');
+    let depth = 0;
+    const out = [];
+    for (const raw of lines) {
+        const line = raw.trim();
+        if (!line) continue;
+        const isClose = /^<\//.test(line);
+        const isOpen = /^<[a-zA-Z]/.test(line) && !isClose;
+        const isSelfClose = /\/>$/.test(line);
+        const tagMatch = line.match(/^<\/?([a-zA-Z][a-zA-Z0-9-]*)/);
+        const isVoid = tagMatch && voidTags.test(tagMatch[1]);
+
+        if (isClose) depth = Math.max(0, depth - 1);
+        out.push(indent.repeat(depth) + line);
+        if (isOpen && !isSelfClose && !isVoid) depth++;
+    }
+    return out.join('\n');
+}
+
+function beautifySQL(text) {
+    const kws = /\b(SELECT|FROM|WHERE|AND|OR|INNER JOIN|LEFT JOIN|RIGHT JOIN|FULL JOIN|CROSS JOIN|JOIN|ON|GROUP BY|ORDER BY|HAVING|LIMIT|OFFSET|UNION|INSERT INTO|VALUES|UPDATE|SET|DELETE FROM|CREATE TABLE|ALTER TABLE|DROP TABLE|CASE|WHEN|THEN|ELSE|END|WITH)\b/gi;
+    return text
+        .replace(/\s+/g, ' ')
+        .replace(kws, '\n$1')
+        .replace(/,\s*/g, ',\n\t')
+        .trim();
+}
+
+function beautifyGeneric(text, indent) {
+    const lines = text.split('\n');
+    let depth = 0;
+    const out = [];
+    for (const raw of lines) {
+        const line = raw.trim();
+        if (!line) { out.push(''); continue; }
+        const closers = (line.match(/^[}\])]/) || []).length;
+        if (closers) depth = Math.max(0, depth - 1);
+        out.push(indent.repeat(depth) + line);
+        const opens = (line.match(/[{[(]$/g) || []).length;
+        if (opens) depth++;
+    }
+    return out.join('\n');
+}
+
 // ===== COMMAND PALETTE =====
 function getCommands() {
     return [
@@ -485,6 +855,10 @@ function getCommands() {
         { name: CZi18n.t('cmd_toggle_comment'), shortcut:'Ctrl+/', action:()=>toggleComment(CZEngine.getLangConfig(CZUI.getActiveFile()?.language)) },
         { name: CZi18n.t('sc_duplicate'), shortcut:'Ctrl+D', action:()=>duplicateLine() },
         { name: CZi18n.t('cmd_delete_line'), shortcut:'Ctrl+Shift+K', action:()=>deleteLine() },
+        { name: 'Find', shortcut:'Ctrl+F', action:()=>openSearch(false) },
+        { name: 'Find & Replace', shortcut:'Ctrl+H', action:()=>openSearch(true) },
+        { name: 'Minify Code', shortcut:'', action:()=>minifyCode() },
+        { name: 'Beautify Code', shortcut:'', action:()=>beautifyCode() },
         { name: CZi18n.t('shortcuts_title'), shortcut:'', action:()=>document.getElementById('shortcuts-modal').classList.remove('hidden') },
         { name: CZi18n.t('font_config_title'), shortcut:'', action:()=>{ CZUI.fontConfigModal.classList.remove('hidden'); CZUI.settingsPopup.classList.add('hidden'); }},
         { name: CZi18n.t('cmd_open_folder'), shortcut:'', action:()=>document.getElementById('btn-open-folder').click() },
@@ -516,35 +890,12 @@ function renderCommandPalette(query) {
     });
 }
 
-// ===== CURSOR MOVE =====
-function handleCursorMove() {
-    CZUI.updateFootbar();
-    CZUI.updateActiveLine();
-    if (!CZUI.getActiveId()) return;
-    const ta = CZUI.getEditingArea();
-    const text = ta.value, pos = ta.selectionStart;
-    const cfg = CZEngine.getLangConfig(CZUI.getActiveFile()?.language);
-    const brackets = CZEngine.getMatchingBrackets(text, pos, cfg);
-    const key = brackets.join(',');
-    if (key !== CZUI.lastBracketKey) { CZUI.lastBracketKey = key; CZUI.updateEditorVisuals(); }
-}
-
-// ===== INPUT HANDLER (triggers autocomplete) =====
-function onInput() {
-    CZUI.handleInput();
-    const ta = CZUI.getEditingArea();
-    const text = ta.value, pos = ta.selectionStart;
-    const cfg = CZEngine.getLangConfig(CZUI.getActiveFile()?.language);
-    CZUI.lastBracketKey = CZEngine.getMatchingBrackets(text, pos, cfg).join(',');
-    // Trigger autocomplete after a short delay
-    clearTimeout(onInput._timer);
-    onInput._timer = setTimeout(showAutocomplete, 100);
-}
-
 return {
     handleKeydown, handleCursorMove, onInput,
     hideAutocomplete, toggleCommandPalette, renderCommandPalette,
-    saveFile,
-    get acVisible() { return acVisible; }
+    saveFile, openSearch, closeSearch, getSearchMatches, getSearchCurrentIdx,
+    minifyCode, beautifyCode,
+    get acVisible() { return acVisible; },
+    get searchVisible() { return searchVisible; }
 };
 })();

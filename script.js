@@ -166,7 +166,7 @@
             const list = document.getElementById('language-list');
             const langs = CZi18n.getAvailableLanguages();
             const current = CZi18n.getCurrentLang();
-            list.innerHTML = langs.map(l => 
+            list.innerHTML = langs.map(l =>
                 `<div class="lang-picker-item${l.code === current ? ' active' : ''}" data-ui-lang="${l.code}">${l.name}</div>`
             ).join('');
             list.querySelectorAll('.lang-picker-item').forEach(el => {

@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title id="app-title">czeditor - Modern Code Editor</title>
-    <meta name="description" content="czeditor - A powerful, modern web-based code editor with autocomplete, emmet, and syntax highlighting.">
+    <meta name="description"
+        content="czeditor - A powerful, modern web-based code editor with autocomplete, emmet, and syntax highlighting.">
     <meta name="theme-color" content="#1e1e2e">
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" href="icon-192.png">
@@ -12,7 +14,7 @@
     <link rel="stylesheet" href="style.css">
     <script>
         // Apply saved sidebar state BEFORE first paint to prevent visual flash
-        (function() {
+        (function () {
             var w = localStorage.getItem('cz_sidebar_width');
             var c = localStorage.getItem('cz_sidebar_collapsed');
             var css = '';
@@ -33,27 +35,35 @@
         })();
     </script>
 </head>
+
 <body>
 
     <div class="drop-overlay" id="drop-overlay" data-i18n="drop_overlay">Jatuhkan File di Sini</div>
 
     <header class="editor-header">
-        <button class="action-btn sidebar-toggle-btn" id="btn-toggle-sidebar" data-i18n="btn_toggle_sidebar_title" data-i18n-attr="title" title="Toggle Sidebar (Ctrl+B)">☰</button>
+        <button class="action-btn sidebar-toggle-btn" id="btn-toggle-sidebar" data-i18n="btn_toggle_sidebar_title"
+            data-i18n-attr="title" title="Toggle Sidebar (Ctrl+B)">☰</button>
         <div class="tabs-container" id="tabs-container"></div>
-        
+
         <div class="action-btns">
-            <button class="action-btn" id="btn-new-file" data-i18n="btn_new_file_title" data-i18n-attr="title" title="File Baru (Ctrl+N)">+</button>
-            <button class="action-btn" id="btn-open-file" data-i18n="btn_open_file_title" data-i18n-attr="title" title="Buka File">&#128194;</button>
+            <button class="action-btn" id="btn-new-file" data-i18n="btn_new_file_title" data-i18n-attr="title"
+                title="File Baru (Ctrl+N)">+</button>
+            <button class="action-btn" id="btn-open-file" data-i18n="btn_open_file_title" data-i18n-attr="title"
+                title="Buka File">&#128194;</button>
             <input type="file" id="file-input" style="display: none;" multiple>
         </div>
-        
+
         <div class="toolbar" id="toolbar-right">
             <div class="settings-wrapper">
-                <button class="settings-btn" id="btn-settings" data-i18n="btn_settings_title" data-i18n-attr="title" title="Pengaturan">⚙️</button>
+                <button class="settings-btn" id="btn-settings" data-i18n="btn_settings_title" data-i18n-attr="title"
+                    title="Pengaturan">⚙️</button>
                 <div class="settings-popup hidden" id="settings-popup">
-                    <div class="settings-item" id="menu-font-config" data-i18n="menu_font_config">🔡 Konfigurasi Font</div>
-                    <div class="settings-item" id="menu-shortcuts" data-i18n="menu_shortcuts">⌨️ Keyboard Shortcuts</div>
-                    <div class="settings-item" id="menu-language">🌐 <span data-i18n="menu_language" id="menu-language-text">Bahasa</span></div>
+                    <div class="settings-item" id="menu-font-config" data-i18n="menu_font_config">🔡 Konfigurasi Font
+                    </div>
+                    <div class="settings-item" id="menu-shortcuts" data-i18n="menu_shortcuts">⌨️ Keyboard Shortcuts
+                    </div>
+                    <div class="settings-item" id="menu-language">🌐 <span data-i18n="menu_language"
+                            id="menu-language-text">Bahasa</span></div>
                 </div>
             </div>
         </div>
@@ -73,7 +83,8 @@
             <div class="sidebar-tree" id="sidebar-tree">
                 <div class="sidebar-empty" id="sidebar-empty">
                     <p data-i18n="sidebar_no_folder">Belum ada folder dibuka</p>
-                    <button class="sidebar-open-btn" id="btn-open-folder" data-i18n="btn_open_folder_title">📂 Open Folder</button>
+                    <button class="sidebar-open-btn" id="btn-open-folder" data-i18n="btn_open_folder_title">📂 Open
+                        Folder</button>
                     <div class="recent-folders" id="recent-folders"></div>
                 </div>
             </div>
@@ -86,7 +97,8 @@
                 <div class="cz-version anim-fade-up" style="animation-delay: 0.3s" id="app-version"></div>
                 <div class="cz-description anim-fade-up" style="animation-delay: 0.4s" id="app-description"></div>
                 <div class="cz-hints anim-fade-up" style="animation-delay: 0.5s">
-                    <p data-i18n="welcome_hint" data-i18n-html>Tekan <strong>Ctrl+N</strong> atau <strong>Drag &amp; Drop</strong> file untuk mulai</p>
+                    <p data-i18n="welcome_hint" data-i18n-html>Tekan <strong>Ctrl+N</strong> atau <strong>Drag &amp;
+                            Drop</strong> file untuk mulai</p>
                     <div class="shortcut-hints">
                         <span class="hint-badge">Ctrl+S</span> <span data-i18n="shortcut_save">Save</span>
                         <span class="hint-badge">Tab</span> <span data-i18n="shortcut_emmet">Emmet / Indent</span>
@@ -94,16 +106,37 @@
                         <span class="hint-badge">Ctrl+P</span> <span data-i18n="shortcut_palette">Command Palette</span>
                     </div>
                 </div>
-                <button class="pwa-install-btn anim-fade-up hidden" id="pwa-install-btn" style="animation-delay: 0.7s" data-i18n="pwa_install">
+                <button class="pwa-install-btn anim-fade-up hidden" id="pwa-install-btn" style="animation-delay: 0.7s"
+                    data-i18n="pwa_install">
                     📥 Install sebagai Aplikasi
                 </button>
             </div>
 
             <div id="editor-body" class="editor-body hidden">
+                <!-- Search & Replace Panel -->
+                <div id="search-panel" class="search-panel hidden">
+                    <div class="search-row">
+                        <input type="text" id="search-input" class="search-field" placeholder="Search..."
+                            spellcheck="false" autocomplete="off">
+                        <span class="search-count" id="search-count">0 results</span>
+                        <button class="search-btn" id="search-toggle-case" title="Match Case (Alt+C)">Aa</button>
+                        <button class="search-btn" id="search-toggle-regex" title="Use Regex (Alt+R)">.*</button>
+                        <button class="search-btn" id="search-prev" title="Previous (Shift+Enter)">▲</button>
+                        <button class="search-btn" id="search-next" title="Next (Enter)">▼</button>
+                        <button class="search-btn search-close" id="search-close" title="Close (Esc)">✕</button>
+                    </div>
+                    <div class="search-row replace-row hidden" id="replace-row">
+                        <input type="text" id="replace-input" class="search-field" placeholder="Replace..."
+                            spellcheck="false" autocomplete="off">
+                        <button class="search-btn" id="replace-one" title="Replace">⇄</button>
+                        <button class="search-btn" id="replace-all" title="Replace All">⇄All</button>
+                    </div>
+                </div>
                 <div class="line-numbers" id="line-numbers">1</div>
                 <div class="code-wrapper">
                     <div class="active-line-highlight" id="active-line-highlight"></div>
-                    <textarea id="editing" spellcheck="false" wrap="off" autocapitalize="off" autocomplete="off" autocorrect="off"></textarea>
+                    <textarea id="editing" spellcheck="false" wrap="off" autocapitalize="off" autocomplete="off"
+                        autocorrect="off"></textarea>
                     <pre id="highlighting" aria-hidden="true"><code id="highlighting-content"></code></pre>
                 </div>
             </div>
@@ -124,13 +157,16 @@
                     <div class="binary-file-icon" id="binary-file-icon">📄</div>
                     <div class="binary-file-name" id="binary-file-name"></div>
                     <div class="binary-file-size" id="binary-file-size"></div>
-                    <p class="binary-file-msg" data-i18n="binary_file_msg">This file is in binary format and cannot be displayed as text.</p>
+                    <p class="binary-file-msg" data-i18n="binary_file_msg">This file is in binary format and cannot be
+                        displayed as text.</p>
                     <div class="binary-file-actions">
-                        <button class="binary-btn binary-btn-code" id="btn-binary-open-code" onclick="CZUI.openBinaryAsCode()">
+                        <button class="binary-btn binary-btn-code" id="btn-binary-open-code"
+                            onclick="CZUI.openBinaryAsCode()">
                             <span class="binary-btn-icon">&lt;/&gt;</span>
                             <span data-i18n="binary_open_code">Open as Code</span>
                         </button>
-                        <button class="binary-btn binary-btn-external" id="btn-binary-open-external" onclick="CZUI.openBinaryExternal()">
+                        <button class="binary-btn binary-btn-external" id="btn-binary-open-external"
+                            onclick="CZUI.openBinaryExternal()">
                             <span class="binary-btn-icon">↗</span>
                             <span data-i18n="binary_open_external">Open External</span>
                         </button>
@@ -139,7 +175,8 @@
             </div>
 
             <!-- Floating SVG Preview Toggle (only when editing SVG) -->
-            <button id="btn-svg-preview-toggle" class="svg-preview-toggle-btn hidden" title="Toggle SVG Preview" onclick="CZUI.toggleSvgPreview()">
+            <button id="btn-svg-preview-toggle" class="svg-preview-toggle-btn hidden" title="Toggle SVG Preview"
+                onclick="CZUI.toggleSvgPreview()">
                 <span class="split-icon">👁</span>
             </button>
 
@@ -162,7 +199,8 @@
     <!-- Command Palette -->
     <div id="command-palette" class="modal hidden">
         <div class="command-palette-content">
-            <input type="text" id="command-palette-input" data-i18n="cmd_palette_placeholder" data-i18n-attr="placeholder" placeholder="Ketik perintah..." autocomplete="off">
+            <input type="text" id="command-palette-input" data-i18n="cmd_palette_placeholder"
+                data-i18n-attr="placeholder" placeholder="Ketik perintah..." autocomplete="off">
             <div class="command-palette-list" id="command-palette-list"></div>
         </div>
     </div>
@@ -175,19 +213,34 @@
                 <span class="close-modal" id="close-shortcuts">&times;</span>
             </div>
             <div class="modal-body shortcuts-body">
-                <div class="shortcut-row"><span class="shortcut-keys">Ctrl + N</span><span data-i18n="sc_new_file">File Baru</span></div>
-                <div class="shortcut-row"><span class="shortcut-keys">Ctrl + S</span><span data-i18n="sc_save">Simpan / Download</span></div>
-                <div class="shortcut-row"><span class="shortcut-keys">Ctrl + /</span><span data-i18n="sc_comment">Toggle Komentar</span></div>
-                <div class="shortcut-row"><span class="shortcut-keys">Ctrl + D</span><span data-i18n="sc_duplicate">Duplikat Baris</span></div>
-                <div class="shortcut-row"><span class="shortcut-keys">Ctrl + Shift + K</span><span data-i18n="sc_delete_line">Hapus Baris</span></div>
-                <div class="shortcut-row"><span class="shortcut-keys">Alt + ↑/↓</span><span data-i18n="sc_move_line">Pindah Baris</span></div>
-                <div class="shortcut-row"><span class="shortcut-keys">Ctrl + ]</span><span data-i18n="sc_indent">Indent</span></div>
-                <div class="shortcut-row"><span class="shortcut-keys">Ctrl + [</span><span data-i18n="sc_outdent">Outdent</span></div>
-                <div class="shortcut-row"><span class="shortcut-keys">Ctrl + L</span><span data-i18n="sc_select_line">Pilih Baris</span></div>
-                <div class="shortcut-row"><span class="shortcut-keys">Ctrl + P</span><span data-i18n="sc_palette">Command Palette</span></div>
-                <div class="shortcut-row"><span class="shortcut-keys">Tab</span><span data-i18n="sc_emmet">Emmet Expand / Indent</span></div>
-                <div class="shortcut-row"><span class="shortcut-keys">Ctrl + B</span><span data-i18n="sc_toggle_sidebar">Toggle Sidebar</span></div>
-                <div class="shortcut-row"><span class="shortcut-keys">Escape</span><span data-i18n="sc_close_popup">Tutup Popup</span></div>
+                <div class="shortcut-row"><span class="shortcut-keys">Ctrl + N</span><span data-i18n="sc_new_file">File
+                        Baru</span></div>
+                <div class="shortcut-row"><span class="shortcut-keys">Ctrl + S</span><span data-i18n="sc_save">Simpan /
+                        Download</span></div>
+                <div class="shortcut-row"><span class="shortcut-keys">Ctrl + /</span><span data-i18n="sc_comment">Toggle
+                        Komentar</span></div>
+                <div class="shortcut-row"><span class="shortcut-keys">Ctrl + D</span><span
+                        data-i18n="sc_duplicate">Duplikat Baris</span></div>
+                <div class="shortcut-row"><span class="shortcut-keys">Ctrl + Shift + K</span><span
+                        data-i18n="sc_delete_line">Hapus Baris</span></div>
+                <div class="shortcut-row"><span class="shortcut-keys">Alt + ↑/↓</span><span
+                        data-i18n="sc_move_line">Pindah Baris</span></div>
+                <div class="shortcut-row"><span class="shortcut-keys">Ctrl + ]</span><span
+                        data-i18n="sc_indent">Indent</span></div>
+                <div class="shortcut-row"><span class="shortcut-keys">Ctrl + [</span><span
+                        data-i18n="sc_outdent">Outdent</span></div>
+                <div class="shortcut-row"><span class="shortcut-keys">Ctrl + L</span><span
+                        data-i18n="sc_select_line">Pilih Baris</span></div>
+                <div class="shortcut-row"><span class="shortcut-keys">Ctrl + P</span><span
+                        data-i18n="sc_palette">Command Palette</span></div>
+                <div class="shortcut-row"><span class="shortcut-keys">Tab</span><span data-i18n="sc_emmet">Emmet Expand
+                        / Indent</span></div>
+                <div class="shortcut-row"><span class="shortcut-keys">Ctrl + F</span><span>Find</span></div>
+                <div class="shortcut-row"><span class="shortcut-keys">Ctrl + H</span><span>Find & Replace</span></div>
+                <div class="shortcut-row"><span class="shortcut-keys">Ctrl + B</span><span
+                        data-i18n="sc_toggle_sidebar">Toggle Sidebar</span></div>
+                <div class="shortcut-row"><span class="shortcut-keys">Escape</span><span
+                        data-i18n="sc_close_popup">Tutup Popup</span></div>
             </div>
         </div>
     </div>
@@ -361,7 +414,8 @@
         <div class="context-menu-divider"></div>
         <div class="context-menu-item" data-action="close-folder" data-i18n="ctx_close_folder">❌ Tutup Folder</div>
         <div class="context-menu-divider"></div>
-        <div class="context-menu-item" data-action="explorer-settings" data-i18n="ctx_explorer_settings">⚙️ Explorer Settings</div>
+        <div class="context-menu-item" data-action="explorer-settings" data-i18n="ctx_explorer_settings">⚙️ Explorer
+            Settings</div>
     </div>
 
     <div id="tab-context-menu" class="context-menu hidden">
@@ -372,7 +426,7 @@
         <div class="context-menu-item" data-action="pin" data-i18n="ctx_pin">Pin / Unpin File</div>
         <div class="context-menu-item" data-action="rename" data-i18n="ctx_rename">Ganti Nama File</div>
     </div>
-    
+
     <select class="hidden" id="lang-selector">
         <option value="plaintext">Plain Text</option>
         <option value="batch">Batch (CMD)</option>
@@ -403,4 +457,5 @@
     <script src="editor-features.js"></script>
     <script src="script.js"></script>
 </body>
+
 </html>
