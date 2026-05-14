@@ -267,11 +267,13 @@ const CZUI = (() => {
         highlightActiveInTree();
     }
 
-    function scrollToActiveTab() {
-        setTimeout(() => {
+    function scrollToActiveTab(instant) {
+        const doScroll = () => {
             const t = tabsContainer.querySelector('.tab.active');
-            if (t) tabsContainer.scrollTo({ left: t.offsetLeft - tabsContainer.clientWidth / 2 + t.clientWidth / 2, behavior: 'smooth' });
-        }, 10);
+            if (t) tabsContainer.scrollTo({ left: t.offsetLeft - tabsContainer.clientWidth / 2 + t.clientWidth / 2, behavior: instant ? 'instant' : 'smooth' });
+        };
+        if (instant) doScroll();
+        else setTimeout(doScroll, 10);
     }
 
     function setupTabDragging() {
@@ -375,13 +377,13 @@ const CZUI = (() => {
         }
     }
 
-    function switchFile(id) {
+    function switchFile(id, opts) {
         const f = files.find(x => x.id === id);
         if (!f) return;
         activeFileId = id;
 
         // Render tabs first (this calls checkEmptyState internally)
-        renderTabs(); scrollToActiveTab();
+        renderTabs(); scrollToActiveTab(opts && opts.instant);
         highlightActiveInTree();
         localStorage.setItem('cz_active_id', activeFileId);
 

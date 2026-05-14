@@ -22,7 +22,7 @@
                 files.forEach(f => { if (f.isPinned === undefined) f.isPinned = false; });
                 CZUI.setFiles(files);
                 CZUI.setActiveId(savedActiveId || files[0].id);
-                CZUI.switchFile(CZUI.getActiveId());
+                CZUI.switchFile(CZUI.getActiveId(), { instant: true });
                 // Preload language configs
                 files.forEach(f => CZEngine.loadLanguage(f.language));
             }
