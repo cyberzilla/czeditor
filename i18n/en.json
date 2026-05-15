@@ -52,7 +52,10 @@
     "ctx_close": "Close",
     "ctx_close_other": "Close Others",
     "ctx_close_all": "Close All",
-    "ctx_pin": "Pin / Unpin File",
+    "ctx_pin": "📌 Pin File",
+    "ctx_unpin": "📌 Unpin File",
+    "ctx_reload": "🔄 Reload File",
+    "ctx_reload_error": "Failed to reload file.",
     "ctx_rename": "Rename File",
 
     "confirm_close_file": "Close file '{0}'?",

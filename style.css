@@ -1090,7 +1090,7 @@ body.sidebar-resizing {
 .preview-pane {
     display: flex;
     flex-direction: column;
-    min-width: 0;
+    min-width: 180px;
     background: var(--bg-main);
     border-left: 1px solid var(--border-color);
     overflow: hidden;
@@ -1110,7 +1110,6 @@ body.sidebar-resizing {
     border-bottom: 1px solid var(--border-color);
     flex-shrink: 0;
     min-width: 0;
-    overflow: hidden;
 }
 
 .preview-title {
@@ -1225,6 +1224,28 @@ body.sidebar-resizing {
     max-width: 100%;
     display: block;
     margin: 0 auto;
+}
+
+/* HTML preview content */
+.preview-content.html-preview {
+    background-image: none;
+    background: #ffffff;
+    padding: 0;
+    overflow: hidden;
+    position: relative;
+}
+
+.html-preview-iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: #ffffff;
+    display: block;
+    transform-origin: top left;
+    transition: transform 0.15s;
 }
 
 /* Markdown preview content */
@@ -1605,6 +1626,12 @@ body.sidebar-resizing {
     resize: none;
     outline: none;
     overflow: auto;
+}
+
+/* During preload: make text visible and hide scrollbar until JS fully initializes */
+#editing.preload-visible {
+    color: var(--text-main);
+    overflow: hidden !important;
 }
 
 #editing::selection {

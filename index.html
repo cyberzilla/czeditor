@@ -30,6 +30,29 @@
             css += '#sidebar-empty{display:none}';
             // Ensure active tab never flashes a bottom border
             css += '.tab.active{box-shadow:none!important;border-bottom:none!important}';
+            // Pre-show UI elements if files exist to prevent layout shift & flicker
+            var hasFiles = false;
+            try { var sf = localStorage.getItem('cz_files'); hasFiles = sf && JSON.parse(sf).length > 0; } catch(e) {}
+            if (hasFiles) {
+                css += '#toolbar-right{display:flex!important}';
+                css += '#editor-footer{display:flex!important}';
+                css += '#editor-body{display:flex!important;flex-direction:column;flex-grow:1;height:100%}';
+                css += '#welcome-screen{display:none!important}';
+                // Suppress tab scroll animation during initial load
+                css += '#tabs-container{scroll-behavior:auto!important}';
+            }
+            // Apply saved font settings BEFORE first paint to prevent font-size flash
+            var fs = localStorage.getItem('cz_font_size');
+            var fw = localStorage.getItem('cz_font_weight');
+            if (fs || fw) {
+                var sz = parseInt(fs) || 15;
+                var lh = Math.round(sz * 1.6);
+                css += ':root{';
+                css += '--editor-font-size:' + sz + 'px!important;';
+                css += '--editor-line-height:' + lh + 'px!important;';
+                if (fw) css += '--editor-font-weight:' + fw + '!important;';
+                css += '}';
+            }
             var s = document.createElement('style');
             s.id = 'cz-preload-styles';
             s.textContent = css;
@@ -464,7 +487,9 @@
         <div class="context-menu-item" data-action="close-other" data-i18n="ctx_close_other">Tutup Lainnya</div>
         <div class="context-menu-item" data-action="close-all" data-i18n="ctx_close_all">Tutup Semua</div>
         <div class="context-menu-divider"></div>
-        <div class="context-menu-item" data-action="pin" data-i18n="ctx_pin">Pin / Unpin File</div>
+        <div class="context-menu-item" data-action="pin" id="ctx-pin-item">📌 Pin File</div>
+        <div class="context-menu-item" data-action="reload" id="ctx-reload-item" style="display:none">🔄 Reload File</div>
+        <div class="context-menu-divider"></div>
         <div class="context-menu-item" data-action="rename" data-i18n="ctx_rename">Ganti Nama File</div>
     </div>
 
@@ -491,6 +516,103 @@
         <option value="yaml">YAML</option>
     </select>
 
+    <script>
+        // Pre-render tabs, editor content & sidebar tree from localStorage BEFORE main scripts
+        // This eliminates the flicker where UI elements appear after JS loads
+        (function () {
+            try {
+                var raw = localStorage.getItem('cz_files');
+                if (!raw) return;
+                var files = JSON.parse(raw);
+                if (!files || !files.length) return;
+                var activeId = localStorage.getItem('cz_active_id') || files[0].id;
+
+                // Pre-render tabs
+                var tc = document.getElementById('tabs-container');
+                if (tc) {
+                    files.sort(function (a, b) { return (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0); });
+                    var html = '';
+                    for (var i = 0; i < files.length; i++) {
+                        var f = files[i];
+                        var cls = 'tab' + (f.id === activeId ? ' active' : '');
+                        var pin = f.isPinned ? '<span class="tab-pin-icon">📌</span>' : '';
+                        var dot = f.dirty ? '<span class="tab-dot">●</span>' : '';
+                        // Escape HTML in file name
+                        var name = f.name.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+                        html += '<div class="' + cls + '" data-id="' + f.id + '">';
+                        html += '<span class="tab-name">' + pin + dot + name + '</span>';
+                        html += '<span class="tab-close" data-close="' + f.id + '">&times;</span></div>';
+                    }
+                    tc.innerHTML = html;
+                    // Instantly scroll to active tab (no animation) to prevent later jump
+                    var activeTab = tc.querySelector('.tab.active');
+                    if (activeTab) {
+                        tc.scrollLeft = activeTab.offsetLeft - tc.clientWidth / 2 + activeTab.clientWidth / 2;
+                    }
+                }
+
+                // Pre-fill editor textarea with active file content
+                var active = null;
+                for (var j = 0; j < files.length; j++) {
+                    if (files[j].id === activeId) { active = files[j]; break; }
+                }
+                if (active && active.content && !active.isImage && !active.isBinary) {
+                    var ta = document.getElementById('editing');
+                    if (ta) {
+                        ta.value = active.content;
+                        // Make text visible until syntax highlighting takes over
+                        ta.classList.add('preload-visible');
+                    }
+                    // Pre-render line numbers + store count for CZUI init
+                    var ln = document.getElementById('line-numbers');
+                    if (ln && active.content) {
+                        var lines = active.content.split('\n').length;
+                        var nums = [];
+                        for (var k = 1; k <= lines; k++) nums.push(k);
+                        ln.innerHTML = nums.join('<br>');
+                        ln.dataset.preloadCount = lines;
+                    }
+                    // Pre-fill footer stats
+                    var sl = document.getElementById('stat-length');
+                    var sli = document.getElementById('stat-lines');
+                    if (sl) sl.textContent = 'Length: ' + active.content.length;
+                    if (sli) sli.textContent = 'Lines: ' + active.content.split('\n').length;
+                }
+                // Pre-fill footer language, encoding, EOL from active file
+                if (active) {
+                    var sLang = document.getElementById('stat-lang');
+                    var sEnc = document.getElementById('stat-encoding');
+                    var sEol = document.getElementById('stat-eol');
+                    if (sLang && active.language) {
+                        var sel = document.getElementById('lang-selector');
+                        if (sel) {
+                            sel.value = active.language;
+                            var opt = sel.options[sel.selectedIndex];
+                            sLang.textContent = opt ? opt.text : active.language;
+                        }
+                    }
+                    if (sEnc) sEnc.textContent = active.encoding || 'UTF-8';
+                    if (sEol) sEol.textContent = active.eol || 'LF';
+                }
+            } catch (e) { /* silent — main scripts will handle it */ }
+
+            // Pre-render cached sidebar tree (insert before sidebar-empty, don't destroy it)
+            try {
+                var treeHtml = localStorage.getItem('cz_tree_html');
+                if (treeHtml) {
+                    var st = document.getElementById('sidebar-tree');
+                    var se = document.getElementById('sidebar-empty');
+                    if (st && se) {
+                        se.style.display = 'none';
+                        st.insertAdjacentHTML('afterbegin', treeHtml);
+                    }
+                    // Show sidebar action buttons
+                    var sa = document.getElementById('sidebar-actions');
+                    if (sa) sa.classList.remove('hidden');
+                }
+            } catch (e) { /* silent */ }
+        })();
+    </script>
     <script src="engine.js"></script>
     <script src="i18n.js"></script>
     <script src="filesystem.js"></script>

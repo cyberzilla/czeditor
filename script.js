@@ -219,6 +219,20 @@
             if (tab) {
                 e.preventDefault();
                 CZUI.targetContextTabId = tab.dataset.id;
+                const f = CZUI.getFiles().find(x => x.id === tab.dataset.id);
+                // Update pin/unpin label
+                const pinItem = document.getElementById('ctx-pin-item');
+                if (pinItem && f) {
+                    pinItem.textContent = f.isPinned
+                        ? CZi18n.t('ctx_unpin')
+                        : CZi18n.t('ctx_pin');
+                }
+                // Show reload only for project files (has fileHandle)
+                const reloadItem = document.getElementById('ctx-reload-item');
+                if (reloadItem) {
+                    reloadItem.style.display = (f && f.fileHandle) ? '' : 'none';
+                    reloadItem.textContent = CZi18n.t('ctx_reload');
+                }
                 CZUI.tabContextMenu.style.left = e.pageX + 'px';
                 CZUI.tabContextMenu.style.top = e.pageY + 'px';
                 CZUI.tabContextMenu.classList.remove('hidden');
@@ -371,8 +385,8 @@
                 if (shift && interceptedShift.includes(key)) {
                     e.preventDefault();
                     e.stopImmediatePropagation();
-                    // Ctrl+Shift+V: Toggle preview panel
-                    if (key === 'v') { CZUI.togglePreview(); return; }
+                    // Ctrl+Shift+V: Toggle preview panel (only for previewable files)
+                    if (key === 'v') { const af = CZUI.getActiveFile(); if (af && CZUI.isPreviewableFile(af)) CZUI.togglePreview(); return; }
                     // Delegate to features handler if editor is active
                     if (CZUI.getActiveId()) {
                         CZUI.getEditingArea().focus();

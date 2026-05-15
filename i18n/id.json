@@ -52,7 +52,10 @@
     "ctx_close": "Tutup",
     "ctx_close_other": "Tutup Lainnya",
     "ctx_close_all": "Tutup Semua",
-    "ctx_pin": "Pin / Unpin File",
+    "ctx_pin": "📌 Pin File",
+    "ctx_unpin": "📌 Unpin File",
+    "ctx_reload": "🔄 Muat Ulang File",
+    "ctx_reload_error": "Gagal memuat ulang file.",
     "ctx_rename": "Ganti Nama File",
 
     "confirm_close_file": "Tutup file '{0}'?",

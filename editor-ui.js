@@ -15,7 +15,7 @@ const CZUI = (() => {
 
     let files = [], activeFileId = null, saveTimeout = null, isDraggingTab = false;
     let targetContextTabId = null, promptCb = null, confirmCb = null;
-    let currentLineCount = 0, lastBracketKey = '';
+    let currentLineCount = parseInt(lineNumbers?.dataset?.preloadCount) || 0, lastBracketKey = '';
     let sidebarContextTarget = null; // {handle, parentHandle, name, kind}
 
     // ===== CUSTOMIZABLE FILE ICONS =====
@@ -101,8 +101,12 @@ const CZUI = (() => {
         const ext = name.split('.').pop().toLowerCase();
         return ['md', 'markdown', 'mdown', 'mkd'].includes(ext);
     }
+    function isHtmlFile(name) {
+        const ext = name.split('.').pop().toLowerCase();
+        return ['html', 'htm'].includes(ext);
+    }
     function isPreviewableFile(f) {
-        return f && !f.isImage && !f.isBinary && (f.isSvg || isMarkdownFile(f.name) || isLottieContent(f));
+        return f && !f.isImage && !f.isBinary && (f.isSvg || isSvgFile(f.name) || isMarkdownFile(f.name) || isHtmlFile(f.name) || isLottieContent(f));
     }
     function isLottieContent(f) {
         if (!f || !f.content || !f.name.endsWith('.json')) return false;
@@ -415,23 +419,24 @@ const CZUI = (() => {
         const imageViewer = $('image-viewer');
         const binaryPanel = $('binary-file-panel');
 
-        // Hide all viewers first
-        if (imageViewer) imageViewer.classList.add('hidden');
-        if (binaryPanel) binaryPanel.classList.add('hidden');
-        editorBody.classList.add('hidden');
-
         if (f.isBinary) {
-            // Show binary file info panel
+            // Switching to binary — hide editor and image viewer, show binary panel
+            editorBody.classList.add('hidden');
+            if (imageViewer) imageViewer.classList.add('hidden');
             showBinaryPanel(f);
         } else if (f.isImage) {
-            // Show full-tab image viewer for binary images only
+            // Switching to image — hide editor and binary panel, show image viewer
+            editorBody.classList.add('hidden');
+            if (binaryPanel) binaryPanel.classList.add('hidden');
             showImageViewer(f);
         } else {
-            // Normal code file (including SVG/MD) — editor-body MUST be visible
+            // Normal code file — hide binary/image panels, keep editor-body visible
+            if (imageViewer) imageViewer.classList.add('hidden');
+            if (binaryPanel) binaryPanel.classList.add('hidden');
             editorBody.classList.remove('hidden');
             editingArea.value = f.content;
             langSelector.value = f.language;
-            currentLineCount = 0; lastBracketKey = '';
+            lastBracketKey = '';
             updateEditorVisuals(); updateFootbar();
             CZEngine.loadLanguage(f.language).then(() => updateEditorVisuals());
             // Update preview if open
@@ -576,6 +581,11 @@ const CZUI = (() => {
         if (!pane || !handle || !editorPane || !container) return;
 
         previewOpen = !previewOpen;
+        // Guard: don't open preview for non-previewable files
+        if (previewOpen) {
+            const f = getActiveFile();
+            if (!isPreviewableFile(f)) { previewOpen = false; return; }
+        }
         if (previewOpen) {
             pane.classList.remove('hidden');
             handle.classList.remove('hidden');
@@ -593,10 +603,13 @@ const CZUI = (() => {
             editorPane.style.width = editorW + 'px';
             editorPane.style.flexGrow = '0';
             editorPane.style.flexShrink = '0';
-            // Preview fills remaining space
-            pane.style.width = '';
-            pane.style.flexGrow = '1';
+            editorPane.style.flexBasis = editorW + 'px';
+            // Set preview pane width explicitly (remaining space)
+            const previewW = Math.max(180, container.clientWidth - editorW - handleW);
+            pane.style.width = previewW + 'px';
+            pane.style.flexGrow = '0';
             pane.style.flexShrink = '0';
+            pane.style.flexBasis = previewW + 'px';
             updatePreview();
         } else {
             pane.classList.add('hidden');
@@ -606,9 +619,11 @@ const CZUI = (() => {
             editorPane.style.width = '';
             editorPane.style.flexGrow = '';
             editorPane.style.flexShrink = '';
+            editorPane.style.flexBasis = '';
             pane.style.width = '';
             pane.style.flexGrow = '';
             pane.style.flexShrink = '';
+            pane.style.flexBasis = '';
         }
     }
 
@@ -617,6 +632,8 @@ const CZUI = (() => {
         lottieLastHash = '';
         if (previewOpen) togglePreview();
     }
+
+    let htmlPreviewDebounceTimer = null;
 
     function updatePreview() {
         if (!previewOpen) return;
@@ -643,6 +660,29 @@ const CZUI = (() => {
                     '</div>';
             }
             loadLottieAnimation(f.content);
+        } else if (isHtmlFile(f.name)) {
+            content.className = 'preview-content html-preview';
+            // Extract <title> from HTML content, fallback to 'HTML Preview'
+            const titleMatch = f.content.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+            const htmlTitle = titleMatch ? titleMatch[1].trim() : '';
+            if (title) title.textContent = htmlTitle || 'HTML Preview';
+            // Reuse existing iframe if present, otherwise create one
+            let iframe = content.querySelector('.html-preview-iframe');
+            if (!iframe) {
+                content.innerHTML = '';
+                iframe = document.createElement('iframe');
+                iframe.className = 'html-preview-iframe';
+                iframe.sandbox = 'allow-scripts allow-same-origin';
+                iframe.setAttribute('referrerpolicy', 'no-referrer');
+                iframe.setAttribute('loading', 'lazy');
+                content.appendChild(iframe);
+            }
+            // Apply zoom via CSS transform on iframe
+            iframe.style.transform = 'scale(' + (previewZoom / 100) + ')';
+            iframe.style.width = (10000 / previewZoom) + '%';
+            iframe.style.height = (10000 / previewZoom) + '%';
+            // Write content into iframe using srcdoc for safety
+            iframe.srcdoc = f.content;
         } else if (isMarkdownFile(f.name)) {
             content.className = 'preview-content markdown-preview';
             if (title) title.textContent = 'Markdown Preview';
@@ -661,6 +701,14 @@ const CZUI = (() => {
         if (lc && lottieAnim) {
             lc.style.transform = 'scale(' + (previewZoom / 100) + ')';
             try { lottieAnim.resize(); } catch (e) {}
+            return;
+        }
+        // HTML iframe: update transform directly without reloading srcdoc
+        const iframe = $('preview-content')?.querySelector('.html-preview-iframe');
+        if (iframe) {
+            iframe.style.transform = 'scale(' + (previewZoom / 100) + ')';
+            iframe.style.width = (10000 / previewZoom) + '%';
+            iframe.style.height = (10000 / previewZoom) + '%';
             return;
         }
         updatePreview();
@@ -907,7 +955,7 @@ const CZUI = (() => {
         const handle = $('preview-resize-handle');
         if (!handle) return;
 
-        let startX, startWidth;
+        let startX, startWidth, handleW, rafId;
 
         handle.addEventListener('mousedown', e => {
             e.preventDefault();
@@ -917,35 +965,43 @@ const CZUI = (() => {
             if (!pane || !editorPane || !container) return;
             startX = e.clientX;
             startWidth = editorPane.offsetWidth;
+            handleW = handle.offsetWidth; // cache once — avoid layout thrash
             handle.classList.add('dragging');
             document.body.style.cursor = 'col-resize';
             document.body.style.userSelect = 'none';
+            // Block iframe from stealing mouse events during drag
+            pane.style.pointerEvents = 'none';
 
             function onMove(ev) {
-                const dx = ev.clientX - startX;
-                const handleW = handle.offsetWidth;
-                const containerW = container.clientWidth;
-                const maxEditorW = containerW - handleW - 200; // min preview 200px
-                const newEditorW = Math.max(200, Math.min(startWidth + dx, maxEditorW));
-                const previewW = containerW - newEditorW - handleW;
-                editorPane.style.width = newEditorW + 'px';
-                editorPane.style.flexGrow = '0';
-                editorPane.style.flexShrink = '0';
-                editorPane.style.flexBasis = newEditorW + 'px';
-                // Preview gets exact remaining width
-                pane.style.width = previewW + 'px';
-                pane.style.flexGrow = '0';
-                pane.style.flexShrink = '0';
-                pane.style.flexBasis = previewW + 'px';
+                // Batch DOM writes to next animation frame
+                cancelAnimationFrame(rafId);
+                rafId = requestAnimationFrame(() => {
+                    const dx = ev.clientX - startX;
+                    const containerW = container.clientWidth;
+                    const maxEditorW = containerW - handleW - 200; // min preview 200px
+                    const newEditorW = Math.max(200, Math.min(startWidth + dx, maxEditorW));
+                    const previewW = containerW - newEditorW - handleW;
+                    editorPane.style.width = newEditorW + 'px';
+                    editorPane.style.flexGrow = '0';
+                    editorPane.style.flexShrink = '0';
+                    editorPane.style.flexBasis = newEditorW + 'px';
+                    // Preview gets exact remaining width
+                    pane.style.width = previewW + 'px';
+                    pane.style.flexGrow = '0';
+                    pane.style.flexShrink = '0';
+                    pane.style.flexBasis = previewW + 'px';
+                });
             }
             function onUp() {
+                cancelAnimationFrame(rafId);
                 document.removeEventListener('mousemove', onMove);
                 document.removeEventListener('mouseup', onUp);
                 handle.classList.remove('dragging');
                 document.body.style.cursor = '';
                 document.body.style.userSelect = '';
+                // Restore pointer events on preview pane
+                pane.style.pointerEvents = '';
                 // Persist as preview width ratio
-                const pane = $('preview-pane');
                 if (pane) localStorage.setItem('cz_preview_width', pane.offsetWidth);
             }
             document.addEventListener('mousemove', onMove);
@@ -968,6 +1024,7 @@ const CZUI = (() => {
         // Clear persisted folder and folder state
         CZFS.clearFolder();
         localStorage.removeItem('cz_expanded_folders');
+        localStorage.removeItem('cz_tree_html');
         // Hide sidebar action buttons
         if (sidebarActions) sidebarActions.classList.add('hidden');
         // Re-render recent folders
@@ -1020,6 +1077,8 @@ const CZUI = (() => {
     function toggleSidebar() {
         sidebar.classList.toggle('collapsed');
         localStorage.setItem('cz_sidebar_collapsed', sidebar.classList.contains('collapsed'));
+        // Re-center active tab after sidebar transition completes (200ms)
+        setTimeout(() => scrollToActiveTab(false), 220);
     }
 
     function isSidebarOpen() {
@@ -1159,6 +1218,8 @@ const CZUI = (() => {
 
         renderTreeNodes(tree, sidebarTree, 1, CZFS.getDirectoryHandle());
         highlightActiveInTree();
+        // Cache tree HTML for instant pre-render on next page load
+        try { localStorage.setItem('cz_tree_html', sidebarTree.innerHTML); } catch (e) { /* quota */ }
     }
 
     function renderTreeNodes(nodes, container, depth, parentHandle) {
@@ -1727,6 +1788,10 @@ const CZUI = (() => {
         highlightingContent.innerHTML = html + (text.endsWith('\n') ? ' ' : '');
         updateActiveLine();
         updateScrollPastEnd();
+        // Remove preload overrides AFTER scroll padding is set, so scrollbar appears correctly
+        if (editingArea.classList.contains('preload-visible')) {
+            editingArea.classList.remove('preload-visible');
+        }
     }
 
     function applySearchHighlights(text, tokens, matches, currentIdx, brackets) {
@@ -1815,12 +1880,16 @@ const CZUI = (() => {
             if (det !== 'plaintext') { f.language = det; langSelector.value = det; CZEngine.loadLanguage(det).then(() => updateEditorVisuals()); }
         }
         updateEditorVisuals(); triggerAutosave(); updateFootbar(); ensureCursorVisible();
-        // Live preview update (SVG / Markdown / Lottie)
+        // Live preview update (SVG / Markdown / Lottie / HTML)
         if (previewOpen && isPreviewableFile(f)) {
             if (isLottieContent(f)) {
                 // Debounce Lottie to avoid destroy/recreate on every keystroke
                 clearTimeout(lottieDebounceTimer);
                 lottieDebounceTimer = setTimeout(() => updatePreview(), 800);
+            } else if (isHtmlFile(f.name)) {
+                // Debounce HTML to avoid iframe reload on every keystroke
+                clearTimeout(htmlPreviewDebounceTimer);
+                htmlPreviewDebounceTimer = setTimeout(() => updatePreview(), 500);
             } else {
                 updatePreview();
             }
@@ -1846,6 +1915,25 @@ const CZUI = (() => {
         } else if (action === 'pin') {
             if (tf) tf.isPinned = !tf.isPinned;
             saveData(); renderTabs(); checkEmptyState(); scrollToActiveTab();
+        } else if (action === 'reload') {
+            // Reload file content from disk (project files only)
+            if (tf && tf.fileHandle) {
+                try {
+                    const file = await tf.fileHandle.getFile();
+                    tf.content = await file.text();
+                    tf.dirty = false;
+                    saveData();
+                    if (tf.id === activeFileId) {
+                        editingArea.value = tf.content;
+                        currentLineCount = 0;
+                        updateEditorVisuals(); updateFootbar();
+                        if (previewOpen && isPreviewableFile(tf)) updatePreview();
+                    }
+                    renderTabs();
+                } catch (e) {
+                    openAlert(CZi18n.t('alert_title'), CZi18n.t('ctx_reload_error') || 'Failed to reload: ' + e.message);
+                }
+            }
         } else if (action === 'rename') renameFile(targetContextTabId);
     }
 
@@ -1864,7 +1952,7 @@ const CZUI = (() => {
         executeSidebarAction, openExplorerSettings, applyExplorerSettings,
         // Image / SVG / Binary
         // Preview
-        togglePreview, updatePreview, closePreview, setupPreviewResize, setPreviewZoom,
+        isPreviewableFile, togglePreview, updatePreview, closePreview, setupPreviewResize, setPreviewZoom,
         openBinaryAsCode, openBinaryExternal,
         // Icons
         getFileIcons, setFileIcons, getFileIcon,
