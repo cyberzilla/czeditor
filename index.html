@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -147,12 +148,38 @@
                                 <button class="search-btn" id="replace-all" title="Replace All">⇄All</button>
                             </div>
                         </div>
-                        <div class="line-numbers" id="line-numbers">1</div>
-                        <div class="code-wrapper">
-                            <div class="active-line-highlight" id="active-line-highlight"></div>
-                            <textarea id="editing" spellcheck="false" wrap="off" autocapitalize="off" autocomplete="off"
-                                autocorrect="off"></textarea>
-                            <pre id="highlighting" aria-hidden="true"><code id="highlighting-content"></code></pre>
+                        <div class="editor-split">
+                            <div class="editor-pane">
+                                <!-- Preview toggle stays at editor-pane corner -->
+                                <button id="btn-preview-toggle" class="preview-toggle-btn hidden"
+                                    title="Toggle Preview (Ctrl+Shift+V)">👁 Preview</button>
+                                <div class="line-numbers" id="line-numbers">1</div>
+                                <div class="code-wrapper">
+                                    <div class="active-line-highlight" id="active-line-highlight"></div>
+                                    <textarea id="editing" spellcheck="false" wrap="off" autocapitalize="off"
+                                        autocomplete="off" autocorrect="off"></textarea>
+                                    <pre id="highlighting"
+                                        aria-hidden="true"><code id="highlighting-content"></code></pre>
+                                </div>
+                            </div>
+                            <div class="preview-resize-handle hidden" id="preview-resize-handle"></div>
+                            <div class="preview-pane hidden" id="preview-pane">
+                                <div class="preview-header">
+                                    <span class="preview-title" id="preview-title">Preview</span>
+                                    <div class="preview-zoom-controls">
+                                        <button class="preview-zoom-btn" id="btn-preview-zoom-out"
+                                            title="Zoom Out">−</button>
+                                        <span class="preview-zoom-level" id="preview-zoom-level">100%</span>
+                                        <button class="preview-zoom-btn" id="btn-preview-zoom-in"
+                                            title="Zoom In">+</button>
+                                        <button class="preview-zoom-btn" id="btn-preview-zoom-reset"
+                                            title="Reset Zoom">⟲</button>
+                                        <button class="preview-zoom-btn preview-close-btn" id="btn-preview-close"
+                                            title="Close Preview">✕</button>
+                                    </div>
+                                </div>
+                                <div class="preview-content" id="preview-content"></div>
+                            </div>
                         </div>
                     </div>
 
@@ -188,21 +215,6 @@
                                 </button>
                             </div>
                         </div>
-                    </div>
-
-                    <!-- Floating SVG Preview Toggle (only when editing SVG) -->
-                    <button id="btn-svg-preview-toggle" class="svg-preview-toggle-btn hidden" title="Toggle SVG Preview"
-                        onclick="CZUI.toggleSvgPreview()">
-                        <span class="split-icon">👁</span>
-                    </button>
-
-                    <!-- SVG Preview Overlay (floating over code editor) -->
-                    <div id="svg-preview-overlay" class="svg-preview-overlay hidden">
-                        <div class="svg-preview-overlay-header">
-                            <span data-i18n="svg_preview_title">SVG Preview</span>
-                            <button class="svg-preview-close" onclick="CZUI.toggleSvgPreview()">✕</button>
-                        </div>
-                        <div class="svg-preview-content" id="svg-preview-content"></div>
                     </div>
                 </div>
             </main>

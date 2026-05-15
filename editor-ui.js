@@ -97,6 +97,13 @@ const CZUI = (() => {
     function isSvgFile(name) {
         return name.split('.').pop().toLowerCase() === 'svg';
     }
+    function isMarkdownFile(name) {
+        const ext = name.split('.').pop().toLowerCase();
+        return ['md', 'markdown', 'mdown', 'mkd'].includes(ext);
+    }
+    function isPreviewableFile(f) {
+        return f && !f.isImage && !f.isBinary && (f.isSvg || isMarkdownFile(f.name));
+    }
     // Check if a fileHandle is a real FileSystemFileHandle (not a stale deserialized object)
     function isValidHandle(h) {
         return h && typeof h.getFile === 'function';
@@ -154,11 +161,12 @@ const CZUI = (() => {
         // Show/hide binary panel
         const bp = $('binary-file-panel');
         if (bp) bp.classList.toggle('hidden', empty || !activeFile?.isBinary);
-        // Hide SVG preview button & overlay when not viewing an SVG
-        const svgBtn = $('btn-svg-preview-toggle');
-        if (svgBtn) svgBtn.classList.toggle('hidden', empty || !activeFile?.isSvg);
-        const svgOvl = $('svg-preview-overlay');
-        if (svgOvl) svgOvl.classList.add('hidden');
+        // Show/hide preview toggle button for SVG/MD files
+        const previewBtn = $('btn-preview-toggle');
+        const canPreview = !empty && isPreviewableFile(activeFile);
+        if (previewBtn) previewBtn.classList.toggle('hidden', !canPreview);
+        // Close preview if file is not previewable
+        if (!canPreview && previewOpen) closePreview();
     }
 
     // ===== DIALOGS =====
@@ -398,15 +406,10 @@ const CZUI = (() => {
         localStorage.setItem('cz_active_id', activeFileId);
 
         const imageViewer = $('image-viewer');
-        const svgPreviewOverlay = $('svg-preview-overlay');
-        const svgPreviewBtn = $('btn-svg-preview-toggle');
-
         const binaryPanel = $('binary-file-panel');
 
         // Hide all viewers first
         if (imageViewer) imageViewer.classList.add('hidden');
-        if (svgPreviewOverlay) svgPreviewOverlay.classList.add('hidden');
-        if (svgPreviewBtn) svgPreviewBtn.classList.add('hidden');
         if (binaryPanel) binaryPanel.classList.add('hidden');
         editorBody.classList.add('hidden');
 
@@ -417,16 +420,20 @@ const CZUI = (() => {
             // Show full-tab image viewer for binary images only
             showImageViewer(f);
         } else {
-            // Normal code file (including SVG) — editor-body MUST be visible
+            // Normal code file (including SVG/MD) — editor-body MUST be visible
             editorBody.classList.remove('hidden');
             editingArea.value = f.content;
             langSelector.value = f.language;
             currentLineCount = 0; lastBracketKey = '';
             updateEditorVisuals(); updateFootbar();
             CZEngine.loadLanguage(f.language).then(() => updateEditorVisuals());
-            // Show SVG preview toggle for SVG files
-            if (f.isSvg && svgPreviewBtn) {
-                svgPreviewBtn.classList.remove('hidden');
+            // Update preview if open
+            if (previewOpen) {
+                if (isPreviewableFile(f)) {
+                    updatePreview();
+                } else {
+                    closePreview();
+                }
             }
         }
     }
@@ -549,32 +556,266 @@ const CZUI = (() => {
         }
     }
 
-    // ===== SVG FLOATING PREVIEW =====
-    function toggleSvgPreview() {
-        const overlay = $('svg-preview-overlay');
-        const btn = $('btn-svg-preview-toggle');
-        if (!overlay) return;
+    // ===== SPLIT PREVIEW PANEL =====
+    let previewOpen = false;
+    let previewZoom = 100;
 
-        const isOpen = !overlay.classList.contains('hidden');
-        if (isOpen) {
-            overlay.classList.add('hidden');
-            if (btn) btn.classList.remove('active');
+    function togglePreview() {
+        const pane = $('preview-pane');
+        const handle = $('preview-resize-handle');
+        const btn = $('btn-preview-toggle');
+        const editorPane = pane?.parentElement?.querySelector('.editor-pane');
+        const container = pane?.parentElement;
+        if (!pane || !handle || !editorPane || !container) return;
+
+        previewOpen = !previewOpen;
+        if (previewOpen) {
+            pane.classList.remove('hidden');
+            handle.classList.remove('hidden');
+            if (btn) { btn.textContent = '👁 Preview ✓'; btn.classList.add('active'); }
+            // Calculate editor width from saved preview width or default 50%
+            const savedW = localStorage.getItem('cz_preview_width');
+            const handleW = handle.offsetWidth;
+            let editorW;
+            if (savedW) {
+                editorW = container.clientWidth - parseInt(savedW) - handleW;
+            } else {
+                editorW = Math.floor(container.clientWidth * 0.5);
+            }
+            editorW = Math.max(200, editorW);
+            editorPane.style.width = editorW + 'px';
+            editorPane.style.flexGrow = '0';
+            editorPane.style.flexShrink = '0';
+            // Preview fills remaining space
+            pane.style.width = '';
+            pane.style.flexGrow = '1';
+            pane.style.flexShrink = '0';
+            updatePreview();
         } else {
-            overlay.classList.remove('hidden');
-            if (btn) btn.classList.add('active');
-            updateSvgPreview();
+            pane.classList.add('hidden');
+            handle.classList.add('hidden');
+            if (btn) { btn.textContent = '👁 Preview'; btn.classList.remove('active'); }
+            // Reset editor pane to default flex
+            editorPane.style.width = '';
+            editorPane.style.flexGrow = '';
+            editorPane.style.flexShrink = '';
+            pane.style.width = '';
+            pane.style.flexGrow = '';
+            pane.style.flexShrink = '';
         }
     }
 
-    function updateSvgPreview() {
-        const overlay = $('svg-preview-overlay');
+    function closePreview() {
+        if (previewOpen) togglePreview();
+    }
+
+    function updatePreview() {
+        if (!previewOpen) return;
         const f = getActiveFile();
-        if (!overlay || !f || !f.isSvg) return;
-        const previewContent = $('svg-preview-content');
-        if (!previewContent) return;
-        // Sanitize and render SVG
-        const sanitized = f.content.replace(/<script[\s\S]*?<\/script>/gi, '');
-        previewContent.innerHTML = sanitized;
+        const content = $('preview-content');
+        const title = $('preview-title');
+        if (!f || !content) return;
+
+        if (f.isSvg) {
+            content.className = 'preview-content';
+            if (title) title.textContent = 'SVG Preview';
+            const sanitized = f.content.replace(/<script[\s\S]*?<\/script>/gi, '');
+            content.innerHTML = '<div style="transform:scale(' + (previewZoom / 100) + ');transform-origin:center center;transition:transform 0.15s">' + sanitized + '</div>';
+        } else if (isMarkdownFile(f.name)) {
+            content.className = 'preview-content markdown-preview';
+            if (title) title.textContent = 'Markdown Preview';
+            const html = renderMarkdown(f.content);
+            content.innerHTML = '<div style="transform:scale(' + (previewZoom / 100) + ');transform-origin:top left;transition:transform 0.15s;width:' + (10000 / previewZoom) + '%">' + html + '</div>';
+        } else {
+            content.innerHTML = '';
+        }
+    }
+
+    function setPreviewZoom(level) {
+        previewZoom = Math.max(25, Math.min(300, level));
+        $('preview-zoom-level').textContent = previewZoom + '%';
+        updatePreview();
+    }
+
+    // ===== MARKDOWN RENDERER =====
+    function renderMarkdown(md) {
+        // Normalize line endings
+        md = md.replace(/\r\n?/g, '\n');
+
+        // 1) Extract fenced code blocks BEFORE escaping (to preserve raw chars for ligatures + highlighting)
+        const langAliases = {
+            bash: 'shell', sh: 'shell', zsh: 'shell',
+            ts: 'typescript', js: 'javascript',
+            py: 'python', rb: 'ruby',
+            cs: 'csharp', kt: 'kotlin',
+            yml: 'yaml', md: 'markdown',
+            htm: 'html', bat: 'batch', cmd: 'batch',
+            ps1: 'powershell', psm1: 'powershell',
+            '': 'text'
+        };
+        const codeBlocks = [];
+        md = md.replace(/```(\w*)[ \t]*\n([\s\S]*?)\n?```/g, (_, lang, code) => {
+            const idx = codeBlocks.length;
+            const resolved = langAliases[lang] || lang || 'text';
+            codeBlocks.push({ lang: resolved, code: code.trimEnd() });
+            return '%%CZCB:' + idx + '%%';
+        });
+
+        // 2) Escape HTML
+        let html = md
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+
+        // Inline code
+        html = html.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+
+        // Headings
+        html = html.replace(/^######\s+(.*)$/gm, '<h6>$1</h6>');
+        html = html.replace(/^#####\s+(.*)$/gm, '<h5>$1</h5>');
+        html = html.replace(/^####\s+(.*)$/gm, '<h4>$1</h4>');
+        html = html.replace(/^###\s+(.*)$/gm, '<h3>$1</h3>');
+        html = html.replace(/^##\s+(.*)$/gm, '<h2>$1</h2>');
+        html = html.replace(/^#\s+(.*)$/gm, '<h1>$1</h1>');
+
+        // Horizontal rules
+        html = html.replace(/^(?:---+|\*\*\*+|___+)$/gm, '<hr>');
+
+        // Blockquotes
+        html = html.replace(/^&gt;\s+(.*)$/gm, '<blockquote>$1</blockquote>');
+        // Merge consecutive blockquotes
+        html = html.replace(/<\/blockquote>\n<blockquote>/g, '\n');
+
+        // Images
+        html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">');
+
+        // Links
+        html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+
+        // Bold + italic
+        html = html.replace(/\*\*\*([^*]+)\*\*\*/g, '<strong><em>$1</em></strong>');
+        html = html.replace(/___([^_]+)___/g, '<strong><em>$1</em></strong>');
+
+        // Bold
+        html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+        html = html.replace(/__([^_]+)__/g, '<strong>$1</strong>');
+
+        // Italic
+        html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+        html = html.replace(/_([^_]+)_/g, '<em>$1</em>');
+
+        // Strikethrough
+        html = html.replace(/~~([^~]+)~~/g, '<del>$1</del>');
+
+        // Task lists
+        html = html.replace(/^[-*+]\s+\[x\]\s+(.*)$/gm, '<li class="task"><input type="checkbox" checked disabled> $1</li>');
+        html = html.replace(/^[-*+]\s+\[ \]\s+(.*)$/gm, '<li class="task"><input type="checkbox" disabled> $1</li>');
+
+        // Unordered lists
+        html = html.replace(/^[-*+]\s+(.*)$/gm, '<li>$1</li>');
+
+        // Ordered lists — use <oli> temp tag so <ul> wrapping doesn't touch them
+        html = html.replace(/^\d+\.\s+(.*)$/gm, '<oli>$1</oli>');
+
+        // Wrap unordered <li> in <ul> FIRST (while ordered items are still <oli>)
+        html = html.replace(/((?:<li[^>]*>.*<\/li>\n?)+)/g, '<ul>$1</ul>');
+
+        // THEN wrap <oli> in <ol>, convert <oli> → <li>
+        html = html.replace(/((?:<oli>.*<\/oli>\n?)+)/g, (m) => {
+            return '<ol>' + m.replace(/<oli>/g, '<li>').replace(/<\/oli>/g, '</li>') + '</ol>';
+        });
+
+        // Tables
+        html = html.replace(/^(\|.+\|)\n(\|[-:\s|]+\|)\n((?:\|.+\|\n?)*)/gm, (_, header, sep, body) => {
+            const ths = header.split('|').filter(c => c.trim()).map(c => '<th>' + c.trim() + '</th>').join('');
+            const rows = body.trim().split('\n').map(row => {
+                const tds = row.split('|').filter(c => c.trim()).map(c => '<td>' + c.trim() + '</td>').join('');
+                return '<tr>' + tds + '</tr>';
+            }).join('');
+            return '<table><thead><tr>' + ths + '</tr></thead><tbody>' + rows + '</tbody></table>';
+        });
+
+        // Paragraphs — wrap remaining loose text (skip code block placeholders)
+        html = html.replace(/^(?!<[a-z/])(?!%%CZCB:)((?:.(?!<[a-z/]))+.)$/gm, '<p>$1</p>');
+
+        // Clean up empty paragraphs
+        html = html.replace(/<p>\s*<\/p>/g, '');
+
+        // 3) Re-inject code blocks with syntax highlighting — LAST step to avoid paragraph corruption
+        html = html.replace(/%%CZCB:(\d+)%%/g, (_, idx) => {
+            const block = codeBlocks[parseInt(idx)];
+            let highlighted;
+            try {
+                const langConfig = CZEngine.getLangConfig(block.lang);
+                if (langConfig && langConfig._compiled) {
+                    const tokens = CZEngine.tokenize(block.code, langConfig, block.lang);
+                    highlighted = CZEngine.renderTokens(tokens);
+                } else if (block.lang !== 'text' && block.lang !== 'plaintext') {
+                    // Load language async, re-render only on success
+                    CZEngine.loadLanguage(block.lang).then(cfg => {
+                        if (cfg && previewOpen) updatePreview();
+                    });
+                    highlighted = CZEngine.escapeHTML(block.code);
+                } else {
+                    highlighted = CZEngine.escapeHTML(block.code);
+                }
+            } catch (e) {
+                highlighted = CZEngine.escapeHTML(block.code);
+            }
+            return '<pre><code class="language-' + block.lang + '">' + highlighted + '</code></pre>';
+        });
+
+        // Safety: remove any unmatched placeholders
+        html = html.replace(/%%CZCB:\d+%%/g, '');
+
+        return html;
+    }
+
+    // ===== PREVIEW RESIZE HANDLE =====
+    function setupPreviewResize() {
+        const handle = $('preview-resize-handle');
+        if (!handle) return;
+
+        let startX, startWidth;
+
+        handle.addEventListener('mousedown', e => {
+            e.preventDefault();
+            const pane = $('preview-pane');
+            const editorPane = pane?.parentElement?.querySelector('.editor-pane');
+            const container = pane?.parentElement;
+            if (!pane || !editorPane || !container) return;
+            startX = e.clientX;
+            startWidth = editorPane.offsetWidth;
+            handle.classList.add('dragging');
+            document.body.style.cursor = 'col-resize';
+            document.body.style.userSelect = 'none';
+
+            function onMove(ev) {
+                const dx = ev.clientX - startX;
+                const handleW = handle.offsetWidth;
+                const maxEditorW = container.clientWidth - handleW - 200; // min preview 200px
+                const newEditorW = Math.max(200, Math.min(startWidth + dx, maxEditorW));
+                editorPane.style.width = newEditorW + 'px';
+                editorPane.style.flexGrow = '0';
+                editorPane.style.flexShrink = '0';
+                // Preview fills the rest
+                pane.style.width = '';
+                pane.style.flexGrow = '1';
+                pane.style.flexShrink = '0';
+            }
+            function onUp() {
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup', onUp);
+                handle.classList.remove('dragging');
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+                // Persist as preview width ratio
+                const pane = $('preview-pane');
+                if (pane) localStorage.setItem('cz_preview_width', pane.offsetWidth);
+            }
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+        });
     }
 
     function closeFolder() {
@@ -1436,8 +1677,8 @@ const CZUI = (() => {
             if (det !== 'plaintext') { f.language = det; langSelector.value = det; CZEngine.loadLanguage(det).then(() => updateEditorVisuals()); }
         }
         updateEditorVisuals(); triggerAutosave(); updateFootbar(); ensureCursorVisible();
-        // Live SVG preview update
-        if (f.isSvg) updateSvgPreview();
+        // Live preview update (SVG / Markdown)
+        if (previewOpen && isPreviewableFile(f)) updatePreview();
     }
 
     // ===== CONTEXT MENU =====
@@ -1476,7 +1717,8 @@ const CZUI = (() => {
         openFileFromTree, highlightActiveInTree, renderRecentFolders, reattachFileHandles,
         executeSidebarAction, openExplorerSettings, applyExplorerSettings,
         // Image / SVG / Binary
-        updateSvgPreview, toggleSvgPreview,
+        // Preview
+        togglePreview, updatePreview, closePreview, setupPreviewResize, setPreviewZoom,
         openBinaryAsCode, openBinaryExternal,
         // Icons
         getFileIcons, setFileIcons, getFileIcon,

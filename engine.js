@@ -8,11 +8,11 @@ const CZEngine = (() => {
 
     // ===== LANGUAGE LOADER =====
     async function loadLanguage(langId) {
-        if (langId === 'plaintext') return null;
-        if (langCache[langId]) return langCache[langId];
+        if (langId === 'plaintext' || langId === 'text') return null;
+        if (langId in langCache) return langCache[langId];
         try {
             const r = await fetch(`${LANG_DIR}/${langId}.json`);
-            if (!r.ok) return null;
+            if (!r.ok) { langCache[langId] = null; return null; }
             const cfg = await r.json();
             cfg._compiled = cfg.syntax.map(rule => {
                 const flags = rule.flags || '';
@@ -24,7 +24,7 @@ const CZEngine = (() => {
                 await Promise.all([loadLanguage('javascript'), loadLanguage('css')]);
             }
             return cfg;
-        } catch (e) { console.warn('Lang load fail:', langId, e); return null; }
+        } catch (e) { console.warn('Lang load fail:', langId, e); langCache[langId] = null; return null; }
     }
 
     function getLangConfig(langId) { return langCache[langId] || null; }

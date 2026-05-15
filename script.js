@@ -202,6 +202,14 @@
         document.getElementById('close-alert').onclick = () => CZUI.closeAlert();
         document.getElementById('btn-alert-ok').onclick = () => CZUI.closeAlert();
 
+        // Preview panel controls
+        document.getElementById('btn-preview-toggle').onclick = () => CZUI.togglePreview();
+        document.getElementById('btn-preview-close').onclick = () => CZUI.closePreview();
+        document.getElementById('btn-preview-zoom-in').onclick = () => CZUI.setPreviewZoom(parseInt(document.getElementById('preview-zoom-level').textContent) + 25);
+        document.getElementById('btn-preview-zoom-out').onclick = () => CZUI.setPreviewZoom(parseInt(document.getElementById('preview-zoom-level').textContent) - 25);
+        document.getElementById('btn-preview-zoom-reset').onclick = () => CZUI.setPreviewZoom(100);
+        CZUI.setupPreviewResize();
+
         document.getElementById('close-shortcuts').onclick = () => document.getElementById('shortcuts-modal').classList.add('hidden');
 
         // Tab context menu
@@ -358,11 +366,13 @@
             // All Ctrl+ shortcuts — intercept browser defaults
             if (ctrl) {
                 const intercepted = ['n', 's', 'd', 'p', 'l', 'f', 'h', '/', ']', '[', 'b'];
-                const interceptedShift = ['k', 'd'];
+                const interceptedShift = ['k', 'd', 'v'];
 
                 if (shift && interceptedShift.includes(key)) {
                     e.preventDefault();
                     e.stopImmediatePropagation();
+                    // Ctrl+Shift+V: Toggle preview panel
+                    if (key === 'v') { CZUI.togglePreview(); return; }
                     // Delegate to features handler if editor is active
                     if (CZUI.getActiveId()) {
                         CZUI.getEditingArea().focus();
