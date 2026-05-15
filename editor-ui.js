@@ -102,7 +102,14 @@ const CZUI = (() => {
         return ['md', 'markdown', 'mdown', 'mkd'].includes(ext);
     }
     function isPreviewableFile(f) {
-        return f && !f.isImage && !f.isBinary && (f.isSvg || isMarkdownFile(f.name));
+        return f && !f.isImage && !f.isBinary && (f.isSvg || isMarkdownFile(f.name) || isLottieContent(f));
+    }
+    function isLottieContent(f) {
+        if (!f || !f.content || !f.name.endsWith('.json')) return false;
+        try {
+            const d = JSON.parse(f.content);
+            return d && typeof d.v !== 'undefined' && typeof d.fr === 'number' && Array.isArray(d.layers);
+        } catch (e) { return false; }
     }
     // Check if a fileHandle is a real FileSystemFileHandle (not a stale deserialized object)
     function isValidHandle(h) {
@@ -606,6 +613,8 @@ const CZUI = (() => {
     }
 
     function closePreview() {
+        if (lottieAnim) { try { lottieAnim.destroy(); } catch (e) {} lottieAnim = null; }
+        lottieLastHash = '';
         if (previewOpen) togglePreview();
     }
 
@@ -621,6 +630,19 @@ const CZUI = (() => {
             if (title) title.textContent = 'SVG Preview';
             const sanitized = f.content.replace(/<script[\s\S]*?<\/script>/gi, '');
             content.innerHTML = '<div style="transform:scale(' + (previewZoom / 100) + ');transform-origin:center center;transition:transform 0.15s">' + sanitized + '</div>';
+        } else if (isLottieContent(f)) {
+            content.className = 'preview-content lottie-preview';
+            if (title) title.textContent = 'Lottie Preview';
+            // Only rebuild DOM if lottie-container doesn't exist (first render / file switch)
+            if (!document.getElementById('lottie-container')) {
+                content.innerHTML = '<div id="lottie-container" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;transform:scale(' + (previewZoom / 100) + ');transform-origin:center center;transition:transform 0.15s"></div>' +
+                    '<div class="lottie-controls">' +
+                    '<button class="preview-zoom-btn" id="btn-lottie-restart" title="Restart">\u27f2</button>' +
+                    '<button class="preview-zoom-btn" id="btn-lottie-playpause" title="Play/Pause">\u23f8</button>' +
+                    '<span class="lottie-frame-info" id="lottie-frame-info"></span>' +
+                    '</div>';
+            }
+            loadLottieAnimation(f.content);
         } else if (isMarkdownFile(f.name)) {
             content.className = 'preview-content markdown-preview';
             if (title) title.textContent = 'Markdown Preview';
@@ -634,7 +656,116 @@ const CZUI = (() => {
     function setPreviewZoom(level) {
         previewZoom = Math.max(25, Math.min(300, level));
         $('preview-zoom-level').textContent = previewZoom + '%';
+        // Lottie: update transform directly without destroying animation
+        const lc = document.getElementById('lottie-container');
+        if (lc && lottieAnim) {
+            lc.style.transform = 'scale(' + (previewZoom / 100) + ')';
+            try { lottieAnim.resize(); } catch (e) {}
+            return;
+        }
         updatePreview();
+    }
+
+    // ===== LOTTIE ANIMATION PLAYER =====
+    let lottieAnim = null;
+    let lottieLibLoaded = false;
+    let lottieLastHash = '';
+    let lottieDebounceTimer = null;
+
+    function hashString(s) {
+        let h = 0;
+        for (let i = 0; i < s.length; i++) {
+            h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+        }
+        return h;
+    }
+
+    function loadLottieAnimation(jsonContent) {
+        const container = document.getElementById('lottie-container');
+        if (!container) return;
+
+        // Skip if content hasn't changed
+        const hash = hashString(jsonContent);
+        if (hash === lottieLastHash && lottieAnim) return;
+        lottieLastHash = hash;
+
+        // Destroy previous animation
+        if (lottieAnim) {
+            try { lottieAnim.destroy(); } catch (e) {}
+            lottieAnim = null;
+        }
+
+        function initLottie() {
+            try {
+                const animData = JSON.parse(jsonContent);
+                lottieAnim = lottie.loadAnimation({
+                    container: container,
+                    renderer: 'canvas',
+                    loop: true,
+                    autoplay: true,
+                    animationData: animData,
+                    rendererSettings: {
+                        clearCanvas: true,
+                        progressiveLoad: true
+                    }
+                });
+
+                // Frame info — throttle to ~10fps for UI performance
+                const frameInfo = document.getElementById('lottie-frame-info');
+                let lastFrameUpdate = 0;
+                if (frameInfo) {
+                    lottieAnim.addEventListener('enterFrame', () => {
+                        const now = performance.now();
+                        if (now - lastFrameUpdate > 100) {
+                            lastFrameUpdate = now;
+                            frameInfo.textContent = Math.round(lottieAnim.currentFrame) + ' / ' + Math.round(lottieAnim.totalFrames) + ' @ ' + animData.fr + 'fps';
+                        }
+                    });
+                }
+
+                // Play/Pause button
+                const ppBtn = document.getElementById('btn-lottie-playpause');
+                if (ppBtn) {
+                    ppBtn.onclick = () => {
+                        if (lottieAnim.isPaused) {
+                            lottieAnim.play();
+                            ppBtn.textContent = '\u23f8';
+                            ppBtn.title = 'Pause';
+                        } else {
+                            lottieAnim.pause();
+                            ppBtn.textContent = '\u25b6';
+                            ppBtn.title = 'Play';
+                        }
+                    };
+                }
+
+                // Restart button
+                const restartBtn = document.getElementById('btn-lottie-restart');
+                if (restartBtn) {
+                    restartBtn.onclick = () => {
+                        lottieAnim.goToAndPlay(0, true);
+                        const ppBtn2 = document.getElementById('btn-lottie-playpause');
+                        if (ppBtn2) { ppBtn2.textContent = '\u23f8'; ppBtn2.title = 'Pause'; }
+                    };
+                }
+            } catch (e) {
+                container.innerHTML = '<p style="color:var(--text-muted);text-align:center">Failed to load Lottie animation</p>';
+            }
+        }
+
+        // Lazy load lottie-web from CDN
+        if (lottieLibLoaded || typeof lottie !== 'undefined') {
+            lottieLibLoaded = true;
+            initLottie();
+        } else {
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js';
+            script.onload = () => { lottieLibLoaded = true; initLottie(); };
+            script.onerror = () => {
+                container.innerHTML = '<p style="color:var(--text-muted);text-align:center">Failed to load Lottie library</p>';
+            };
+            document.head.appendChild(script);
+        }
     }
 
     // ===== MARKDOWN RENDERER =====
@@ -1572,6 +1703,9 @@ const CZUI = (() => {
             lineNumbers.innerHTML = Array.from({ length: newLC }, (_, i) => i + 1).join('<br>');
             currentLineCount = newLC;
         }
+
+
+
         const f = getActiveFile();
         const langCfg = f ? CZEngine.getLangConfig(f.language) : null;
         const cursorPos = editingArea.selectionStart;
@@ -1681,8 +1815,16 @@ const CZUI = (() => {
             if (det !== 'plaintext') { f.language = det; langSelector.value = det; CZEngine.loadLanguage(det).then(() => updateEditorVisuals()); }
         }
         updateEditorVisuals(); triggerAutosave(); updateFootbar(); ensureCursorVisible();
-        // Live preview update (SVG / Markdown)
-        if (previewOpen && isPreviewableFile(f)) updatePreview();
+        // Live preview update (SVG / Markdown / Lottie)
+        if (previewOpen && isPreviewableFile(f)) {
+            if (isLottieContent(f)) {
+                // Debounce Lottie to avoid destroy/recreate on every keystroke
+                clearTimeout(lottieDebounceTimer);
+                lottieDebounceTimer = setTimeout(() => updatePreview(), 800);
+            } else {
+                updatePreview();
+            }
+        }
     }
 
     // ===== CONTEXT MENU =====

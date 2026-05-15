@@ -1165,6 +1165,46 @@ body.sidebar-resizing {
     user-select: none;
 }
 
+/* Lottie preview */
+.lottie-preview {
+    position: relative;
+}
+
+.lottie-preview #lottie-container {
+    flex-grow: 1;
+    min-height: 0;
+}
+
+.lottie-preview #lottie-container svg {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.lottie-controls {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    z-index: 5;
+}
+
+.lottie-frame-info {
+    font-size: 10px;
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    white-space: nowrap;
+    margin-left: 4px;
+}
+
 /* Preview content area */
 .preview-content {
     flex-grow: 1;
