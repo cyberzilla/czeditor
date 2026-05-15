@@ -1109,6 +1109,8 @@ body.sidebar-resizing {
     background: var(--bg-tab);
     border-bottom: 1px solid var(--border-color);
     flex-shrink: 0;
+    min-width: 0;
+    overflow: hidden;
 }
 
 .preview-title {
@@ -1117,6 +1119,11 @@ body.sidebar-resizing {
     text-transform: uppercase;
     letter-spacing: 1px;
     color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+    flex-shrink: 1;
 }
 
 /* Zoom controls */
@@ -1124,6 +1131,7 @@ body.sidebar-resizing {
     display: flex;
     align-items: center;
     gap: 2px;
+    flex-shrink: 0;
 }
 
 .preview-zoom-btn {

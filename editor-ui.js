@@ -793,15 +793,19 @@ const CZUI = (() => {
             function onMove(ev) {
                 const dx = ev.clientX - startX;
                 const handleW = handle.offsetWidth;
-                const maxEditorW = container.clientWidth - handleW - 200; // min preview 200px
+                const containerW = container.clientWidth;
+                const maxEditorW = containerW - handleW - 200; // min preview 200px
                 const newEditorW = Math.max(200, Math.min(startWidth + dx, maxEditorW));
+                const previewW = containerW - newEditorW - handleW;
                 editorPane.style.width = newEditorW + 'px';
                 editorPane.style.flexGrow = '0';
                 editorPane.style.flexShrink = '0';
-                // Preview fills the rest
-                pane.style.width = '';
-                pane.style.flexGrow = '1';
+                editorPane.style.flexBasis = newEditorW + 'px';
+                // Preview gets exact remaining width
+                pane.style.width = previewW + 'px';
+                pane.style.flexGrow = '0';
                 pane.style.flexShrink = '0';
+                pane.style.flexBasis = previewW + 'px';
             }
             function onUp() {
                 document.removeEventListener('mousemove', onMove);
