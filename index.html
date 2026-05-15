@@ -21,17 +21,19 @@
             if (c === 'true') {
                 css += '#sidebar{width:0!important;min-width:0!important;border-right:none;opacity:0;pointer-events:none;transition:none}';
                 css += '.sidebar-resize-handle{display:none}';
+                css += '#btn-sidebar-reopen{display:flex}';
             } else if (w) {
                 css += '#sidebar{width:' + w + 'px;transition:none}';
+                css += '#btn-sidebar-reopen{display:none}';
             }
             // Hide sidebar-empty initially to prevent flash when folder restores
             css += '#sidebar-empty{display:none}';
-            if (css) {
-                var s = document.createElement('style');
-                s.id = 'cz-preload-styles';
-                s.textContent = css;
-                document.head.appendChild(s);
-            }
+            // Ensure active tab never flashes a bottom border
+            css += '.tab.active{box-shadow:none!important;border-bottom:none!important}';
+            var s = document.createElement('style');
+            s.id = 'cz-preload-styles';
+            s.textContent = css;
+            document.head.appendChild(s);
         })();
     </script>
 </head>
@@ -40,156 +42,164 @@
 
     <div class="drop-overlay" id="drop-overlay" data-i18n="drop_overlay">Jatuhkan File di Sini</div>
 
-    <header class="editor-header">
-        <button class="action-btn sidebar-toggle-btn" id="btn-toggle-sidebar" data-i18n="btn_toggle_sidebar_title"
-            data-i18n-attr="title" title="Toggle Sidebar (Ctrl+B)">☰</button>
-        <div class="tabs-container" id="tabs-container"></div>
-
-        <div class="action-btns">
-            <button class="action-btn" id="btn-new-file" data-i18n="btn_new_file_title" data-i18n-attr="title"
-                title="File Baru (Ctrl+N)">+</button>
-            <button class="action-btn" id="btn-open-file" data-i18n="btn_open_file_title" data-i18n-attr="title"
-                title="Buka File">&#128194;</button>
-            <input type="file" id="file-input" style="display: none;" multiple>
-        </div>
-
-        <div class="toolbar" id="toolbar-right">
-            <div class="settings-wrapper">
-                <button class="settings-btn" id="btn-settings" data-i18n="btn_settings_title" data-i18n-attr="title"
-                    title="Pengaturan">⚙️</button>
-                <div class="settings-popup hidden" id="settings-popup">
-                    <div class="settings-item" id="menu-font-config" data-i18n="menu_font_config">🔡 Konfigurasi Font
-                    </div>
-                    <div class="settings-item" id="menu-shortcuts" data-i18n="menu_shortcuts">⌨️ Keyboard Shortcuts
-                    </div>
-                    <div class="settings-item" id="menu-language">🌐 <span data-i18n="menu_language"
-                            id="menu-language-text">Bahasa</span></div>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <main class="editor-main">
+    <div class="app-layout">
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <span class="sidebar-title" data-i18n="sidebar_explorer">Explorer</span>
-                <div class="sidebar-actions hidden">
+                <button class="sidebar-toggle-btn" id="btn-toggle-sidebar" data-i18n="btn_toggle_sidebar_title"
+                    data-i18n-attr="title" title="Toggle Sidebar (Ctrl+B)">☰</button>
+            </div>
+            <div class="sidebar-tree-area">
+                <div class="sidebar-actions hidden" id="sidebar-actions">
                     <button class="sidebar-btn" id="btn-new-fs-file" title="New File">📄</button>
                     <button class="sidebar-btn" id="btn-new-fs-folder" title="New Folder">📁+</button>
                     <button class="sidebar-btn" id="btn-refresh-tree" title="Refresh">🔄</button>
                     <button class="sidebar-btn" id="btn-collapse-all" title="Collapse All">⊟</button>
                 </div>
-            </div>
-            <div class="sidebar-tree" id="sidebar-tree">
-                <div class="sidebar-empty" id="sidebar-empty">
-                    <p data-i18n="sidebar_no_folder">Belum ada folder dibuka</p>
-                    <button class="sidebar-open-btn" id="btn-open-folder" data-i18n="btn_open_folder_title">📂 Open
-                        Folder</button>
-                    <div class="recent-folders" id="recent-folders"></div>
+                <div class="sidebar-tree" id="sidebar-tree">
+                    <div class="sidebar-empty" id="sidebar-empty">
+                        <p data-i18n="sidebar_no_folder">Belum ada folder dibuka</p>
+                        <button class="sidebar-open-btn" id="btn-open-folder" data-i18n="btn_open_folder_title">📂 Open
+                            Folder</button>
+                        <div class="recent-folders" id="recent-folders"></div>
+                    </div>
                 </div>
             </div>
         </aside>
         <div class="sidebar-resize-handle" id="sidebar-resize-handle"></div>
 
-        <div class="editor-content" id="editor-content">
-            <div id="welcome-screen" class="welcome-screen">
-                <div class="cz-logo anim-fade-up" style="animation-delay: 0.1s" id="app-logo"></div>
-                <div class="cz-version anim-fade-up" style="animation-delay: 0.3s" id="app-version"></div>
-                <div class="cz-description anim-fade-up" style="animation-delay: 0.4s" id="app-description"></div>
-                <div class="cz-hints anim-fade-up" style="animation-delay: 0.5s">
-                    <p data-i18n="welcome_hint" data-i18n-html>Tekan <strong>Ctrl+N</strong> atau <strong>Drag &amp;
-                            Drop</strong> file untuk mulai</p>
-                    <div class="shortcut-hints">
-                        <span class="hint-badge">Ctrl+S</span> <span data-i18n="shortcut_save">Save</span>
-                        <span class="hint-badge">Tab</span> <span data-i18n="shortcut_emmet">Emmet / Indent</span>
-                        <span class="hint-badge">Ctrl+/</span> <span data-i18n="shortcut_comment">Comment</span>
-                        <span class="hint-badge">Ctrl+P</span> <span data-i18n="shortcut_palette">Command Palette</span>
+        <div class="editor-column">
+            <header class="editor-header">
+                <button class="sidebar-reopen-btn" id="btn-sidebar-reopen" data-i18n="btn_toggle_sidebar_title"
+                    data-i18n-attr="title" title="Toggle Sidebar (Ctrl+B)">☰</button>
+                <div class="tabs-container" id="tabs-container"></div>
+
+                <div class="action-btns">
+                    <button class="action-btn" id="btn-new-file" data-i18n="btn_new_file_title" data-i18n-attr="title"
+                        title="File Baru (Ctrl+N)">+</button>
+                    <button class="action-btn" id="btn-open-file" data-i18n="btn_open_file_title" data-i18n-attr="title"
+                        title="Buka File">&#128194;</button>
+                    <input type="file" id="file-input" style="display: none;" multiple>
+                </div>
+
+                <div class="toolbar hidden" id="toolbar-right">
+                    <div class="settings-wrapper">
+                        <button class="settings-btn" id="btn-settings" data-i18n="btn_settings_title" data-i18n-attr="title"
+                            title="Pengaturan">⚙️</button>
+                        <div class="settings-popup hidden" id="settings-popup">
+                            <div class="settings-item" id="menu-font-config" data-i18n="menu_font_config">🔡 Konfigurasi Font
+                            </div>
+                            <div class="settings-item" id="menu-shortcuts" data-i18n="menu_shortcuts">⌨️ Keyboard Shortcuts
+                            </div>
+                            <div class="settings-item" id="menu-language">🌐 <span data-i18n="menu_language"
+                                    id="menu-language-text">Bahasa</span></div>
+                        </div>
                     </div>
                 </div>
-                <button class="pwa-install-btn anim-fade-up hidden" id="pwa-install-btn" style="animation-delay: 0.7s"
-                    data-i18n="pwa_install">
-                    📥 Install sebagai Aplikasi
-                </button>
-            </div>
+            </header>
 
-            <div id="editor-body" class="editor-body hidden">
-                <!-- Search & Replace Panel -->
-                <div id="search-panel" class="search-panel hidden">
-                    <div class="search-row">
-                        <input type="text" id="search-input" class="search-field" placeholder="Search..."
-                            spellcheck="false" autocomplete="off">
-                        <span class="search-count" id="search-count">0 results</span>
-                        <button class="search-btn" id="search-toggle-case" title="Match Case (Alt+C)">Aa</button>
-                        <button class="search-btn" id="search-toggle-regex" title="Use Regex (Alt+R)">.*</button>
-                        <button class="search-btn" id="search-prev" title="Previous (Shift+Enter)">▲</button>
-                        <button class="search-btn" id="search-next" title="Next (Enter)">▼</button>
-                        <button class="search-btn search-close" id="search-close" title="Close (Esc)">✕</button>
-                    </div>
-                    <div class="search-row replace-row hidden" id="replace-row">
-                        <input type="text" id="replace-input" class="search-field" placeholder="Replace..."
-                            spellcheck="false" autocomplete="off">
-                        <button class="search-btn" id="replace-one" title="Replace">⇄</button>
-                        <button class="search-btn" id="replace-all" title="Replace All">⇄All</button>
-                    </div>
-                </div>
-                <div class="line-numbers" id="line-numbers">1</div>
-                <div class="code-wrapper">
-                    <div class="active-line-highlight" id="active-line-highlight"></div>
-                    <textarea id="editing" spellcheck="false" wrap="off" autocapitalize="off" autocomplete="off"
-                        autocorrect="off"></textarea>
-                    <pre id="highlighting" aria-hidden="true"><code id="highlighting-content"></code></pre>
-                </div>
-            </div>
-
-            <!-- Image Viewer (full-tab, binary images only) -->
-            <div id="image-viewer" class="image-viewer hidden">
-                <div class="image-viewer-container">
-                    <img id="image-viewer-img" src="" alt="Preview">
-                </div>
-                <div class="image-viewer-bar">
-                    <span id="image-viewer-info"></span>
-                </div>
-            </div>
-
-            <!-- Binary File Info Panel (for non-text, non-image files) -->
-            <div id="binary-file-panel" class="binary-file-panel hidden">
-                <div class="binary-file-card">
-                    <div class="binary-file-icon" id="binary-file-icon">📄</div>
-                    <div class="binary-file-name" id="binary-file-name"></div>
-                    <div class="binary-file-size" id="binary-file-size"></div>
-                    <p class="binary-file-msg" data-i18n="binary_file_msg">This file is in binary format and cannot be
-                        displayed as text.</p>
-                    <div class="binary-file-actions">
-                        <button class="binary-btn binary-btn-code" id="btn-binary-open-code"
-                            onclick="CZUI.openBinaryAsCode()">
-                            <span class="binary-btn-icon">&lt;/&gt;</span>
-                            <span data-i18n="binary_open_code">Open as Code</span>
-                        </button>
-                        <button class="binary-btn binary-btn-external" id="btn-binary-open-external"
-                            onclick="CZUI.openBinaryExternal()">
-                            <span class="binary-btn-icon">↗</span>
-                            <span data-i18n="binary_open_external">Open External</span>
+            <main class="editor-main">
+                <div class="editor-content" id="editor-content">
+                    <div id="welcome-screen" class="welcome-screen">
+                        <div class="cz-logo anim-fade-up" style="animation-delay: 0.1s" id="app-logo"></div>
+                        <div class="cz-version anim-fade-up" style="animation-delay: 0.3s" id="app-version"></div>
+                        <div class="cz-description anim-fade-up" style="animation-delay: 0.4s" id="app-description"></div>
+                        <div class="cz-hints anim-fade-up" style="animation-delay: 0.5s">
+                            <p data-i18n="welcome_hint" data-i18n-html>Tekan <strong>Ctrl+N</strong> atau <strong>Drag &amp;
+                                    Drop</strong> file untuk mulai</p>
+                            <div class="shortcut-hints">
+                                <span class="hint-badge">Ctrl+S</span> <span data-i18n="shortcut_save">Save</span>
+                                <span class="hint-badge">Tab</span> <span data-i18n="shortcut_emmet">Emmet / Indent</span>
+                                <span class="hint-badge">Ctrl+/</span> <span data-i18n="shortcut_comment">Comment</span>
+                                <span class="hint-badge">Ctrl+P</span> <span data-i18n="shortcut_palette">Command Palette</span>
+                            </div>
+                        </div>
+                        <button class="pwa-install-btn anim-fade-up hidden" id="pwa-install-btn" style="animation-delay: 0.7s"
+                            data-i18n="pwa_install">
+                            📥 Install sebagai Aplikasi
                         </button>
                     </div>
-                </div>
-            </div>
 
-            <!-- Floating SVG Preview Toggle (only when editing SVG) -->
-            <button id="btn-svg-preview-toggle" class="svg-preview-toggle-btn hidden" title="Toggle SVG Preview"
-                onclick="CZUI.toggleSvgPreview()">
-                <span class="split-icon">👁</span>
-            </button>
+                    <div id="editor-body" class="editor-body hidden">
+                        <!-- Search & Replace Panel -->
+                        <div id="search-panel" class="search-panel hidden">
+                            <div class="search-row">
+                                <input type="text" id="search-input" class="search-field" placeholder="Search..."
+                                    spellcheck="false" autocomplete="off">
+                                <span class="search-count" id="search-count">0 results</span>
+                                <button class="search-btn" id="search-toggle-case" title="Match Case (Alt+C)">Aa</button>
+                                <button class="search-btn" id="search-toggle-regex" title="Use Regex (Alt+R)">.*</button>
+                                <button class="search-btn" id="search-prev" title="Previous (Shift+Enter)">▲</button>
+                                <button class="search-btn" id="search-next" title="Next (Enter)">▼</button>
+                                <button class="search-btn search-close" id="search-close" title="Close (Esc)">✕</button>
+                            </div>
+                            <div class="search-row replace-row hidden" id="replace-row">
+                                <input type="text" id="replace-input" class="search-field" placeholder="Replace..."
+                                    spellcheck="false" autocomplete="off">
+                                <button class="search-btn" id="replace-one" title="Replace">⇄</button>
+                                <button class="search-btn" id="replace-all" title="Replace All">⇄All</button>
+                            </div>
+                        </div>
+                        <div class="line-numbers" id="line-numbers">1</div>
+                        <div class="code-wrapper">
+                            <div class="active-line-highlight" id="active-line-highlight"></div>
+                            <textarea id="editing" spellcheck="false" wrap="off" autocapitalize="off" autocomplete="off"
+                                autocorrect="off"></textarea>
+                            <pre id="highlighting" aria-hidden="true"><code id="highlighting-content"></code></pre>
+                        </div>
+                    </div>
 
-            <!-- SVG Preview Overlay (floating over code editor) -->
-            <div id="svg-preview-overlay" class="svg-preview-overlay hidden">
-                <div class="svg-preview-overlay-header">
-                    <span data-i18n="svg_preview_title">SVG Preview</span>
-                    <button class="svg-preview-close" onclick="CZUI.toggleSvgPreview()">✕</button>
+                    <!-- Image Viewer (full-tab, binary images only) -->
+                    <div id="image-viewer" class="image-viewer hidden">
+                        <div class="image-viewer-container">
+                            <img id="image-viewer-img" src="" alt="Preview">
+                        </div>
+                        <div class="image-viewer-bar">
+                            <span id="image-viewer-info"></span>
+                        </div>
+                    </div>
+
+                    <!-- Binary File Info Panel (for non-text, non-image files) -->
+                    <div id="binary-file-panel" class="binary-file-panel hidden">
+                        <div class="binary-file-card">
+                            <div class="binary-file-icon" id="binary-file-icon">📄</div>
+                            <div class="binary-file-name" id="binary-file-name"></div>
+                            <div class="binary-file-size" id="binary-file-size"></div>
+                            <p class="binary-file-msg" data-i18n="binary_file_msg">This file is in binary format and cannot be
+                                displayed as text.</p>
+                            <div class="binary-file-actions">
+                                <button class="binary-btn binary-btn-code" id="btn-binary-open-code"
+                                    onclick="CZUI.openBinaryAsCode()">
+                                    <span class="binary-btn-icon">&lt;/&gt;</span>
+                                    <span data-i18n="binary_open_code">Open as Code</span>
+                                </button>
+                                <button class="binary-btn binary-btn-external" id="btn-binary-open-external"
+                                    onclick="CZUI.openBinaryExternal()">
+                                    <span class="binary-btn-icon">↗</span>
+                                    <span data-i18n="binary_open_external">Open External</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Floating SVG Preview Toggle (only when editing SVG) -->
+                    <button id="btn-svg-preview-toggle" class="svg-preview-toggle-btn hidden" title="Toggle SVG Preview"
+                        onclick="CZUI.toggleSvgPreview()">
+                        <span class="split-icon">👁</span>
+                    </button>
+
+                    <!-- SVG Preview Overlay (floating over code editor) -->
+                    <div id="svg-preview-overlay" class="svg-preview-overlay hidden">
+                        <div class="svg-preview-overlay-header">
+                            <span data-i18n="svg_preview_title">SVG Preview</span>
+                            <button class="svg-preview-close" onclick="CZUI.toggleSvgPreview()">✕</button>
+                        </div>
+                        <div class="svg-preview-content" id="svg-preview-content"></div>
+                    </div>
                 </div>
-                <div class="svg-preview-content" id="svg-preview-content"></div>
-            </div>
+            </main>
         </div>
-    </main>
+    </div>
 
     <!-- Autocomplete Popup -->
     <div id="autocomplete-popup" class="autocomplete-popup hidden">

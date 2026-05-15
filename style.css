@@ -220,21 +220,58 @@ body {
     flex-direction: column;
 }
 
+/* ===== APP LAYOUT ===== */
+.app-layout {
+    display: flex;
+    flex-direction: row;
+    flex-grow: 1;
+    overflow: hidden;
+}
+
+.editor-column {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    min-width: 0;
+    overflow: hidden;
+}
+
 /* ===== HEADER & TABS ===== */
 .editor-header {
     display: flex;
     background: var(--bg-header);
     backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border-color);
     height: 36px;
     align-items: center;
     justify-content: space-between;
     z-index: 10;
+    flex-shrink: 0;
 }
 
-.sidebar-toggle-btn {
+/* Sidebar reopen button — visible only when sidebar is collapsed */
+.sidebar-reopen-btn {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
     border-right: 1px solid var(--border-color);
+    color: var(--text-muted);
+    width: 36px;
+    height: 100%;
+    cursor: pointer;
+    font-size: 16px;
+    transition: 0.2s;
     flex-shrink: 0;
+}
+
+.sidebar-reopen-btn:hover {
+    color: var(--text-main);
+    background-color: var(--bg-tab-hover);
+}
+
+.sidebar.collapsed~.editor-column .sidebar-reopen-btn {
+    display: flex;
 }
 
 .tabs-container {
@@ -259,6 +296,8 @@ body {
     background-color: var(--bg-tab);
     color: var(--text-muted);
     border-right: 1px solid var(--border-color);
+    border-top: 1px solid transparent;
+    border-bottom: none;
     cursor: pointer;
     font-size: 12.5px;
     user-select: none;
@@ -331,6 +370,7 @@ body {
     display: flex;
     height: 100%;
     border-right: 1px solid var(--border-color);
+    background: var(--bg-header);
 }
 
 .action-btn {
@@ -358,6 +398,8 @@ body {
     padding: 0 15px;
     gap: 15px;
     position: relative;
+    height: 100%;
+    background: var(--bg-header);
 }
 
 .save-status {
@@ -449,9 +491,9 @@ body {
 .editor-main {
     position: relative;
     flex-grow: 1;
-    height: calc(100vh - 36px - 25px);
     display: flex;
     flex-direction: row;
+    overflow: hidden;
 }
 
 .editor-content {
@@ -514,10 +556,31 @@ body.sidebar-resizing {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 8px 10px;
-    border-bottom: 1px solid var(--border-color);
+    padding: 0 10px;
     flex-shrink: 0;
-    min-height: 36px;
+    height: 36px;
+}
+
+/* Toggle sidebar button — inside sidebar-header */
+.sidebar-toggle-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: 0.2s;
+    flex-shrink: 0;
+}
+
+.sidebar-toggle-btn:hover {
+    color: var(--text-main);
+    background-color: rgba(255, 255, 255, 0.08);
 }
 
 .sidebar-title {
@@ -530,10 +593,30 @@ body.sidebar-resizing {
     overflow: hidden;
 }
 
+/* Sidebar tree area — position context for floating actions */
+.sidebar-tree-area {
+    flex-grow: 1;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Sidebar actions — absolute overlay on root folder row */
 .sidebar-actions {
+    position: absolute;
+    top: 0;
+    right: 4px;
+    z-index: 5;
     display: flex;
     gap: 2px;
-    flex-shrink: 0;
+    height: 26px;
+    align-items: center;
+    padding: 0 2px;
+}
+
+.sidebar-actions.hidden {
+    display: none !important;
 }
 
 .sidebar-btn {
@@ -547,9 +630,12 @@ body.sidebar-resizing {
     line-height: 1;
     transition: 0.15s;
     opacity: 0;
+    pointer-events: auto;
 }
 
-.sidebar-header:hover .sidebar-btn {
+/* Show actions when hovering root folder or the actions bar itself */
+.sidebar-tree-area:has(.tree-root-folder:hover) .sidebar-actions .sidebar-btn,
+.sidebar-actions:hover .sidebar-btn {
     opacity: 1;
 }
 

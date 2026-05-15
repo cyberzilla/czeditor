@@ -112,6 +112,7 @@
         };
         document.getElementById('btn-settings').onclick = () => CZUI.settingsPopup.classList.toggle('hidden');
         document.getElementById('btn-toggle-sidebar').onclick = () => CZUI.toggleSidebar();
+        document.getElementById('btn-sidebar-reopen').onclick = () => CZUI.toggleSidebar();
 
         // Sidebar buttons
         document.getElementById('btn-open-folder').onclick = async () => {

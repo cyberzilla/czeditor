@@ -10,7 +10,8 @@ const CZUI = (() => {
         tabContextMenu = $('tab-context-menu'), settingsPopup = $('settings-popup'),
         fontConfigModal = $('font-config-modal'), activeLineHL = $('active-line-highlight'),
         sidebar = $('sidebar'), sidebarTree = $('sidebar-tree'), sidebarEmpty = $('sidebar-empty'),
-        sidebarContextMenu = $('sidebar-context-menu'), explorerSettingsModal = $('explorer-settings-modal');
+        sidebarContextMenu = $('sidebar-context-menu'), explorerSettingsModal = $('explorer-settings-modal'),
+        sidebarActions = $('sidebar-actions'), btnSidebarReopen = $('btn-sidebar-reopen');
 
     let files = [], activeFileId = null, saveTimeout = null, isDraggingTab = false;
     let targetContextTabId = null, promptCb = null, confirmCb = null;
@@ -592,7 +593,6 @@ const CZUI = (() => {
         CZFS.clearFolder();
         localStorage.removeItem('cz_expanded_folders');
         // Hide sidebar action buttons
-        const sidebarActions = document.querySelector('.sidebar-actions');
         if (sidebarActions) sidebarActions.classList.add('hidden');
         // Re-render recent folders
         renderRecentFolders();
@@ -748,7 +748,6 @@ const CZUI = (() => {
     function renderSidebar(tree, folderName) {
         sidebarTree.innerHTML = '';
         sidebarEmpty.style.display = 'none';
-        const sidebarActions = document.querySelector('.sidebar-actions');
 
         if (!tree || tree.length === 0) {
             if (!CZFS.getDirectoryHandle()) {
