@@ -8,6 +8,7 @@
   ],
   "brackets": [["(", ")"], ["[", "]"], ["{", "}"]],
   "syntax": [
+    { "match": "<!--[\\s\\S]*?-->", "scope": "comment" },
     { "match": "^#{1,6}\\s+.*$", "scope": "keyword", "flags": "m" },
     { "match": "```[\\s\\S]*?```", "scope": "string" },
     { "match": "`[^`\\n]+`", "scope": "string" },

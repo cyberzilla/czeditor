@@ -427,25 +427,103 @@ function handleKeydown(e) {
 }
 
 // ===== LINE OPERATIONS =====
-function toggleComment(cfg) {
-    const ta = CZUI.getEditingArea();
-    const text = ta.value, start = ta.selectionStart, end = ta.selectionEnd;
-    const ls = text.lastIndexOf('\n',start-1)+1;
-    const le = text.indexOf('\n',end); const lineEnd = le===-1?text.length:le;
-    const block = text.substring(ls, lineEnd);
-    const lines = block.split('\n');
-    const commentStr = cfg?.comment?.line || '//';
-    const allCommented = lines.every(l => l.trimStart().startsWith(commentStr));
-    let result;
-    if (allCommented) {
-        result = lines.map(l => { const i=l.indexOf(commentStr); return l.substring(0,i)+l.substring(i+commentStr.length+(l[i+commentStr.length]===' '?1:0)); }).join('\n');
-    } else {
-        result = lines.map(l => commentStr+' '+l).join('\n');
+
+    // Detect if cursor position is inside an embedded <script> or <style> block in HTML
+    function getEmbeddedCommentConfig(text, pos, fileLang) {
+        if (fileLang !== 'html') return null;
+        const blockRe = /<(script|style)([\s\S]*?)>([\s\S]*?)<\/\1>/gi;
+        let m;
+        while ((m = blockRe.exec(text)) !== null) {
+            const tagName = m[1].toLowerCase();
+            const openTag = '<' + m[1] + m[2] + '>';
+            const innerStart = m.index + openTag.length;
+            const innerEnd = innerStart + m[3].length;
+            if (pos >= innerStart && pos <= innerEnd) {
+                const subLangId = tagName === 'script' ? 'javascript' : 'css';
+                return CZEngine.getLangConfig(subLangId);
+            }
+        }
+        return null; // cursor is in plain HTML region
     }
-    replaceRange(ta, ls, lineEnd, result);
-    ta.setSelectionRange(ls, ls+result.length);
-    CZUI.handleInput();
-}
+
+    function toggleComment(cfg) {
+        const ta = CZUI.getEditingArea();
+        const f = CZUI.getActiveFile();
+        const text = ta.value, start = ta.selectionStart, end = ta.selectionEnd;
+        const ls = text.lastIndexOf('\n', start - 1) + 1;
+        const le = text.indexOf('\n', end); const lineEnd = le === -1 ? text.length : le;
+        const block = text.substring(ls, lineEnd);
+        const lines = block.split('\n');
+
+        // Determine effective comment config based on embedded context
+        let effectiveCfg = cfg;
+        if (f && f.language === 'html') {
+            const embeddedCfg = getEmbeddedCommentConfig(text, start, f.language);
+            if (embeddedCfg) effectiveCfg = embeddedCfg;
+        }
+
+        const lineComment = effectiveCfg?.comment?.line;
+        const blockStart = effectiveCfg?.comment?.blockStart;
+        const blockEnd = effectiveCfg?.comment?.blockEnd;
+
+        let result;
+        if (lineComment) {
+            // Line-comment mode (e.g. // for JS, # for Python)
+            const allCommented = lines.every(l => l.trimStart().startsWith(lineComment));
+            if (allCommented) {
+                result = lines.map(l => {
+                    const i = l.indexOf(lineComment);
+                    return l.substring(0, i) + l.substring(i + lineComment.length + (l[i + lineComment.length] === ' ' ? 1 : 0));
+                }).join('\n');
+            } else {
+                result = lines.map(l => lineComment + ' ' + l).join('\n');
+            }
+        } else if (blockStart && blockEnd) {
+            // Per-line block-comment mode (e.g. /* */ for CSS, <!-- --> for HTML)
+            // Check if ALL lines are individually wrapped with block comment
+            const allCommented = lines.every(l => {
+                const t = l.trim();
+                return t === '' || (t.startsWith(blockStart) && t.endsWith(blockEnd));
+            });
+            if (allCommented) {
+                // Uncomment: remove per-line block comment delimiters
+                result = lines.map(l => {
+                    const t = l.trim();
+                    if (t === '') return l;
+                    const indent = l.match(/^(\s*)/)[1];
+                    let inner = t.substring(blockStart.length);
+                    if (inner.endsWith(blockEnd)) inner = inner.substring(0, inner.length - blockEnd.length);
+                    // Remove optional spaces around content
+                    if (inner.startsWith(' ')) inner = inner.substring(1);
+                    if (inner.endsWith(' ')) inner = inner.substring(0, inner.length - 1);
+                    return indent + inner;
+                }).join('\n');
+            } else {
+                // Comment: wrap each line with block comment delimiters
+                result = lines.map(l => {
+                    const t = l.trim();
+                    if (t === '') return l;
+                    const indent = l.match(/^(\s*)/)[1];
+                    return indent + blockStart + ' ' + t + ' ' + blockEnd;
+                }).join('\n');
+            }
+        } else {
+            // Fallback: use // if nothing else is available
+            const commentStr = '//';
+            const allCommented = lines.every(l => l.trimStart().startsWith(commentStr));
+            if (allCommented) {
+                result = lines.map(l => {
+                    const i = l.indexOf(commentStr);
+                    return l.substring(0, i) + l.substring(i + commentStr.length + (l[i + commentStr.length] === ' ' ? 1 : 0));
+                }).join('\n');
+            } else {
+                result = lines.map(l => commentStr + ' ' + l).join('\n');
+            }
+        }
+        replaceRange(ta, ls, lineEnd, result);
+        ta.setSelectionRange(ls, ls + result.length);
+        CZUI.handleInput();
+    }
 
 function duplicateLine() {
     const ta = CZUI.getEditingArea();

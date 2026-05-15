@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="id">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -84,12 +83,14 @@
 
                 <div class="toolbar hidden" id="toolbar-right">
                     <div class="settings-wrapper">
-                        <button class="settings-btn" id="btn-settings" data-i18n="btn_settings_title" data-i18n-attr="title"
-                            title="Pengaturan">⚙️</button>
+                        <button class="settings-btn" id="btn-settings" data-i18n="btn_settings_title"
+                            data-i18n-attr="title" title="Pengaturan">⚙️</button>
                         <div class="settings-popup hidden" id="settings-popup">
-                            <div class="settings-item" id="menu-font-config" data-i18n="menu_font_config">🔡 Konfigurasi Font
+                            <div class="settings-item" id="menu-font-config" data-i18n="menu_font_config">🔡 Konfigurasi
+                                Font
                             </div>
-                            <div class="settings-item" id="menu-shortcuts" data-i18n="menu_shortcuts">⌨️ Keyboard Shortcuts
+                            <div class="settings-item" id="menu-shortcuts" data-i18n="menu_shortcuts">⌨️ Keyboard
+                                Shortcuts
                             </div>
                             <div class="settings-item" id="menu-language">🌐 <span data-i18n="menu_language"
                                     id="menu-language-text">Bahasa</span></div>
@@ -103,19 +104,23 @@
                     <div id="welcome-screen" class="welcome-screen">
                         <div class="cz-logo anim-fade-up" style="animation-delay: 0.1s" id="app-logo"></div>
                         <div class="cz-version anim-fade-up" style="animation-delay: 0.3s" id="app-version"></div>
-                        <div class="cz-description anim-fade-up" style="animation-delay: 0.4s" id="app-description"></div>
+                        <div class="cz-description anim-fade-up" style="animation-delay: 0.4s" id="app-description">
+                        </div>
                         <div class="cz-hints anim-fade-up" style="animation-delay: 0.5s">
-                            <p data-i18n="welcome_hint" data-i18n-html>Tekan <strong>Ctrl+N</strong> atau <strong>Drag &amp;
+                            <p data-i18n="welcome_hint" data-i18n-html>Tekan <strong>Ctrl+N</strong> atau <strong>Drag
+                                    &amp;
                                     Drop</strong> file untuk mulai</p>
                             <div class="shortcut-hints">
                                 <span class="hint-badge">Ctrl+S</span> <span data-i18n="shortcut_save">Save</span>
-                                <span class="hint-badge">Tab</span> <span data-i18n="shortcut_emmet">Emmet / Indent</span>
+                                <span class="hint-badge">Tab</span> <span data-i18n="shortcut_emmet">Emmet /
+                                    Indent</span>
                                 <span class="hint-badge">Ctrl+/</span> <span data-i18n="shortcut_comment">Comment</span>
-                                <span class="hint-badge">Ctrl+P</span> <span data-i18n="shortcut_palette">Command Palette</span>
+                                <span class="hint-badge">Ctrl+P</span> <span data-i18n="shortcut_palette">Command
+                                    Palette</span>
                             </div>
                         </div>
-                        <button class="pwa-install-btn anim-fade-up hidden" id="pwa-install-btn" style="animation-delay: 0.7s"
-                            data-i18n="pwa_install">
+                        <button class="pwa-install-btn anim-fade-up hidden" id="pwa-install-btn"
+                            style="animation-delay: 0.7s" data-i18n="pwa_install">
                             📥 Install sebagai Aplikasi
                         </button>
                     </div>
@@ -127,8 +132,10 @@
                                 <input type="text" id="search-input" class="search-field" placeholder="Search..."
                                     spellcheck="false" autocomplete="off">
                                 <span class="search-count" id="search-count">0 results</span>
-                                <button class="search-btn" id="search-toggle-case" title="Match Case (Alt+C)">Aa</button>
-                                <button class="search-btn" id="search-toggle-regex" title="Use Regex (Alt+R)">.*</button>
+                                <button class="search-btn" id="search-toggle-case"
+                                    title="Match Case (Alt+C)">Aa</button>
+                                <button class="search-btn" id="search-toggle-regex"
+                                    title="Use Regex (Alt+R)">.*</button>
                                 <button class="search-btn" id="search-prev" title="Previous (Shift+Enter)">▲</button>
                                 <button class="search-btn" id="search-next" title="Next (Enter)">▼</button>
                                 <button class="search-btn search-close" id="search-close" title="Close (Esc)">✕</button>
@@ -165,7 +172,8 @@
                             <div class="binary-file-icon" id="binary-file-icon">📄</div>
                             <div class="binary-file-name" id="binary-file-name"></div>
                             <div class="binary-file-size" id="binary-file-size"></div>
-                            <p class="binary-file-msg" data-i18n="binary_file_msg">This file is in binary format and cannot be
+                            <p class="binary-file-msg" data-i18n="binary_file_msg">This file is in binary format and
+                                cannot be
                                 displayed as text.</p>
                             <div class="binary-file-actions">
                                 <button class="binary-btn binary-btn-code" id="btn-binary-open-code"

@@ -2,12 +2,14 @@
   "id": "json",
   "name": "JSON",
   "extensions": ["json", "jsonc", "json5"],
-  "comment": { "line": null, "blockStart": null, "blockEnd": null },
+  "comment": { "line": "//", "blockStart": "/*", "blockEnd": "*/" },
   "autoClosePairs": [
     ["{", "}"], ["[", "]"], ["\"", "\""]
   ],
   "brackets": [["{", "}"], ["[", "]"]],
   "syntax": [
+    { "match": "\\/\\/[^\\n]*", "scope": "comment" },
+    { "match": "\\/\\*[\\s\\S]*?\\*\\/", "scope": "comment" },
     { "match": "\"(?:[^\"\\\\]|\\\\.)*\"(?=\\s*:)", "scope": "property" },
     { "match": "\"(?:[^\"\\\\]|\\\\.)*\"", "scope": "string" },
     { "match": "\\b(?:true|false|null)\\b", "scope": "keyword" },

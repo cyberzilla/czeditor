@@ -357,7 +357,7 @@
 
             // All Ctrl+ shortcuts — intercept browser defaults
             if (ctrl) {
-                const intercepted = ['n', 's', 'd', 'p', 'l', '/', ']', '[', 'b'];
+                const intercepted = ['n', 's', 'd', 'p', 'l', 'f', 'h', '/', ']', '[', 'b'];
                 const interceptedShift = ['k', 'd'];
 
                 if (shift && interceptedShift.includes(key)) {

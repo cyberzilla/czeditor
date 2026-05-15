@@ -19,6 +19,10 @@ const CZEngine = (() => {
                 return { re: new RegExp(rule.match, 'g' + flags), scope: rule.scope };
             });
             langCache[langId] = cfg;
+            // Preload embedded sub-languages for HTML
+            if (langId === 'html') {
+                await Promise.all([loadLanguage('javascript'), loadLanguage('css')]);
+            }
             return cfg;
         } catch (e) { console.warn('Lang load fail:', langId, e); return null; }
     }
@@ -26,7 +30,15 @@ const CZEngine = (() => {
     function getLangConfig(langId) { return langCache[langId] || null; }
 
     // ===== TOKENIZER =====
-    function tokenize(text, langConfig) {
+    function tokenize(text, langConfig, langId) {
+        if (!langConfig || !langConfig._compiled) return [{ text, scope: null }];
+        // Use embedded tokenizer for HTML
+        if (langId === 'html') return tokenizeHTML(text, langConfig);
+        return tokenizeFlat(text, langConfig);
+    }
+
+    // Basic flat tokenizer — single language, no embedding
+    function tokenizeFlat(text, langConfig) {
         if (!langConfig || !langConfig._compiled) return [{ text, scope: null }];
         const rules = langConfig._compiled;
         const tokens = [];
@@ -55,6 +67,83 @@ const CZEngine = (() => {
             pos = h.end;
         }
         if (pos < len) tokens.push({ text: text.slice(pos), scope: null });
+        return tokens;
+    }
+
+    // HTML tokenizer with embedded <script> and <style> support
+    function tokenizeHTML(text, htmlConfig) {
+        // 1. Find all <script>...</script> and <style>...</style> regions
+        const embeddedBlocks = [];
+        const blockRe = /<(script|style)([\s\S]*?)>([\s\S]*?)<\/\1>/gi;
+        let bm;
+        while ((bm = blockRe.exec(text)) !== null) {
+            const tagName = bm[1].toLowerCase();
+            const openTag = '<' + bm[1] + bm[2] + '>';
+            const closeTag = '</' + bm[1] + '>';
+            const innerContent = bm[3];
+            const fullStart = bm.index;
+            const innerStart = fullStart + openTag.length;
+            const innerEnd = innerStart + innerContent.length;
+            embeddedBlocks.push({
+                tagName,
+                fullStart,
+                fullEnd: fullStart + bm[0].length,
+                innerStart,
+                innerEnd,
+                openTag,
+                closeTag,
+                innerContent
+            });
+        }
+
+        if (embeddedBlocks.length === 0) {
+            // No embedded blocks — just use flat HTML tokenization
+            return tokenizeFlat(text, htmlConfig);
+        }
+
+        // 2. Build result by processing segments between/around embedded blocks
+        const tokens = [];
+        let pos = 0;
+
+        for (const block of embeddedBlocks) {
+            // A. Tokenize HTML before this block
+            if (block.fullStart > pos) {
+                const segment = text.slice(pos, block.fullStart);
+                const segTokens = tokenizeFlat(segment, htmlConfig);
+                tokens.push(...segTokens);
+            }
+
+            // B. Tokenize the opening tag as HTML
+            const openTagTokens = tokenizeFlat(block.openTag, htmlConfig);
+            tokens.push(...openTagTokens);
+
+            // C. Tokenize the inner content with the sub-language
+            const subLangId = block.tagName === 'script' ? 'javascript' : 'css';
+            const subConfig = getLangConfig(subLangId);
+            if (subConfig && subConfig._compiled && block.innerContent.trim().length > 0) {
+                const subTokens = tokenizeFlat(block.innerContent, subConfig);
+                tokens.push(...subTokens);
+            } else {
+                // Sub-language not loaded yet or empty content — output as plain
+                if (block.innerContent.length > 0) {
+                    tokens.push({ text: block.innerContent, scope: null });
+                }
+            }
+
+            // D. Tokenize the closing tag as HTML
+            const closeTagTokens = tokenizeFlat(block.closeTag, htmlConfig);
+            tokens.push(...closeTagTokens);
+
+            pos = block.fullEnd;
+        }
+
+        // E. Tokenize remaining HTML after last block
+        if (pos < text.length) {
+            const segment = text.slice(pos);
+            const segTokens = tokenizeFlat(segment, htmlConfig);
+            tokens.push(...segTokens);
+        }
+
         return tokens;
     }
 

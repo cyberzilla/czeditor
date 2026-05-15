@@ -2,7 +2,7 @@
   "id": "python",
   "name": "Python",
   "extensions": ["py", "pyw", "pyi"],
-  "comment": { "line": "#", "blockStart": "\"\"\"", "blockEnd": "\"\"\"" },
+  "comment": { "line": "#", "blockStart": null, "blockEnd": null },
   "autoClosePairs": [
     ["{", "}"], ["[", "]"], ["(", ")"], ["\"", "\""], ["'", "'"]
   ],

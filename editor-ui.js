@@ -1331,7 +1331,7 @@ const CZUI = (() => {
         const langCfg = f ? CZEngine.getLangConfig(f.language) : null;
         const cursorPos = editingArea.selectionStart;
         const brackets = CZEngine.getMatchingBrackets(text, cursorPos, langCfg);
-        const tokens = CZEngine.tokenize(text, langCfg);
+        const tokens = CZEngine.tokenize(text, langCfg, f ? f.language : null);
         let html;
         // Use token-level search highlighting when search is active
         if (typeof CZFeatures !== 'undefined' && CZFeatures.searchVisible) {
