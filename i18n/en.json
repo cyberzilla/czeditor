@@ -9,6 +9,9 @@
     "menu_font_config": "🔡 Font Configuration",
     "menu_shortcuts": "⌨️ Keyboard Shortcuts",
     "menu_language": "Language",
+    "menu_theme": "Theme",
+    "theme_dark": "Dark",
+    "theme_light": "Light",
 
     "welcome_hint": "Press <strong>Ctrl+N</strong> or <strong>Drag & Drop</strong> files to start",
     "pwa_install": "📥 Install as Application",

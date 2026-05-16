@@ -9,6 +9,9 @@
     "menu_font_config": "🔡 Konfigurasi Font",
     "menu_shortcuts": "⌨️ Keyboard Shortcuts",
     "menu_language": "Bahasa",
+    "menu_theme": "Tema",
+    "theme_dark": "Gelap",
+    "theme_light": "Terang",
 
     "welcome_hint": "Tekan <strong>Ctrl+N</strong> atau <strong>Drag & Drop</strong> file untuk mulai",
     "pwa_install": "📥 Install sebagai Aplikasi",

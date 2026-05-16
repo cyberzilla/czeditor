@@ -1,0 +1,80 @@
+/* ============================================
+   CZEditor Light Theme — Catppuccin Latte
+   ============================================ */
+:root {
+    /* Backgrounds */
+    --bg-main: #eff1f5;
+    --bg-header: rgba(230, 233, 239, 0.9);
+    --bg-footer: #dce0e8;
+    --bg-tab: #dce0e8;
+    --bg-tab-active: #eff1f5;
+    --bg-tab-hover: #ccd0da;
+
+    /* Text */
+    --text-main: #4c4f69;
+    --text-muted: #9ca0b0;
+
+    /* Accent */
+    --accent-color: #1e66f5;
+    --accent-purple: #8839ef;
+
+    /* Borders & Selection */
+    --border-color: rgba(0, 0, 0, 0.1);
+    --selection-bg: rgba(30, 102, 245, 0.18);
+    --active-line-bg: rgba(0, 0, 0, 0.04);
+
+    /* Surface channel — used for rgba(var(--surface-rgb), alpha) compositing
+       Light theme: dark highlights on light background */
+    --surface-rgb: 0, 0, 0;
+
+    /* Semantic colors */
+    --color-red: #d20f39;
+    --color-green: #40a02b;
+    --color-yellow: #df8e1d;
+    --color-orange: #fe640b;
+
+    /* Specific backgrounds */
+    --bg-line-numbers: rgba(0, 0, 0, 0.04);
+    --bg-overlay: rgba(0, 0, 0, 0.45);
+    --bg-checkerboard: rgba(0, 0, 0, 0.06);
+
+    /* Scrollbar */
+    --scrollbar-thumb: rgba(108, 112, 134, 0.3);
+    --scrollbar-thumb-hover: rgba(108, 112, 134, 0.5);
+
+    /* Syntax Highlighting — Catppuccin Latte */
+    --syn-keyword: #8839ef;
+    --syn-string: #40a02b;
+    --syn-comment: #9ca0b0;
+    --syn-function: #1e66f5;
+    --syn-tag: #d20f39;
+    --syn-attr: #df8e1d;
+    --syn-number: #fe640b;
+    --syn-operator: #04a5e5;
+    --syn-class: #df8e1d;
+    --syn-variable: #d20f39;
+    --syn-regex: #fe640b;
+    --syn-property: #1e66f5;
+    --syn-selector: #d20f39;
+    --syn-color: #fe640b;
+    --syn-pseudo: #8839ef;
+    --syn-decorator: #df8e1d;
+    --syn-punctuation: #9ca0b0;
+    --syn-bold: #4c4f69;
+    --syn-italic: #4c4f69;
+    --syn-type: #df8e1d;
+    --syn-constant: #fe640b;
+}
+
+/* Scrollbar — theme-specific */
+::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover);
+}
+
+::-webkit-scrollbar-corner {
+    background: var(--bg-main);
+}

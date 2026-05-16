@@ -1158,6 +1158,22 @@ const CZUI = (() => {
         setupSidebarResize();
     }
 
+    // ===== THEME SWITCHING =====
+    function setTheme(name) {
+        const link = document.getElementById('cz-theme');
+        if (link) link.href = 'themes/' + name + '.css';
+        localStorage.setItem('cz_theme', name);
+        // Update meta theme-color for browser chrome
+        const meta = document.getElementById('meta-theme-color');
+        if (meta) {
+            const colors = { dark: '#1e1e2e', light: '#eff1f5' };
+            meta.content = colors[name] || colors.dark;
+        }
+        // Sync the dropdown if called programmatically
+        const sel = document.getElementById('theme-selector');
+        if (sel && sel.value !== name) sel.value = name;
+    }
+
     // Remove preload flash-prevention styles after sidebar is fully initialized
     function removePreloadStyles() {
         const preload = document.getElementById('cz-preload-styles');
@@ -2116,7 +2132,7 @@ const CZUI = (() => {
         handleInput, updateEditorVisuals, updateFootbar, syncScroll, updateActiveLine, ensureCursorVisible, updateScrollPastEnd,
         executeMenuAction,
         // Sidebar
-        toggleSidebar, isSidebarOpen, restoreSidebarState, removePreloadStyles,
+        toggleSidebar, isSidebarOpen, restoreSidebarState, removePreloadStyles, setTheme,
         renderSidebar, refreshSidebar, collapseAllFolders, closeFolder,
         openFileFromTree, highlightActiveInTree, renderRecentFolders, reattachFileHandles,
         executeSidebarAction, openExplorerSettings, applyExplorerSettings,

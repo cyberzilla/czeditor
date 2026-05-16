@@ -184,6 +184,13 @@
         };
         document.getElementById('close-language').onclick = () => document.getElementById('language-modal').classList.add('hidden');
 
+        // Theme selector
+        const themeSelector = document.getElementById('theme-selector');
+        if (themeSelector) {
+            themeSelector.value = localStorage.getItem('cz_theme') || 'dark';
+            themeSelector.onchange = () => CZUI.setTheme(themeSelector.value);
+        }
+
         // Font config
         document.getElementById('font-weight-select').onchange = () => CZUI.applyFontSettings();
         document.getElementById('font-size-input').oninput = () => CZUI.applyFontSettings();

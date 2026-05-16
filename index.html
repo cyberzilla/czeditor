@@ -7,10 +7,21 @@
     <title id="app-title">czeditor - Modern Code Editor</title>
     <meta name="description"
         content="czeditor - A powerful, modern web-based code editor with autocomplete, emmet, and syntax highlighting.">
-    <meta name="theme-color" content="#1e1e2e">
+    <meta name="theme-color" content="#1e1e2e" id="meta-theme-color">
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" href="icon-192.png">
     <link rel="apple-touch-icon" href="icon-192.png">
+    <link id="cz-theme" rel="stylesheet" href="themes/dark.css">
+    <script>
+        // Apply saved theme BEFORE first paint to prevent flash
+        (function () {
+            var t = localStorage.getItem('cz_theme') || 'dark';
+            var link = document.getElementById('cz-theme');
+            if (link) link.href = 'themes/' + t + '.css';
+            var meta = document.getElementById('meta-theme-color');
+            if (meta) meta.content = t === 'light' ? '#eff1f5' : '#1e1e2e';
+        })();
+    </script>
     <link rel="stylesheet" href="style.css">
     <script>
         // Apply saved sidebar state BEFORE first paint to prevent visual flash
@@ -124,6 +135,13 @@
                             </div>
                             <div class="settings-item" id="menu-language">🌐 <span data-i18n="menu_language"
                                     id="menu-language-text">Bahasa</span></div>
+                            <div class="settings-item" id="menu-theme">🎨 <span data-i18n="menu_theme"
+                                    id="menu-theme-text">Tema</span>
+                                <select id="theme-selector" class="settings-select">
+                                    <option value="dark" data-i18n="theme_dark">Dark</option>
+                                    <option value="light" data-i18n="theme_light">Light</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                 </div>
