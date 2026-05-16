@@ -707,7 +707,7 @@ const CZUI = (() => {
             if (title) title.textContent = 'Lottie Preview';
             // Only rebuild DOM if lottie-container doesn't exist (first render / file switch)
             if (!document.getElementById('lottie-container')) {
-                content.innerHTML = '<div id="lottie-container" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;transform:scale(' + (previewZoom / 100) + ');transform-origin:center center;transition:transform 0.15s"></div>' +
+                content.innerHTML = '<div id="lottie-container" style="display:flex;align-items:center;justify-content:center;transform:scale(' + (previewZoom / 100) + ');transform-origin:center center;transition:transform 0.15s"></div>' +
                     '<div class="lottie-controls">' +
                     '<button class="preview-zoom-btn" id="btn-lottie-restart" title="Restart">\u27f2</button>' +
                     '<button class="preview-zoom-btn" id="btn-lottie-playpause" title="Play/Pause">\u23f8</button>' +
@@ -755,7 +755,6 @@ const CZUI = (() => {
         const lc = document.getElementById('lottie-container');
         if (lc && lottieAnim) {
             lc.style.transform = 'scale(' + (previewZoom / 100) + ')';
-            try { lottieAnim.resize(); } catch (e) {}
             return;
         }
         // HTML iframe: update transform directly without reloading srcdoc
@@ -812,6 +811,15 @@ const CZUI = (() => {
                         progressiveLoad: true
                     }
                 });
+
+                // Constrain container to animation's aspect ratio so canvas doesn't stretch
+                if (animData.w && animData.h) {
+                    container.style.aspectRatio = animData.w + '/' + animData.h;
+                    container.style.maxWidth = '100%';
+                    container.style.maxHeight = '100%';
+                    container.style.width = 'auto';
+                    container.style.height = 'auto';
+                }
 
                 // Frame info — throttle to ~10fps for UI performance
                 const frameInfo = document.getElementById('lottie-frame-info');
