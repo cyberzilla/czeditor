@@ -107,5 +107,12 @@
     "binary_no_handle": "File handle tidak tersedia. Silakan buka ulang foldernya.",
 
     "alert_file_exists": "File dengan nama tersebut sudah ada di folder ini.",
-    "alert_folder_exists": "Folder dengan nama tersebut sudah ada."
+    "alert_folder_exists": "Folder dengan nama tersebut sudah ada.",
+
+    "filename_empty": "Nama file tidak boleh kosong.",
+    "filename_illegal_chars": "Nama file mengandung karakter yang tidak diizinkan: \\ / : * ? \" < > |",
+    "filename_reserved": "Nama ini merupakan nama yang direservasi oleh sistem (CON, PRN, NUL, dll).",
+    "filename_only_dots": "Nama file tidak boleh hanya berisi titik.",
+    "filename_trailing": "Nama file tidak boleh diakhiri dengan titik atau spasi.",
+    "filename_too_long": "Nama file terlalu panjang (maksimal 255 karakter)."
 }

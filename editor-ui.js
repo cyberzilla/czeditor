@@ -119,6 +119,24 @@ const CZUI = (() => {
     function isValidHandle(h) {
         return h && typeof h.getFile === 'function';
     }
+    // Cross-OS filename validation — returns error i18n key or null if valid
+    function validateFileName(name) {
+        if (!name || !name.trim()) return 'filename_empty';
+        const n = name.trim();
+        // Illegal characters for Windows/macOS/Linux
+        if (/[\\/:*?"<>|]/.test(n)) return 'filename_illegal_chars';
+        // Control characters (0x00–0x1F)
+        if (/[\x00-\x1f]/.test(n)) return 'filename_illegal_chars';
+        // Windows reserved names
+        if (/^(CON|PRN|AUX|NUL|COM[0-9]|LPT[0-9])(\.|$)/i.test(n)) return 'filename_reserved';
+        // Names that are only dots
+        if (/^\.+$/.test(n)) return 'filename_only_dots';
+        // Trailing dot or space (Windows)
+        if (/[. ]$/.test(n)) return 'filename_trailing';
+        // Too long (255 bytes is the common limit)
+        if (n.length > 255) return 'filename_too_long';
+        return null;
+    }
     function formatFileSize(bytes) {
         if (bytes < 1024) return bytes + ' B';
         if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
@@ -181,15 +199,50 @@ const CZUI = (() => {
     }
 
     // ===== DIALOGS =====
-    function openPrompt(title, defaultVal) {
+    function openPrompt(title, defaultVal, opts) {
         return new Promise(resolve => {
             $('prompt-title').textContent = title;
-            const inp = $('prompt-input'); inp.value = defaultVal;
+            const inp = $('prompt-input');
+            const errEl = $('prompt-validation-error');
+            const okBtn = $('btn-prompt-ok');
+            inp.value = defaultVal;
+            errEl.textContent = '';
+            inp.classList.remove('input-invalid');
+            okBtn.disabled = false;
+
+            // Live filename validation
+            const doValidate = opts && opts.validateFilename;
+            inp._liveValidate = doValidate ? function () {
+                const err = validateFileName(inp.value);
+                if (err) {
+                    errEl.textContent = CZi18n.t(err);
+                    inp.classList.add('input-invalid');
+                    okBtn.disabled = true;
+                } else {
+                    errEl.textContent = '';
+                    inp.classList.remove('input-invalid');
+                    okBtn.disabled = false;
+                }
+            } : null;
+
+            if (inp._liveValidate) {
+                inp.addEventListener('input', inp._liveValidate);
+            }
+
             $('custom-prompt-modal').classList.remove('hidden');
             inp.focus(); inp.select(); promptCb = resolve;
         });
     }
     function closePrompt(val) {
+        const inp = $('prompt-input');
+        // Clean up live validation listener
+        if (inp._liveValidate) {
+            inp.removeEventListener('input', inp._liveValidate);
+            inp._liveValidate = null;
+        }
+        inp.classList.remove('input-invalid');
+        $('prompt-validation-error').textContent = '';
+        $('btn-prompt-ok').disabled = false;
         $('custom-prompt-modal').classList.add('hidden');
         if (promptCb) promptCb(val); promptCb = null;
     }
@@ -371,10 +424,12 @@ const CZUI = (() => {
     async function renameFile(id) {
         const f = files.find(x => x.id === id);
         if (!f) return;
-        const nn = await openPrompt("Nama File Baru:", f.name);
+        const nn = await openPrompt("Nama File Baru:", f.name, { validateFilename: true });
         if (nn && nn.trim() && nn !== f.name) {
             const oldName = f.name;
             const newName = nn.trim();
+            const err = validateFileName(newName);
+            if (err) { openAlert(CZi18n.t('alert_title'), CZi18n.t(err)); return; }
             f.name = newName;
             const ext = newName.split('.').pop().toLowerCase();
             const detected = CZEngine.detectByExtension(ext);
@@ -1098,7 +1153,16 @@ const CZUI = (() => {
     // Remove preload flash-prevention styles after sidebar is fully initialized
     function removePreloadStyles() {
         const preload = document.getElementById('cz-preload-styles');
-        if (preload) preload.remove();
+        if (!preload) return;
+        // Keep sidebar transition suppressed during preload removal
+        sidebar.style.transition = 'none';
+        preload.remove();
+        // Clear preloaded tree marker
+        delete sidebarTree.dataset.preloaded;
+        // Re-enable sidebar transitions after a frame so the initial layout is stable
+        requestAnimationFrame(() => {
+            sidebar.style.transition = '';
+        });
     }
 
     function setupSidebarResize() {
@@ -1181,10 +1245,11 @@ const CZUI = (() => {
     }
 
     function renderSidebar(tree, folderName) {
-        sidebarTree.innerHTML = '';
         sidebarEmpty.style.display = 'none';
 
         if (!tree || tree.length === 0) {
+            delete sidebarTree.dataset.preloaded;
+            sidebarTree.innerHTML = '';
             if (!CZFS.getDirectoryHandle()) {
                 sidebarEmpty.style.display = 'flex';
                 sidebarTree.appendChild(sidebarEmpty);
@@ -1200,6 +1265,17 @@ const CZUI = (() => {
         // Restore folder expand/collapse state from localStorage
         applyExpandedPaths(tree, folderName || '');
 
+        // If tree was preloaded, skip DOM rebuild — just attach event handlers
+        if (sidebarTree.dataset.preloaded) {
+            delete sidebarTree.dataset.preloaded;
+            attachTreeHandlers(tree, sidebarTree, 1, CZFS.getDirectoryHandle(), folderName);
+            highlightActiveInTree();
+            return;
+        }
+
+        // Build new tree in a fragment to avoid flash
+        const frag = document.createDocumentFragment();
+
         // Render folder name header
         if (folderName) {
             const header = document.createElement('div');
@@ -1213,13 +1289,93 @@ const CZUI = (() => {
                 sidebarContextTarget = { handle: CZFS.getDirectoryHandle(), parentHandle: null, name: folderName, kind: 'root' };
                 showSidebarContextMenu(e.pageX, e.pageY);
             };
-            sidebarTree.appendChild(header);
+            frag.appendChild(header);
         }
 
-        renderTreeNodes(tree, sidebarTree, 1, CZFS.getDirectoryHandle());
+        renderTreeNodes(tree, frag, 1, CZFS.getDirectoryHandle());
+
+        // Atomic replace — no empty-frame flash between clear and insert
+        sidebarTree.replaceChildren(frag);
+
         highlightActiveInTree();
         // Cache tree HTML for instant pre-render on next page load
         try { localStorage.setItem('cz_tree_html', sidebarTree.innerHTML); } catch (e) { /* quota */ }
+    }
+
+    // Walk preloaded DOM tree and attach live event handlers without rebuilding DOM
+    function attachTreeHandlers(treeData, container, depth, parentHandle, folderName) {
+        // Attach root folder header handler
+        const rootHeader = container.querySelector('.tree-root-folder');
+        if (rootHeader && folderName) {
+            rootHeader.oncontextmenu = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                sidebarContextTarget = { handle: CZFS.getDirectoryHandle(), parentHandle: null, name: folderName, kind: 'root' };
+                showSidebarContextMenu(e.pageX, e.pageY);
+            };
+        }
+        // Walk tree data and match to DOM nodes
+        attachNodeHandlers(treeData, container, 1, parentHandle);
+    }
+
+    function attachNodeHandlers(nodes, container, depth, parentHandle) {
+        // Get direct child tree-folders and tree-items (files) in order
+        const folderDivs = [];
+        const fileDivs = [];
+        for (const child of container.children) {
+            if (child.classList.contains('tree-folder')) folderDivs.push(child);
+            else if (child.classList.contains('tree-item') && child.dataset.kind === 'file') fileDivs.push(child);
+        }
+
+        let fi = 0, di = 0;
+        nodes.forEach(node => {
+            if (node.kind === 'directory') {
+                const folderDiv = folderDivs[di++];
+                if (!folderDiv) return;
+                const item = folderDiv.querySelector(':scope > .tree-item');
+                const childrenDiv = folderDiv.querySelector(':scope > .tree-folder-children');
+                if (item) {
+                    // Sync expand/collapse DOM state with restored node.expanded
+                    const arrowEl = item.querySelector('.folder-arrow');
+                    if (arrowEl) arrowEl.classList.toggle('expanded', !!node.expanded);
+                    if (childrenDiv) childrenDiv.classList.toggle('collapsed', !node.expanded);
+
+                    item.onclick = (e) => {
+                        e.stopPropagation();
+                        node.expanded = !node.expanded;
+                        const arrowEl = item.querySelector('.folder-arrow');
+                        if (arrowEl) arrowEl.classList.toggle('expanded', node.expanded);
+                        if (childrenDiv) childrenDiv.classList.toggle('collapsed', !node.expanded);
+                        const tree = CZFS.getCurrentTree();
+                        if (tree) saveExpandedPaths(tree, CZFS.getDirectoryHandle()?.name || '');
+                    };
+                    item.oncontextmenu = (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        sidebarContextTarget = { handle: node.handle, parentHandle, name: node.name, kind: 'directory' };
+                        showSidebarContextMenu(e.pageX, e.pageY);
+                    };
+                }
+                // Recurse into children
+                if (childrenDiv && node.children && node.children.length > 0) {
+                    attachNodeHandlers(node.children, childrenDiv, depth + 1, node.handle);
+                }
+            } else {
+                const item = fileDivs[fi++];
+                if (!item) return;
+                item.onclick = async (e) => {
+                    e.stopPropagation();
+                    await openFileFromTree(node.handle, node.name, parentHandle);
+                };
+                item.oncontextmenu = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    sidebarContextTarget = { handle: node.handle, parentHandle, name: node.name, kind: 'file' };
+                    showSidebarContextMenu(e.pageX, e.pageY);
+                };
+                item._fileHandle = node.handle;
+            }
+        });
     }
 
     function renderTreeNodes(nodes, container, depth, parentHandle) {
@@ -1503,9 +1659,11 @@ const CZUI = (() => {
             : target.parentHandle;
 
         if (action === 'new-file') {
-            const name = await openPrompt(CZi18n.t('prompt_new_file_title') || 'New File', 'untitled.txt');
+            const name = await openPrompt(CZi18n.t('prompt_new_file_title') || 'New File', 'untitled.txt', { validateFilename: true });
             if (!name || !name.trim()) return;
             const trimmed = name.trim();
+            const err = validateFileName(trimmed);
+            if (err) { openAlert(CZi18n.t('alert_title'), CZi18n.t(err)); return; }
             // Check if file already exists
             try {
                 await parentHandle.getFileHandle(trimmed);
@@ -1519,9 +1677,11 @@ const CZUI = (() => {
                 await openFileFromTree(handle, trimmed);
             }
         } else if (action === 'new-folder') {
-            const name = await openPrompt(CZi18n.t('prompt_new_folder_title') || 'New Folder', 'new-folder');
+            const name = await openPrompt(CZi18n.t('prompt_new_folder_title') || 'New Folder', 'new-folder', { validateFilename: true });
             if (!name || !name.trim()) return;
             const trimmed = name.trim();
+            const err = validateFileName(trimmed);
+            if (err) { openAlert(CZi18n.t('alert_title'), CZi18n.t(err)); return; }
             // Check if folder already exists
             try {
                 await parentHandle.getDirectoryHandle(trimmed);
@@ -1531,8 +1691,10 @@ const CZUI = (() => {
             const handle = await CZFS.createFolder(parentHandle, trimmed);
             if (handle) await refreshSidebar();
         } else if (action === 'rename') {
-            const newName = await openPrompt(CZi18n.t('prompt_rename_title'), target.name);
+            const newName = await openPrompt(CZi18n.t('prompt_rename_title'), target.name, { validateFilename: true });
             if (!newName || !newName.trim() || newName === target.name) return;
+            const rnErr = validateFileName(newName.trim());
+            if (rnErr) { openAlert(CZi18n.t('alert_title'), CZi18n.t(rnErr)); return; }
             const result = await CZFS.renameEntry(parentHandle, target.name, newName.trim(), target.kind === 'directory');
             if (result) {
                 // Update open file if it was renamed

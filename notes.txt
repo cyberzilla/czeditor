@@ -1,2 +1,1 @@
-1. treeview masih flicker ketika tidak ada tab yang terbuka dan browser di refresh
-2. Saya melihat belum ada pengecekan untuk create/rename nama file/folder secara menyeluruh (terkait karakter yang dilarang dalam sebuah file atau folder dari semua os)
+1. Lottie preview perlu diperbaiki

@@ -2040,6 +2040,28 @@ body.sidebar-resizing {
     border-color: var(--accent-color);
 }
 
+/* Prompt live validation */
+.prompt-validation-error {
+    font-size: 11px;
+    color: #f38ba8;
+    margin-top: 6px;
+    min-height: 16px;
+    line-height: 1.4;
+}
+
+.prompt-validation-error:empty {
+    display: none;
+}
+
+.config-group input.input-invalid {
+    border-color: #f38ba8;
+}
+
+.config-group input.input-invalid:focus {
+    border-color: #f38ba8;
+    box-shadow: 0 0 0 2px rgba(243, 139, 168, 0.15);
+}
+
 .close-modal {
     cursor: pointer;
     font-size: 20px;
@@ -2080,6 +2102,12 @@ body.sidebar-resizing {
 .btn-ok:hover {
     opacity: 0.85;
     transform: translateY(-1px);
+}
+
+.btn-ok:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
 }
 
 .btn-cancel {

@@ -107,5 +107,12 @@
     "binary_no_handle": "File handle not available. Please re-open the folder.",
 
     "alert_file_exists": "A file with that name already exists in this folder.",
-    "alert_folder_exists": "A folder with that name already exists."
+    "alert_folder_exists": "A folder with that name already exists.",
+
+    "filename_empty": "File name cannot be empty.",
+    "filename_illegal_chars": "File name contains forbidden characters: \\ / : * ? \" < > |",
+    "filename_reserved": "This name is reserved by the operating system (CON, PRN, NUL, etc).",
+    "filename_only_dots": "File name cannot consist only of dots.",
+    "filename_trailing": "File name cannot end with a dot or space.",
+    "filename_too_long": "File name is too long (255 characters max)."
 }
