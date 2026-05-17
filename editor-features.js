@@ -4,6 +4,7 @@ const acPopup = document.getElementById('autocomplete-popup');
 const acList = document.getElementById('autocomplete-list');
 let acItems = [], acIndex = -1, acWord = '', acWordStart = 0, acVisible = false;
 let acSuppressUntil = 0;
+let acDismissedPos = -1; // Track where Escape was pressed to suppress until new word
 
 // ===== TEXT INSERT (preserves undo stack) =====
 function insertText(textarea, text) {
@@ -103,20 +104,33 @@ function downloadFile(f) {
 }
 
 // ===== AUTOCOMPLETE =====
-function showAutocomplete() {
+function showAutocomplete(forceOpen) {
     // Skip if suppressed (just accepted an item)
     if (Date.now() < acSuppressUntil) return;
     const ta = CZUI.getEditingArea();
     const text = ta.value, pos = ta.selectionStart;
     const before = text.substring(0, pos);
     const wordMatch = before.match(/([a-zA-Z_$@#.][a-zA-Z0-9_$-]*)$/);
-    if (!wordMatch || wordMatch[1].length < 2) { hideAutocomplete(); return; }
+    if (!wordMatch || wordMatch[1].length < 1) { hideAutocomplete(); return; }
+
+    // If Escape was pressed in this word, don't re-show until cursor moves to a new word
+    if (!forceOpen && acDismissedPos >= 0) {
+        const currentWordStart = pos - wordMatch[1].length;
+        const dismissBefore = text.substring(0, acDismissedPos);
+        const dismissMatch = dismissBefore.match(/([a-zA-Z_$@#.][a-zA-Z0-9_$-]*)$/);
+        const dismissWordStart = dismissMatch ? acDismissedPos - dismissMatch[1].length : acDismissedPos;
+        if (currentWordStart === dismissWordStart) return; // still in same word
+        acDismissedPos = -1; // moved to new word, clear dismiss
+    }
 
     acWord = wordMatch[1]; acWordStart = pos - acWord.length;
     const f = CZUI.getActiveFile();
     const cfg = f ? CZEngine.getLangConfig(f.language) : null;
     acItems = CZEngine.getAutocompleteItems(acWord, text, cfg);
     if (!acItems.length) { hideAutocomplete(); return; }
+
+    // Don't show if the only suggestion is exactly what's already typed
+    if (acItems.length === 1 && acItems[0].label === acWord) { hideAutocomplete(); return; }
 
     acIndex = 0; acVisible = true;
     renderAutocomplete();
@@ -284,11 +298,20 @@ function handleKeydown(e) {
     const cfg = f ? CZEngine.getLangConfig(f.language) : null;
 
     // Autocomplete navigation
+    // Ctrl+Space: manual autocomplete trigger
+    if ((e.ctrlKey||e.metaKey) && e.key===' ') {
+        e.preventDefault();
+        acDismissedPos = -1; // clear dismiss state
+        showAutocomplete(true); // force open
+        return;
+    }
+
     if (acVisible) {
         if (e.key==='ArrowDown') { e.preventDefault(); navigateAutocomplete(1); return; }
         if (e.key==='ArrowUp') { e.preventDefault(); navigateAutocomplete(-1); return; }
         if (e.key==='Enter' || (e.key==='Tab' && acItems.length)) { e.preventDefault(); acceptAutocomplete(); return; }
-        if (e.key==='Escape') { e.preventDefault(); hideAutocomplete(); return; }
+        // Escape: dismiss and suppress re-show until cursor moves to new word
+        if (e.key==='Escape') { e.preventDefault(); acDismissedPos = ta.selectionStart; hideAutocomplete(); return; }
     }
 
     // Tab: Emmet → Indent
@@ -583,13 +606,9 @@ function handleCursorMove() {
 // ===== INPUT HANDLER (triggers autocomplete) =====
 function onInput() {
     CZUI.handleInput();
-    const ta = CZUI.getEditingArea();
-    const text = ta.value, pos = ta.selectionStart;
-    const cfg = CZEngine.getLangConfig(CZUI.getActiveFile()?.language);
-    CZUI.lastBracketKey = CZEngine.getMatchingBrackets(text, pos, cfg).join(',');
     // Trigger autocomplete after a short delay
     clearTimeout(onInput._timer);
-    onInput._timer = setTimeout(showAutocomplete, 100);
+    onInput._timer = setTimeout(showAutocomplete, 120);
     // Live search update
     if (searchVisible) updateSearchMatches();
 }

@@ -18,6 +18,11 @@ const CZUI = (() => {
     let currentLineCount = parseInt(lineNumbers?.dataset?.preloadCount) || 0, lastBracketKey = '';
     let sidebarContextTarget = null; // {handle, parentHandle, name, kind}
 
+    // Viewport rendering state
+    const VP_BUFFER = 40; // lines of buffer above/below viewport
+    let vpFirst = -1, vpLast = -1, vpScrollRAF = 0;
+    let bracketCache = { text: '', pos: -1, result: [] };
+
     // ===== CUSTOMIZABLE FILE ICONS =====
     const ICON_STORAGE_KEY = 'cz_file_icons';
     const DEFAULT_FILE_ICONS = {
@@ -1942,41 +1947,121 @@ const CZUI = (() => {
         }
     }
 
-    // ===== EDITOR VISUALS =====
+    // ===== EDITOR VISUALS (viewport-aware) =====
+    function getCachedBrackets(text, pos, langCfg) {
+        if (text === bracketCache.text && pos === bracketCache.pos) return bracketCache.result;
+        bracketCache.text = text;
+        bracketCache.pos = pos;
+        bracketCache.result = CZEngine.getMatchingBrackets(text, pos, langCfg);
+        return bracketCache.result;
+    }
+
     function updateEditorVisuals() {
         const text = editingArea.value;
-        const newLC = text.split('\n').length;
-        if (newLC !== currentLineCount) {
-            lineNumbers.innerHTML = Array.from({ length: newLC }, (_, i) => i + 1).join('<br>');
-            currentLineCount = newLC;
+        const lines = text.split('\n');
+        const totalLines = lines.length;
+        const lh = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--editor-line-height')) || 24;
+
+        // --- Calculate visible line range ---
+        const scrollTop = editingArea.scrollTop;
+        const viewHeight = editingArea.clientHeight || 500;
+        const firstLine = Math.max(0, Math.floor(scrollTop / lh) - VP_BUFFER);
+        const lastLine = Math.min(totalLines - 1, Math.ceil((scrollTop + viewHeight) / lh) + VP_BUFFER);
+        vpFirst = firstLine;
+        vpLast = lastLine;
+
+        // --- Line numbers (viewport-aware) ---
+        currentLineCount = totalLines;
+        const topNumH = firstLine * lh;
+        const bottomNumH = Math.max(0, (totalLines - lastLine - 1) * lh);
+        let lnHtml = '';
+        if (topNumH > 0) lnHtml += '<div style="height:' + topNumH + 'px"></div>';
+        for (let i = firstLine; i <= lastLine; i++) {
+            if (i > firstLine) lnHtml += '<br>';
+            lnHtml += (i + 1);
         }
+        if (bottomNumH > 0) lnHtml += '<div style="height:' + bottomNumH + 'px"></div>';
+        lineNumbers.innerHTML = lnHtml;
 
-
-
+        // --- Syntax highlighting (viewport-aware) ---
         const f = getActiveFile();
         const langCfg = f ? CZEngine.getLangConfig(f.language) : null;
         const cursorPos = editingArea.selectionStart;
-        const brackets = CZEngine.getMatchingBrackets(text, cursorPos, langCfg);
-        const tokens = CZEngine.tokenize(text, langCfg, f ? f.language : null);
+
+        // Bracket matching — cached to avoid double tokenization
+        const brackets = getCachedBrackets(text, cursorPos, langCfg);
+
+        // Calculate character offset of visible range start
+        let charOffset = 0;
+        for (let i = 0; i < firstLine; i++) charOffset += lines[i].length + 1;
+        const visibleText = lines.slice(firstLine, lastLine + 1).join('\n');
+        const visibleEnd = charOffset + visibleText.length;
+
+        // Tokenize only visible portion
+        const tokens = CZEngine.tokenize(visibleText, langCfg, f ? f.language : null);
+
+        // Adjust bracket positions to visible-text coordinates
+        const adjBrackets = brackets
+            .map(b => b - charOffset)
+            .filter(b => b >= 0 && b < visibleText.length);
+        const vpBrackets = adjBrackets.length === 2 ? adjBrackets : [];
+
         let html;
         // Use token-level search highlighting when search is active
         if (typeof CZFeatures !== 'undefined' && CZFeatures.searchVisible) {
             const matches = CZFeatures.getSearchMatches();
             const curIdx = CZFeatures.getSearchCurrentIdx();
             if (matches.length > 0) {
-                html = applySearchHighlights(text, tokens, matches, curIdx, brackets);
+                // Filter and adjust search matches to visible range
+                const vpMatches = [];
+                let vpCurIdx = -1;
+                for (let i = 0; i < matches.length; i++) {
+                    const m = matches[i];
+                    if (m.end > charOffset && m.start < visibleEnd) {
+                        if (i === curIdx) vpCurIdx = vpMatches.length;
+                        vpMatches.push({
+                            start: Math.max(0, m.start - charOffset),
+                            end: Math.min(visibleText.length, m.end - charOffset)
+                        });
+                    }
+                }
+                html = applySearchHighlights(visibleText, tokens, vpMatches, vpCurIdx, vpBrackets);
             } else {
-                html = CZEngine.renderTokens(tokens, brackets);
+                html = CZEngine.renderTokens(tokens, vpBrackets);
             }
         } else {
-            html = CZEngine.renderTokens(tokens, brackets);
+            html = CZEngine.renderTokens(tokens, vpBrackets);
         }
-        highlightingContent.innerHTML = html + (text.endsWith('\n') ? ' ' : '');
+
+        // Build final HTML with spacers for non-visible regions
+        const topH = firstLine * lh;
+        const bottomH = Math.max(0, (totalLines - lastLine - 1) * lh);
+        let finalHtml = '';
+        if (topH > 0) finalHtml += '<div style="height:' + topH + 'px"></div>';
+        finalHtml += html;
+        if (bottomH > 0) finalHtml += '<div style="height:' + bottomH + 'px"></div>';
+        finalHtml += text.endsWith('\n') ? ' ' : '';
+        highlightingContent.innerHTML = finalHtml;
+
         updateActiveLine();
         updateScrollPastEnd();
-        // Remove preload overrides AFTER scroll padding is set, so scrollbar appears correctly
+        // Remove preload overrides AFTER scroll padding is set
         if (editingArea.classList.contains('preload-visible')) {
             editingArea.classList.remove('preload-visible');
+        }
+    }
+
+    // Re-render when viewport shifts significantly during scroll
+    function checkViewportUpdate() {
+        const lh = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--editor-line-height')) || 24;
+        const scrollTop = editingArea.scrollTop;
+        const viewHeight = editingArea.clientHeight || 500;
+        const firstLine = Math.max(0, Math.floor(scrollTop / lh) - VP_BUFFER);
+        const lastLine = Math.min((editingArea.value.split('\n').length) - 1, Math.ceil((scrollTop + viewHeight) / lh) + VP_BUFFER);
+        // Only re-render if viewport shifted by more than half the buffer
+        if (Math.abs(firstLine - vpFirst) > VP_BUFFER / 2 || Math.abs(lastLine - vpLast) > VP_BUFFER / 2) {
+            cancelAnimationFrame(vpScrollRAF);
+            vpScrollRAF = requestAnimationFrame(() => updateEditorVisuals());
         }
     }
 
@@ -2032,6 +2117,7 @@ const CZUI = (() => {
         highlighting.scrollLeft = editingArea.scrollLeft;
         lineNumbers.scrollTop = editingArea.scrollTop;
         updateActiveLine();
+        checkViewportUpdate();
     }
 
     function ensureCursorVisible() {
@@ -2129,7 +2215,7 @@ const CZUI = (() => {
         createNewFile, closeFile, renameFile, switchFile, processImportedFile,
         saveData, triggerAutosave, applyFontSettings, updateTabDirtyDot,
         openPrompt, closePrompt, openConfirm, closeConfirm, openAlert, closeAlert,
-        handleInput, updateEditorVisuals, updateFootbar, syncScroll, updateActiveLine, ensureCursorVisible, updateScrollPastEnd,
+        handleInput, updateEditorVisuals, updateFootbar, syncScroll, updateActiveLine, ensureCursorVisible, updateScrollPastEnd, checkViewportUpdate,
         executeMenuAction,
         // Sidebar
         toggleSidebar, isSidebarOpen, restoreSidebarState, removePreloadStyles, setTheme,
