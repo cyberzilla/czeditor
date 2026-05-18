@@ -1,0 +1,49 @@
+{
+  "id": "vue",
+  "name": "Vue",
+  "extensions": ["vue"],
+  "comment": {"line":null,"blockStart":"<!--","blockEnd":"-->"},
+  "autoClosePairs": [["\"","\""],["'","'"],["`","`"],["{","}"],["[","]"],["(",")"]],
+  "autoCloseTag": true,
+  "brackets": [["{","}"],["[","]"],["(",")"]],
+  "syntax": [
+    {"match":"`(?:[^`\\\\]|\\\\.)*`","scope":"string"},
+    {"match":"\"(?:[^\"\\\\\\n]|\\\\.)*\"","scope":"string"},
+    {"match":"'(?:[^'\\\\\\n]|\\\\.)*'","scope":"string"},
+    {"match":"<!--[\\s\\S]*?-->","scope":"comment"},
+    {"match":"\\/\\/[^\\n]*","scope":"comment"},
+    {"match":"\\/\\*[\\s\\S]*?\\*\\/","scope":"comment"},
+    {"match":"\\b(?:const|let|var|function|return|if|else|for|while|do|switch|case|break|continue|class|extends|import|export|default|from|as|new|delete|typeof|instanceof|in|of|try|catch|finally|throw|async|await|yield|static|true|false|null|undefined|void|this|template|script|style|setup|props|emits|defineProps|defineEmits|defineExpose|defineOptions|ref|reactive|computed|watch|watchEffect|onMounted|onUnmounted|onUpdated|onBeforeMount|onBeforeUnmount|onBeforeUpdate|nextTick|provide|inject|readonly|toRef|toRefs|shallowRef|shallowReactive|triggerRef|customRef|unref|isRef|toRaw|markRaw|effectScope)\\b","scope":"keyword"},
+    {"match":"(?<=<\\/?)([A-Z][a-zA-Z0-9]*)","scope":"class"},
+    {"match":"(?<=<\\/?)([a-z][a-zA-Z0-9-]*)","scope":"tag"},
+    {"match":"\\b([a-zA-Z-]+)(?=\\s*=)","scope":"attr"},
+    {"match":"(?:v-if|v-else-if|v-else|v-for|v-show|v-model|v-bind|v-on|v-slot|v-pre|v-once|v-cloak|v-memo|v-html|v-text)","scope":"keyword"},
+    {"match":"(?:@[a-zA-Z.-]+|:[a-zA-Z.-]+|#[a-zA-Z.-]+)","scope":"attr"},
+    {"match":"\\b[a-zA-Z_$][a-zA-Z0-9_$]*(?=\\s*\\()","scope":"function"},
+    {"match":"\\b(?:0x[0-9a-fA-F]+|0b[01]+|0o[0-7]+|\\d+\\.?\\d*(?:e[+-]?\\d+)?)\\b","scope":"number"},
+    {"match":"[<>/=]","scope":"punctuation"}
+  ],
+  "autocomplete": {
+    "keywords": ["async","await","break","case","catch","class","const","continue","default","delete","do","else","export","extends","false","finally","for","function","if","import","in","instanceof","let","new","null","of","return","static","switch","this","throw","true","try","typeof","undefined","var","void","while","yield"],
+    "builtins": ["ref","reactive","computed","watch","watchEffect","watchPostEffect","onMounted","onUnmounted","onUpdated","onBeforeMount","onBeforeUnmount","onBeforeUpdate","onActivated","onDeactivated","onErrorCaptured","nextTick","provide","inject","readonly","toRef","toRefs","shallowRef","shallowReactive","triggerRef","customRef","unref","isRef","toRaw","markRaw","effectScope","defineProps","defineEmits","defineExpose","defineOptions","defineSlots","defineModel","withDefaults","useSlots","useAttrs","createApp","defineComponent","defineAsyncComponent","h","resolveComponent","resolveDirective","Teleport","Transition","TransitionGroup","KeepAlive","Suspense","template","script","style","setup","v-if","v-else-if","v-else","v-for","v-show","v-model","v-bind","v-on","v-slot","v-pre","v-once","v-cloak","v-memo","console","document","window","fetch","Promise","JSON"]
+  },
+  "snippets": {
+    "vbase": {"body":"<template>\n\t<div>\n\t\t$1\n\t</div>\n</template>\n\n<script setup>\n$2\n</script>\n\n<style scoped>\n$3\n</style>","description":"Vue 3 SFC Base"},
+    "vbase-ts": {"body":"<template>\n\t<div>\n\t\t$1\n\t</div>\n</template>\n\n<script setup lang=\"ts\">\n$2\n</script>\n\n<style scoped>\n$3\n</style>","description":"Vue 3 SFC TypeScript"},
+    "vref": {"body":"const $1 = ref($2);","description":"Vue Ref"},
+    "vreactive": {"body":"const $1 = reactive({\n\t$2\n});","description":"Vue Reactive"},
+    "vcomputed": {"body":"const $1 = computed(() => {\n\treturn $2;\n});","description":"Vue Computed"},
+    "vwatch": {"body":"watch($1, ($2, $3) => {\n\t$4\n});","description":"Vue Watch"},
+    "vwatcheffect": {"body":"watchEffect(() => {\n\t$1\n});","description":"Vue WatchEffect"},
+    "vonmounted": {"body":"onMounted(() => {\n\t$1\n});","description":"Vue onMounted"},
+    "vonunmounted": {"body":"onUnmounted(() => {\n\t$1\n});","description":"Vue onUnmounted"},
+    "vprops": {"body":"const props = defineProps<{\n\t$1: $2;\n}>();","description":"Vue defineProps"},
+    "vemits": {"body":"const emit = defineEmits<{\n\t$1: [$2];\n}>();","description":"Vue defineEmits"},
+    "vfor": {"body":"v-for=\"$1 in $2\" :key=\"$3\"","description":"v-for"},
+    "vif": {"body":"v-if=\"$1\"","description":"v-if"},
+    "vmodel": {"body":"v-model=\"$1\"","description":"v-model"},
+    "imp": {"body":"import $1 from '$2';","description":"Import"},
+    "impa": {"body":"import { $1 } from '$2';","description":"Import Named"}
+  },
+  "voidTags": ["area","base","br","col","embed","hr","img","input","link","meta","param","source","track","wbr"]
+}

@@ -1,27 +1,77 @@
 // CZEditor UI Module — Tabs, Files, Dialogs
 const CZUI = (() => {
     const $ = id => document.getElementById(id);
-    const tabsContainer = $('tabs-container'), editingArea = $('editing'),
-        highlightingContent = $('highlighting-content'), lineNumbers = $('line-numbers'),
+    const tabsContainer = $('tabs-container'),
         langSelector = $('lang-selector'), saveStatus = $('save-status'),
-        highlighting = $('highlighting'), dropOverlay = $('drop-overlay'),
+        dropOverlay = $('drop-overlay'),
         welcomeScreen = $('welcome-screen'), editorBody = $('editor-body'),
         toolbarRight = $('toolbar-right'), editorFooter = $('editor-footer'),
         tabContextMenu = $('tab-context-menu'), settingsPopup = $('settings-popup'),
-        fontConfigModal = $('font-config-modal'), activeLineHL = $('active-line-highlight'),
+        fontConfigModal = $('font-config-modal'),
         sidebar = $('sidebar'), sidebarTree = $('sidebar-tree'), sidebarEmpty = $('sidebar-empty'),
         sidebarContextMenu = $('sidebar-context-menu'), explorerSettingsModal = $('explorer-settings-modal'),
         sidebarActions = $('sidebar-actions'), btnSidebarReopen = $('btn-sidebar-reopen');
 
+    // Virtual editor instance
+    const editorContainer = $('virtual-editor');
+    let editorView = null; // initialized after DOM ready
+
+    // Backward-compat shim: editingArea proxies to the hidden input
+    const editingArea = {
+        get value() { return editorView ? editorView.getValue() : ''; },
+        set value(v) { if (editorView) editorView.setValue(v); },
+        get selectionStart() { return editorView ? editorView.getCursorOffset() : 0; },
+        set selectionStart(v) {
+            if (!editorView) return;
+            const pos = editorView.model.getPositionAt(v);
+            editorView.cursor = pos;
+            editorView._scheduleRender();
+        },
+        get selectionEnd() {
+            if (!editorView) return 0;
+            if (editorView.hasSelection()) {
+                const r = editorView.getSelectionRange();
+                if (r) return editorView.model.getOffsetAt(r.endLine, r.endCol);
+            }
+            return this.selectionStart;
+        },
+        set selectionEnd(v) { /* handled by setSelectionRange */ },
+        setSelectionRange(start, end) {
+            if (!editorView) return;
+            const m = editorView.model;
+            const startPos = m.getPositionAt(start);
+            const endPos = m.getPositionAt(end);
+            if (start === end) {
+                editorView.cursor = startPos;
+                editorView.anchor = null;
+            } else {
+                editorView.anchor = startPos;
+                editorView.cursor = endPos;
+            }
+            editorView._scrollToCursor();
+            editorView._scheduleRender();
+        },
+        get scrollTop() { return editorView ? editorView.getScrollTop() : 0; },
+        set scrollTop(v) { if (editorView) editorView.setScrollTop(v); },
+        get scrollLeft() { return editorView ? editorView.scrollEl.scrollLeft : 0; },
+        set scrollLeft(v) { if (editorView) editorView.scrollEl.scrollLeft = v; },
+        get clientHeight() { return editorView ? editorView.scrollEl.clientHeight : 0; },
+        get scrollWidth() { return editorView ? editorView.scrollEl.scrollWidth : 0; },
+        get offsetHeight() { return editorView ? editorView.scrollEl.offsetHeight : 0; },
+        get parentElement() { return editorContainer; },
+        get classList() { return editorContainer.classList; },
+        get style() { return editorContainer.style; },
+        focus() { if (editorView) editorView.focus(); },
+        select() { /* select all via model */ },
+        getBoundingClientRect() { return editorView ? editorView.scrollEl.getBoundingClientRect() : { top: 0, left: 0, right: 0, bottom: 0, width: 0, height: 0 }; },
+        addEventListener(t, fn) { if (editorView) editorView.scrollEl.addEventListener(t, fn); },
+        removeEventListener(t, fn) { if (editorView) editorView.scrollEl.removeEventListener(t, fn); }
+    };
+
     let files = [], activeFileId = null, saveTimeout = null, isDraggingTab = false;
     let targetContextTabId = null, promptCb = null, confirmCb = null;
-    let currentLineCount = parseInt(lineNumbers?.dataset?.preloadCount) || 0, lastBracketKey = '';
+    let currentLineCount = 0, lastBracketKey = '';
     let sidebarContextTarget = null; // {handle, parentHandle, name, kind}
-
-    // Viewport rendering state
-    const VP_BUFFER = 40; // lines of buffer above/below viewport
-    let vpFirst = -1, vpLast = -1, vpScrollRAF = 0;
-    let bracketCache = { text: '', pos: -1, result: [] };
 
     // ===== CUSTOMIZABLE FILE ICONS =====
     const ICON_STORAGE_KEY = 'cz_file_icons';
@@ -188,7 +238,7 @@ const CZUI = (() => {
         editorBody.classList.toggle('hidden', empty || isNonEditor);
         toolbarRight.classList.toggle('hidden', empty);
         editorFooter.classList.toggle('hidden', empty);
-        if (activeLineHL) activeLineHL.style.display = (empty || isNonEditor) ? 'none' : 'block';
+        // Active line highlight handled by EditorView
         // Show/hide image viewer based on whether active file is a binary image
         const iv = $('image-viewer');
         if (iv) iv.classList.toggle('hidden', empty || !activeFile?.isImage);
@@ -279,6 +329,8 @@ const CZUI = (() => {
         document.documentElement.style.setProperty('--editor-line-height', lh + 'px');
         localStorage.setItem('cz_font_weight', w);
         localStorage.setItem('cz_font_size', s);
+        // Re-measure virtual editor after font change
+        if (editorView) editorView.remeasure();
     }
 
     // ===== SAVE =====
@@ -498,6 +550,8 @@ const CZUI = (() => {
             langSelector.value = f.language;
             lastBracketKey = '';
             updateEditorVisuals(); updateFootbar();
+            // Focus the virtual editor so user can type immediately
+            if (editorView) requestAnimationFrame(() => editorView.focus());
             CZEngine.loadLanguage(f.language).then(() => updateEditorVisuals());
             // Update preview if open
             if (previewOpen) {
@@ -662,15 +716,16 @@ const CZUI = (() => {
             editorW = Math.max(200, editorW);
             editorPane.style.width = editorW + 'px';
             editorPane.style.flexGrow = '0';
-            editorPane.style.flexShrink = '0';
+            editorPane.style.flexShrink = '1';
             editorPane.style.flexBasis = editorW + 'px';
             // Set preview pane width explicitly (remaining space)
             const previewW = Math.max(180, container.clientWidth - editorW - handleW);
             pane.style.width = previewW + 'px';
-            pane.style.flexGrow = '0';
-            pane.style.flexShrink = '0';
+            pane.style.flexGrow = '1';
+            pane.style.flexShrink = '1';
             pane.style.flexBasis = previewW + 'px';
-            updatePreview();
+            // Delay preview init until browser has fully laid out the pane
+            requestAnimationFrame(() => requestAnimationFrame(() => updatePreview()));
         } else {
             pane.classList.add('hidden');
             handle.classList.add('hidden');
@@ -686,6 +741,7 @@ const CZUI = (() => {
             pane.style.flexBasis = '';
         }
     }
+
 
     function closePreview() {
         if (lottieAnim) { try { lottieAnim.destroy(); } catch (e) {} lottieAnim = null; }
@@ -805,6 +861,16 @@ const CZUI = (() => {
         function initLottie() {
             try {
                 const animData = JSON.parse(jsonContent);
+
+                // Set container dimensions BEFORE animation init so canvas gets correct size
+                if (animData.w && animData.h) {
+                    container.style.aspectRatio = animData.w + '/' + animData.h;
+                    container.style.maxWidth = '100%';
+                    container.style.maxHeight = '100%';
+                    container.style.width = 'auto';
+                    container.style.height = 'auto';
+                }
+
                 lottieAnim = lottie.loadAnimation({
                     container: container,
                     renderer: 'canvas',
@@ -816,15 +882,6 @@ const CZUI = (() => {
                         progressiveLoad: true
                     }
                 });
-
-                // Constrain container to animation's aspect ratio so canvas doesn't stretch
-                if (animData.w && animData.h) {
-                    container.style.aspectRatio = animData.w + '/' + animData.h;
-                    container.style.maxWidth = '100%';
-                    container.style.maxHeight = '100%';
-                    container.style.width = 'auto';
-                    container.style.height = 'auto';
-                }
 
                 // Frame info — throttle to ~10fps for UI performance
                 const frameInfo = document.getElementById('lottie-frame-info');
@@ -1051,12 +1108,12 @@ const CZUI = (() => {
                     const previewW = containerW - newEditorW - handleW;
                     editorPane.style.width = newEditorW + 'px';
                     editorPane.style.flexGrow = '0';
-                    editorPane.style.flexShrink = '0';
+                    editorPane.style.flexShrink = '1';
                     editorPane.style.flexBasis = newEditorW + 'px';
                     // Preview gets exact remaining width
                     pane.style.width = previewW + 'px';
-                    pane.style.flexGrow = '0';
-                    pane.style.flexShrink = '0';
+                    pane.style.flexGrow = '1';
+                    pane.style.flexShrink = '1';
                     pane.style.flexBasis = previewW + 'px';
                 });
             }
@@ -1299,6 +1356,8 @@ const CZUI = (() => {
             delete sidebarTree.dataset.preloaded;
             attachTreeHandlers(tree, sidebarTree, 1, CZFS.getDirectoryHandle(), folderName);
             highlightActiveInTree();
+            // Update cached tree HTML with current expand state
+            try { localStorage.setItem('cz_tree_html', sidebarTree.innerHTML); } catch (e) { /* quota */ }
             return;
         }
 
@@ -1377,6 +1436,8 @@ const CZUI = (() => {
                         if (childrenDiv) childrenDiv.classList.toggle('collapsed', !node.expanded);
                         const tree = CZFS.getCurrentTree();
                         if (tree) saveExpandedPaths(tree, CZFS.getDirectoryHandle()?.name || '');
+                        // Update cached tree HTML
+                        try { localStorage.setItem('cz_tree_html', sidebarTree.innerHTML); } catch (e) { /* quota */ }
                     };
                     item.oncontextmenu = (e) => {
                         e.preventDefault();
@@ -1432,6 +1493,8 @@ const CZUI = (() => {
                     // Persist folder state
                     const tree = CZFS.getCurrentTree();
                     if (tree) saveExpandedPaths(tree, CZFS.getDirectoryHandle()?.name || '');
+                    // Update cached tree HTML
+                    try { localStorage.setItem('cz_tree_html', sidebarTree.innerHTML); } catch (e) { /* quota */ }
                 };
 
                 item.oncontextmenu = (e) => {
@@ -1614,6 +1677,8 @@ const CZUI = (() => {
 
     function highlightActiveInTree() {
         if (!sidebarTree) return;
+        // Skip if tree is preloaded (will be re-rendered with full data later)
+        if (sidebarTree.dataset.preloaded) return;
         sidebarTree.querySelectorAll('.tree-item.active').forEach(el => el.classList.remove('active'));
         const activeFile = getActiveFile();
         if (!activeFile) return;
@@ -1898,171 +1963,50 @@ const CZUI = (() => {
     // ===== FOOTER =====
     function updateFootbar() {
         if (!activeFileId || !files.length) return;
-        const text = editingArea.value, pos = editingArea.selectionStart;
-        const lines = text.split('\n'), before = text.substring(0, pos).split('\n');
-        $('stat-length').textContent = CZi18n.t('stat_length', text.length);
-        $('stat-lines').textContent = CZi18n.t('stat_lines', lines.length);
-        $('stat-cursor').textContent = `Ln ${before.length}, Col ${before[before.length - 1].length + 1}`;
         const f = getActiveFile();
-        if (f) {
-            langSelector.value = f.language;
-            $('stat-lang').textContent = langSelector.options[langSelector.selectedIndex]?.text || f.language;
-            $('stat-encoding').textContent = f.encoding || 'UTF-8';
-            $('stat-eol').textContent = f.eol || 'LF';
+        if (!f) return;
+        // Use EditorView for cursor info (avoids expensive text.split on large files)
+        if (editorView) {
+            const info = editorView.getCursorInfo();
+            const m = editorView.model;
+            $('stat-length').textContent = CZi18n.t('stat_length', m.getTotalLength());
+            $('stat-lines').textContent = CZi18n.t('stat_lines', m.getLineCount());
+            $('stat-cursor').textContent = `Ln ${info.line}, Col ${info.col}`;
         }
+        langSelector.value = f.language;
+        $('stat-lang').textContent = langSelector.options[langSelector.selectedIndex]?.text || f.language;
+        $('stat-encoding').textContent = f.encoding || 'UTF-8';
+        $('stat-eol').textContent = f.eol || 'LF';
     }
 
     // ===== ACTIVE LINE HIGHLIGHT =====
     function updateActiveLine() {
-        if (!activeLineHL || !activeFileId) return;
-        const text = editingArea.value, pos = editingArea.selectionStart;
-        const lineNum = text.substring(0, pos).split('\n').length - 1;
-        const lh = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--editor-line-height')) || 24;
-        activeLineHL.style.display = 'block';
-        activeLineHL.style.top = (20 + lineNum * lh - editingArea.scrollTop) + 'px';
-        activeLineHL.style.left = -editingArea.scrollLeft + 'px';
+        // Handled by EditorView — no-op
     }
 
     // ===== SCROLL PAST END =====
     function updateScrollPastEnd() {
-        const wrapper = editingArea.parentElement;
-        if (!wrapper) return;
-        const lh = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--editor-line-height')) || 24;
-        // Scrollbar eats into textarea viewport, so subtract it from padding
-        const scrollbarH = editingArea.offsetHeight - editingArea.clientHeight;
-        const taPad = Math.max(50, wrapper.clientHeight - lh - scrollbarH);
-        editingArea.style.paddingBottom = taPad + 'px';
-        // Line-numbers has no scrollbar, needs extra padding to scroll same distance
-        lineNumbers.style.paddingBottom = (taPad + scrollbarH) + 'px';
-        // Highlighting (no scrollbar) uses a spacer div to avoid border-box overflow
-        let spacer = highlighting.querySelector('.scroll-spacer');
-        if (!spacer) {
-            spacer = document.createElement('div');
-            spacer.className = 'scroll-spacer';
-            highlighting.appendChild(spacer);
-        }
-        spacer.style.height = taPad + 'px';
-        if (activeLineHL) {
-            activeLineHL.style.width = Math.max(editingArea.scrollWidth, wrapper.clientWidth) + 'px';
-        }
+        // Handled by EditorView sizer height — no-op
     }
 
-    // ===== EDITOR VISUALS (viewport-aware) =====
-    function getCachedBrackets(text, pos, langCfg) {
-        if (text === bracketCache.text && pos === bracketCache.pos) return bracketCache.result;
-        bracketCache.text = text;
-        bracketCache.pos = pos;
-        bracketCache.result = CZEngine.getMatchingBrackets(text, pos, langCfg);
-        return bracketCache.result;
-    }
-
+    // ===== EDITOR VISUALS =====
     function updateEditorVisuals() {
-        const text = editingArea.value;
-        const lines = text.split('\n');
-        const totalLines = lines.length;
-        const lh = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--editor-line-height')) || 24;
-
-        // --- Calculate visible line range ---
-        const scrollTop = editingArea.scrollTop;
-        const viewHeight = editingArea.clientHeight || 500;
-        const firstLine = Math.max(0, Math.floor(scrollTop / lh) - VP_BUFFER);
-        const lastLine = Math.min(totalLines - 1, Math.ceil((scrollTop + viewHeight) / lh) + VP_BUFFER);
-        vpFirst = firstLine;
-        vpLast = lastLine;
-
-        // --- Line numbers (viewport-aware) ---
-        currentLineCount = totalLines;
-        const topNumH = firstLine * lh;
-        const bottomNumH = Math.max(0, (totalLines - lastLine - 1) * lh);
-        let lnHtml = '';
-        if (topNumH > 0) lnHtml += '<div style="height:' + topNumH + 'px"></div>';
-        for (let i = firstLine; i <= lastLine; i++) {
-            if (i > firstLine) lnHtml += '<br>';
-            lnHtml += (i + 1);
-        }
-        if (bottomNumH > 0) lnHtml += '<div style="height:' + bottomNumH + 'px"></div>';
-        lineNumbers.innerHTML = lnHtml;
-
-        // --- Syntax highlighting (viewport-aware) ---
-        const f = getActiveFile();
-        const langCfg = f ? CZEngine.getLangConfig(f.language) : null;
-        const cursorPos = editingArea.selectionStart;
-
-        // Bracket matching — cached to avoid double tokenization
-        const brackets = getCachedBrackets(text, cursorPos, langCfg);
-
-        // Calculate character offset of visible range start
-        let charOffset = 0;
-        for (let i = 0; i < firstLine; i++) charOffset += lines[i].length + 1;
-        const visibleText = lines.slice(firstLine, lastLine + 1).join('\n');
-        const visibleEnd = charOffset + visibleText.length;
-
-        // Tokenize only visible portion
-        const tokens = CZEngine.tokenize(visibleText, langCfg, f ? f.language : null);
-
-        // Adjust bracket positions to visible-text coordinates
-        const adjBrackets = brackets
-            .map(b => b - charOffset)
-            .filter(b => b >= 0 && b < visibleText.length);
-        const vpBrackets = adjBrackets.length === 2 ? adjBrackets : [];
-
-        let html;
-        // Use token-level search highlighting when search is active
-        if (typeof CZFeatures !== 'undefined' && CZFeatures.searchVisible) {
-            const matches = CZFeatures.getSearchMatches();
-            const curIdx = CZFeatures.getSearchCurrentIdx();
-            if (matches.length > 0) {
-                // Filter and adjust search matches to visible range
-                const vpMatches = [];
-                let vpCurIdx = -1;
-                for (let i = 0; i < matches.length; i++) {
-                    const m = matches[i];
-                    if (m.end > charOffset && m.start < visibleEnd) {
-                        if (i === curIdx) vpCurIdx = vpMatches.length;
-                        vpMatches.push({
-                            start: Math.max(0, m.start - charOffset),
-                            end: Math.min(visibleText.length, m.end - charOffset)
-                        });
-                    }
-                }
-                html = applySearchHighlights(visibleText, tokens, vpMatches, vpCurIdx, vpBrackets);
-            } else {
-                html = CZEngine.renderTokens(tokens, vpBrackets);
-            }
-        } else {
-            html = CZEngine.renderTokens(tokens, vpBrackets);
-        }
-
-        // Build final HTML with spacers for non-visible regions
-        const topH = firstLine * lh;
-        const bottomH = Math.max(0, (totalLines - lastLine - 1) * lh);
-        let finalHtml = '';
-        if (topH > 0) finalHtml += '<div style="height:' + topH + 'px"></div>';
-        finalHtml += html;
-        if (bottomH > 0) finalHtml += '<div style="height:' + bottomH + 'px"></div>';
-        finalHtml += text.endsWith('\n') ? ' ' : '';
-        highlightingContent.innerHTML = finalHtml;
-
-        updateActiveLine();
-        updateScrollPastEnd();
-        // Remove preload overrides AFTER scroll padding is set
-        if (editingArea.classList.contains('preload-visible')) {
-            editingArea.classList.remove('preload-visible');
+        // Delegate to virtual editor
+        if (editorView) editorView._render(true);
+        // Remove preload overrides
+        if (editorContainer && editorContainer.classList.contains('preload-visible')) {
+            editorContainer.classList.remove('preload-visible');
         }
     }
 
-    // Re-render when viewport shifts significantly during scroll
     function checkViewportUpdate() {
-        const lh = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--editor-line-height')) || 24;
-        const scrollTop = editingArea.scrollTop;
-        const viewHeight = editingArea.clientHeight || 500;
-        const firstLine = Math.max(0, Math.floor(scrollTop / lh) - VP_BUFFER);
-        const lastLine = Math.min((editingArea.value.split('\n').length) - 1, Math.ceil((scrollTop + viewHeight) / lh) + VP_BUFFER);
-        // Only re-render if viewport shifted by more than half the buffer
-        if (Math.abs(firstLine - vpFirst) > VP_BUFFER / 2 || Math.abs(lastLine - vpLast) > VP_BUFFER / 2) {
-            cancelAnimationFrame(vpScrollRAF);
-            vpScrollRAF = requestAnimationFrame(() => updateEditorVisuals());
-        }
+        // Handled by EditorView scroll listener — no-op
+    }
+
+    // Initialize virtual editor (called once from script.js)
+    function initVirtualEditor() {
+        if (!editorContainer) return;
+        editorView = new EditorView.View(editorContainer);
     }
 
     function applySearchHighlights(text, tokens, matches, currentIdx, brackets) {
@@ -2113,33 +2057,11 @@ const CZUI = (() => {
     }
 
     function syncScroll() {
-        highlighting.scrollTop = editingArea.scrollTop;
-        highlighting.scrollLeft = editingArea.scrollLeft;
-        lineNumbers.scrollTop = editingArea.scrollTop;
-        updateActiveLine();
-        checkViewportUpdate();
+        // EditorView handles its own scroll — no-op
     }
 
     function ensureCursorVisible() {
-        const ta = editingArea;
-        if (!ta || !activeFileId) return;
-        const text = ta.value;
-        const pos = ta.selectionStart;
-        const lh = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--editor-line-height')) || 24;
-        const lineNum = text.substring(0, pos).split('\n').length - 1;
-        const cursorY = 20 + lineNum * lh; // 20 = editor padding-top
-        const viewTop = ta.scrollTop;
-        const viewBottom = ta.scrollTop + ta.clientHeight;
-        const margin = lh * 2; // keep 2 lines of margin
-
-        if (cursorY + lh > viewBottom - margin) {
-            // Cursor below visible area — scroll so cursor is near bottom with margin
-            ta.scrollTop = cursorY + lh + margin - ta.clientHeight;
-        } else if (cursorY < viewTop + margin) {
-            // Cursor above visible area — scroll so cursor is near top with margin
-            ta.scrollTop = Math.max(0, cursorY - margin);
-        }
-        syncScroll();
+        // EditorView handles cursor visibility — no-op
     }
 
     function handleInput() {
@@ -2196,12 +2118,11 @@ const CZUI = (() => {
                     tf.dirty = false;
                     saveData();
                     if (tf.id === activeFileId) {
-                        editingArea.value = tf.content;
-                        currentLineCount = 0;
-                        updateEditorVisuals(); updateFootbar();
-                        if (previewOpen && isPreviewableFile(tf)) updatePreview();
+                        // Use switchFile for proper state management
+                        switchFile(tf.id);
+                    } else {
+                        renderTabs();
                     }
-                    renderTabs();
                 } catch (e) {
                     openAlert(CZi18n.t('alert_title'), CZi18n.t('ctx_reload_error') || 'Failed to reload: ' + e.message);
                 }
@@ -2217,6 +2138,8 @@ const CZUI = (() => {
         openPrompt, closePrompt, openConfirm, closeConfirm, openAlert, closeAlert,
         handleInput, updateEditorVisuals, updateFootbar, syncScroll, updateActiveLine, ensureCursorVisible, updateScrollPastEnd, checkViewportUpdate,
         executeMenuAction,
+        initVirtualEditor,
+        get editorView() { return editorView; },
         // Sidebar
         toggleSidebar, isSidebarOpen, restoreSidebarState, removePreloadStyles, setTheme,
         renderSidebar, refreshSidebar, collapseAllFolders, closeFolder,

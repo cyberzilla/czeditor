@@ -14,6 +14,9 @@
         document.getElementById('font-size-input').value = savedFontSize;
         CZUI.applyFontSettings();
 
+        // Initialize virtual editor engine
+        CZUI.initVirtualEditor();
+
         if (savedFiles) {
             let files = JSON.parse(savedFiles);
             // Filter out entries that truly can't be restored
@@ -76,32 +79,8 @@
     }
 
     function bindEvents() {
-        const ta = CZUI.getEditingArea();
-
-        // Editor events
-        ta.addEventListener('input', CZFeatures.onInput);
-        ta.addEventListener('keydown', CZFeatures.handleKeydown);
-
-        // Use selectionchange for INSTANT cursor tracking (fires during keydown, not after keyup)
-        document.addEventListener('selectionchange', () => {
-            if (document.activeElement !== ta) return;
-            // Update footbar and active line immediately
-            CZUI.updateFootbar();
-            CZUI.updateActiveLine();
-            // Bracket matching (slightly deferred to avoid perf hit on rapid navigation)
-            cancelAnimationFrame(bindEvents._bracketRAF);
-            bindEvents._bracketRAF = requestAnimationFrame(() => {
-                CZFeatures.handleCursorMove();
-            });
-        });
-
-        ta.addEventListener('scroll', () => {
-            CZUI.syncScroll();
-            CZUI.updateActiveLine();
-        });
-
-        // Recalculate scroll-past-end padding on window resize
-        window.addEventListener('resize', () => CZUI.updateScrollPastEnd());
+        // EditorView handles input, keydown, scroll internally.
+        // No need to bind to the old textarea shim.
 
         // Header buttons
         document.getElementById('btn-new-file').onclick = () => CZUI.createNewFile();
@@ -279,6 +258,7 @@
                     CZUI.updateEditorVisuals();
                     CZUI.updateFootbar();
                     CZUI.saveData();
+                    CZUI.editingArea.focus();
                 });
             };
         });
@@ -306,6 +286,7 @@
                 eolPicker.classList.add('hidden');
                 CZUI.updateFootbar();
                 CZUI.saveData();
+                CZUI.editingArea.focus();
             };
         });
 
@@ -332,6 +313,7 @@
                 encPicker.classList.add('hidden');
                 CZUI.updateFootbar();
                 CZUI.saveData();
+                CZUI.editingArea.focus();
             };
         });
 

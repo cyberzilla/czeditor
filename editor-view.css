@@ -1,0 +1,173 @@
+/* ==========================================
+   CZEditor Virtual Renderer Styles
+   ========================================== */
+
+/* Main editor container */
+.virt-editor {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.virt-scroll {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    /* Overridden by JS to gutterW */
+    overflow: auto;
+    cursor: text;
+}
+
+.virt-sizer {
+    position: relative;
+    min-width: 100%;
+    box-sizing: border-box;
+}
+
+/* Line number gutter — outside scroll container, never scrolls horizontally */
+.virt-gutter {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 4;
+    background: var(--bg-main, #1e1e2e);
+    border-right: 1px solid var(--border-color);
+    user-select: none;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.virt-gutter-num {
+    position: absolute;
+    right: 8px;
+    text-align: right;
+    color: var(--line-num-color, #555);
+    font-family: var(--font-mono);
+    font-size: var(--editor-font-size, 15px);
+    font-weight: var(--editor-font-weight, 400);
+    line-height: var(--editor-line-height, 24px);
+    white-space: nowrap;
+}
+
+/* Lines container */
+.virt-lines {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+}
+
+.virt-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    padding-left: 8px;
+    font-family: var(--font-mono);
+    font-size: var(--editor-font-size, 15px);
+    font-weight: var(--editor-font-weight, 400);
+    line-height: var(--editor-line-height, 24px);
+    white-space: pre;
+    tab-size: 4;
+    color: var(--text-main, #cdd6f4);
+    font-variant-ligatures: contextual common-ligatures;
+    font-feature-settings: "liga" 1, "calt" 1;
+}
+
+/* Active line highlight */
+.virt-active-line {
+    position: absolute;
+    right: 0;
+    z-index: 0;
+    background: var(--active-line-bg, rgba(255, 255, 255, 0.04));
+    pointer-events: none;
+}
+
+/* Search match highlights */
+.virt-search-match {
+    position: absolute;
+    background: rgba(255, 215, 0, 0.25);
+    border: 1px solid rgba(255, 215, 0, 0.5);
+    border-radius: 2px;
+    pointer-events: none;
+    z-index: 1;
+    box-sizing: border-box;
+}
+
+.virt-search-match.current {
+    background: rgba(255, 140, 0, 0.4);
+    border-color: rgba(255, 140, 0, 0.8);
+}
+
+/* Bracket match highlights */
+.virt-bracket-match {
+    position: absolute;
+    background: rgba(255, 255, 100, 0.15);
+    border: 1px solid rgba(255, 255, 100, 0.6);
+    border-radius: 2px;
+    pointer-events: none;
+    z-index: 1;
+    box-sizing: border-box;
+}
+
+/* Cursor (blinking caret) */
+.virt-cursor {
+    position: absolute;
+    width: 1px;
+    z-index: 3;
+    background: var(--cursor-color, #f5e0dc);
+    pointer-events: none;
+}
+
+.virt-cursor.blink {
+    animation: virt-blink 1s step-end infinite;
+}
+
+@keyframes virt-blink {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0;
+    }
+}
+
+/* Selection layer */
+.virt-sel-layer {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.virt-sel-rect {
+    position: absolute;
+    background: var(--selection-bg, rgba(116, 199, 236, 0.18));
+}
+
+/* Hidden input textarea (captures keystrokes + IME) */
+.virt-input {
+    position: absolute;
+    width: 1px !important;
+    height: 1em !important;
+    padding: 0 !important;
+    border: none !important;
+    outline: none !important;
+    opacity: 0 !important;
+    z-index: 3;
+    resize: none;
+    overflow: hidden;
+    font: inherit;
+    caret-color: transparent;
+    color: transparent;
+    background: transparent;
+}

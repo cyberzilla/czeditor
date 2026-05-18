@@ -1,39 +1,40 @@
 {
   "id": "markdown",
   "name": "Markdown",
-  "extensions": ["md", "markdown", "mdown", "mkd"],
-  "comment": { "line": null, "blockStart": "<!--", "blockEnd": "-->" },
-  "autoClosePairs": [
-    ["(", ")"], ["[", "]"], ["{", "}"], ["\"", "\""], ["*", "*"], ["_", "_"], ["`", "`"]
-  ],
-  "brackets": [["(", ")"], ["[", "]"], ["{", "}"]],
+  "extensions": ["md","markdown","mdown","mkd"],
+  "comment": {"line":null,"blockStart":"<!--","blockEnd":"-->"},
+  "autoClosePairs": [["(",")"],["[","]"],["{","}"],["\"","\""],["*","*"],["_","_"],["`","`"]],
+  "brackets": [["(",")"],["[","]"],["{","}"]],
   "syntax": [
-    { "match": "<!--[\\s\\S]*?-->", "scope": "comment" },
-    { "match": "^#{1,6}\\s+.*$", "scope": "keyword", "flags": "m" },
-    { "match": "```[\\s\\S]*?```", "scope": "string" },
-    { "match": "`[^`\\n]+`", "scope": "string" },
-    { "match": "\\*\\*[^*]+\\*\\*", "scope": "bold" },
-    { "match": "__[^_]+__", "scope": "bold" },
-    { "match": "\\*[^*]+\\*", "scope": "italic" },
-    { "match": "_[^_]+_", "scope": "italic" },
-    { "match": "!?\\[[^\\]]*\\]\\([^)]*\\)", "scope": "function" },
-    { "match": "^[*+-]\\s", "scope": "tag", "flags": "m" },
-    { "match": "^\\d+\\.\\s", "scope": "tag", "flags": "m" },
-    { "match": "^>+\\s?", "scope": "comment", "flags": "m" },
-    { "match": "^---+$|^\\*\\*\\*+$|^___+$", "scope": "comment", "flags": "m" }
+    {"match":"```[\\s\\S]*?```","scope":"string"},
+    {"match":"`[^`\\n]+`","scope":"string"},
+    {"match":"<!--[\\s\\S]*?-->","scope":"comment"},
+    {"match":"^>+\\s?","scope":"comment","flags":"m"},
+    {"match":"^---+$|^\\*\\*\\*+$|^___+$","scope":"comment","flags":"m"},
+    {"match":"^#{1,6}\\s+.*$","scope":"keyword","flags":"m"},
+    {"match":"\\*\\*[^*]+\\*\\*","scope":"bold"},
+    {"match":"__[^_]+__","scope":"bold"},
+    {"match":"\\*[^*]+\\*","scope":"italic"},
+    {"match":"_[^_]+_","scope":"italic"},
+    {"match":"!?\\[[^\\]]*\\]\\([^)]*\\)","scope":"function"},
+    {"match":"^[*+-]\\s","scope":"tag","flags":"m"},
+    {"match":"^\\d+\\.\\s","scope":"tag","flags":"m"}
   ],
-  "autocomplete": { "keywords": [], "builtins": [] },
+  "autocomplete": {
+    "keywords": [],
+    "builtins": []
+  },
   "snippets": {
-    "link": { "body": "[$1]($2)", "description": "Link" },
-    "img": { "body": "![$1]($2)", "description": "Image" },
-    "code": { "body": "```$1\n$2\n```", "description": "Code Block" },
-    "table": { "body": "| $1 | $2 |\n| --- | --- |\n| $3 | $4 |", "description": "Table" },
-    "bold": { "body": "**$1**", "description": "Bold" },
-    "italic": { "body": "*$1*", "description": "Italic" },
-    "h1": { "body": "# $1", "description": "Heading 1" },
-    "h2": { "body": "## $1", "description": "Heading 2" },
-    "h3": { "body": "### $1", "description": "Heading 3" },
-    "task": { "body": "- [ ] $1", "description": "Task Item" },
-    "hr": { "body": "---", "description": "Horizontal Rule" }
+    "link": {"body":"[$1]($2)","description":"Link"},
+    "img": {"body":"![$1]($2)","description":"Image"},
+    "code": {"body":"```$1\n$2\n```","description":"Code Block"},
+    "table": {"body":"| $1 | $2 |\n| --- | --- |\n| $3 | $4 |","description":"Table"},
+    "bold": {"body":"**$1**","description":"Bold"},
+    "italic": {"body":"*$1*","description":"Italic"},
+    "h1": {"body":"# $1","description":"Heading 1"},
+    "h2": {"body":"## $1","description":"Heading 2"},
+    "h3": {"body":"### $1","description":"Heading 3"},
+    "task": {"body":"- [ ] $1","description":"Task Item"},
+    "hr": {"body":"---","description":"Horizontal Rule"}
   }
 }

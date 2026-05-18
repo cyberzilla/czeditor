@@ -1,0 +1,841 @@
+// ==========================================
+// CZEditor View — Monaco-style Virtual Line Renderer
+// ==========================================
+const EditorView = (() => {
+'use strict';
+const BUFFER = 20; // extra lines above/below viewport
+const LINE_PAD = 8; // must match .virt-line padding-left
+
+class View {
+    constructor(container) {
+        this.container = container;
+        this.model = new EditorModel.TextModel();
+        this.cursor = { line: 0, col: 0 };
+        this.anchor = null; // selection anchor, null = no selection
+        this.lh = 24; this.cw = 7.8; // lineHeight, charWidth
+        this._visLines = new Map(); // lineNum -> div element
+        this._pool = [];
+        this._rafId = 0;
+        this._lastVersion = -1;
+        this._composing = false;
+        this._focused = false;
+        this._buildDOM();
+        this._measureFont();
+        this._bindEvents();
+        this.model.onChange(() => this._scheduleRender());
+        // Remeasure once fonts are fully loaded (initial measure may use fallback)
+        document.fonts.ready.then(() => {
+            const oldCw = this.cw, oldLh = this.lh;
+            this._measureFont();
+            // Only re-render if measurements actually changed
+            if (this.cw !== oldCw || this.lh !== oldLh) {
+                this._render(true);
+            }
+        });
+    }
+
+    // ===== DOM CONSTRUCTION =====
+    _buildDOM() {
+        const c = this.container;
+        c.classList.add('virt-editor');
+
+        // Scroll container
+        this.scrollEl = document.createElement('div');
+        this.scrollEl.className = 'virt-scroll';
+        this.scrollEl.tabIndex = -1;
+
+        // Content sizer (sets total height for scrollbar)
+        this.sizer = document.createElement('div');
+        this.sizer.className = 'virt-sizer';
+
+        // Line number gutter (outside scroll container — never scrolls horizontally)
+        this.gutter = document.createElement('div');
+        this.gutter.className = 'virt-gutter';
+
+        // Lines container (visible lines rendered here)
+        this.linesEl = document.createElement('div');
+        this.linesEl.className = 'virt-lines';
+
+        // Active line highlight
+        this.activeLineEl = document.createElement('div');
+        this.activeLineEl.className = 'virt-active-line';
+
+        // Cursor
+        this.cursorEl = document.createElement('div');
+        this.cursorEl.className = 'virt-cursor';
+
+        // Selection layer
+        this.selLayer = document.createElement('div');
+        this.selLayer.className = 'virt-sel-layer';
+
+        // Hidden textarea for input capture
+        this.inputEl = document.createElement('textarea');
+        this.inputEl.className = 'virt-input';
+        this.inputEl.setAttribute('autocorrect', 'off');
+        this.inputEl.setAttribute('autocapitalize', 'off');
+        this.inputEl.setAttribute('autocomplete', 'off');
+        this.inputEl.setAttribute('spellcheck', 'false');
+        this.inputEl.setAttribute('wrap', 'off');
+
+        // Assemble off-screen — gutter is OUTSIDE scroll container
+        this.sizer.appendChild(this.selLayer);
+        this.sizer.appendChild(this.activeLineEl);
+        this.sizer.appendChild(this.linesEl);
+        this.sizer.appendChild(this.cursorEl);
+        this.sizer.appendChild(this.inputEl);
+        this.scrollEl.appendChild(this.sizer);
+
+        // Atomic swap: replace preloaded content in one operation
+        c.innerHTML = '';
+        c.appendChild(this.gutter);      // Gutter: absolute, left:0, never scrolls horizontally
+        c.appendChild(this.scrollEl);    // Scroll container: scrolls both axes
+    }
+
+    // ===== FONT MEASUREMENT =====
+    _measureFont() {
+        const rs = getComputedStyle(document.documentElement);
+        this.lh = parseFloat(rs.getPropertyValue('--editor-line-height')) || 24;
+        const fs = rs.getPropertyValue('--editor-font-size').trim() || '15px';
+        const fw = rs.getPropertyValue('--editor-font-weight').trim() || '400';
+        const fm = rs.getPropertyValue('--font-mono').trim() || '"Maple Mono NF","Fira Code",monospace';
+        const span = document.createElement('span');
+        span.style.cssText = [
+            'position:fixed', 'left:-9999px', 'top:0', 'visibility:hidden',
+            'white-space:pre', `font-size:${fs}`, `font-weight:${fw}`, `font-family:${fm}`,
+            'font-variant-ligatures:contextual common-ligatures',
+            'font-feature-settings:"liga" 1, "calt" 1'
+        ].join(';') + ';';
+        span.textContent = 'X'.repeat(100);
+        document.body.appendChild(span);
+        this.cw = span.getBoundingClientRect().width / 100;
+        document.body.removeChild(span);
+    }
+
+    remeasure() {
+        this._measureFont();
+        this._render(true);
+    }
+
+    // ===== CORE RENDERING =====
+    _scheduleRender() {
+        cancelAnimationFrame(this._rafId);
+        this._rafId = requestAnimationFrame(() => this._render());
+    }
+
+    _render(force) {
+        const m = this.model;
+        const totalLines = m.getLineCount();
+        const scrollTop = this.scrollEl.scrollTop;
+        const viewH = this.scrollEl.clientHeight || 400;
+        const gutterW = Math.max(40, (String(totalLines).length + 1) * this.cw + 12);
+
+        // Update sizer height (scroll-past-end: last line can reach top of viewport)
+        const totalH = (totalLines - 1) * this.lh + viewH;
+        this.sizer.style.height = totalH + 'px';
+        this.gutter.style.width = gutterW + 'px';
+        // Offset scroll container to leave room for gutter
+        this.scrollEl.style.left = gutterW + 'px';
+        this.linesEl.style.left = '0';
+        this.selLayer.style.left = '0';
+        this.activeLineEl.style.left = '0';
+
+        // Calculate visible range
+        const first = Math.max(0, Math.floor(scrollTop / this.lh) - BUFFER);
+        const last = Math.min(totalLines - 1, Math.ceil((scrollTop + viewH) / this.lh) + BUFFER);
+
+        // Calculate max line width for horizontal scrolling
+        let maxLineLen = 0;
+        for (let ln = first; ln <= last; ln++) {
+            maxLineLen = Math.max(maxLineLen, m.getLineLength(ln));
+        }
+        const contentW = LINE_PAD + maxLineLen * this.cw + this.cw * 2;
+        this.sizer.style.minWidth = contentW + 'px';
+
+        // Get language config for tokenization
+        const f = typeof CZUI !== 'undefined' ? CZUI.getActiveFile() : null;
+        const langId = f ? f.language : null;
+        const langCfg = langId ? CZEngine.getLangConfig(langId) : null;
+
+        // For HTML: build line-level language map for embedded <script>/<style>
+        let lineLangMap = null;
+        if (langId === 'html' && langCfg) {
+            lineLangMap = this._buildHTMLLangMap(m, first, last);
+        }
+
+        // Remove lines out of range
+        const toRemove = [];
+        this._visLines.forEach((div, ln) => {
+            if (ln < first || ln > last) { toRemove.push(ln); }
+        });
+        for (const ln of toRemove) {
+            const div = this._visLines.get(ln);
+            div.remove();
+            div._gutterEl?.remove();
+            this._pool.push(div);
+            this._visLines.delete(ln);
+        }
+
+        // Render visible lines
+        for (let ln = first; ln <= last; ln++) {
+            let div = this._visLines.get(ln);
+            const top = ln * this.lh;
+            // Gutter number position: viewport-relative (gutter doesn't scroll)
+            const gutterTop = top - scrollTop;
+            if (!div) {
+                div = this._pool.pop() || document.createElement('div');
+                div.className = 'virt-line';
+                div.style.top = top + 'px';
+                div.style.height = this.lh + 'px';
+
+                // Tokenize and render line
+                const lineText = m.getLine(ln);
+                const lineLang = lineLangMap ? lineLangMap[ln] : null;
+                const effCfg = lineLang ? (CZEngine.getLangConfig(lineLang) || langCfg) : langCfg;
+                const effId = lineLang || langId;
+                div.innerHTML = this._renderLine(lineText, effCfg, effId);
+                this.linesEl.appendChild(div);
+
+                // Gutter number
+                let gutEl = div._gutterEl;
+                if (!gutEl) {
+                    gutEl = document.createElement('div');
+                    gutEl.className = 'virt-gutter-num';
+                    div._gutterEl = gutEl;
+                }
+                gutEl.textContent = ln + 1;
+                gutEl.style.top = gutterTop + 'px';
+                gutEl.style.height = this.lh + 'px';
+                gutEl.style.width = gutterW + 'px';
+                this.gutter.appendChild(gutEl);
+
+                this._visLines.set(ln, div);
+            } else if (force || m.version !== this._lastVersion) {
+                // Re-render if model changed
+                const lineLang2 = lineLangMap ? lineLangMap[ln] : null;
+                const effCfg2 = lineLang2 ? (CZEngine.getLangConfig(lineLang2) || langCfg) : langCfg;
+                const effId2 = lineLang2 || langId;
+                div.innerHTML = this._renderLine(m.getLine(ln), effCfg2, effId2);
+                div.style.top = top + 'px';
+                if (div._gutterEl) {
+                    div._gutterEl.textContent = ln + 1;
+                    div._gutterEl.style.top = gutterTop + 'px';
+                    div._gutterEl.style.width = gutterW + 'px';
+                }
+            } else {
+                // Just update gutter position for scroll
+                if (div._gutterEl) div._gutterEl.style.top = gutterTop + 'px';
+            }
+        }
+
+        this._lastVersion = m.version;
+        this._updateCursor(gutterW);
+        this._updateSelection(gutterW);
+        this._updateSearchHighlights(gutterW);
+        this._updateBracketMatch(gutterW);
+        this._updateActiveLine(gutterW);
+    }
+
+    _buildHTMLLangMap(model, firstVisible, lastVisible) {
+        // Scan full document for <script>/<style> open/close tags
+        // Returns object mapping lineNumber → 'javascript'|'css' for embedded lines
+        const map = {};
+        const lineCount = model.getLineCount();
+        let insideTag = null; // 'javascript' or 'css'
+        for (let i = 0; i < lineCount; i++) {
+            const line = model.getLine(i);
+            if (insideTag) {
+                // Check for closing tag
+                const closeRe = insideTag === 'javascript' ? /<\/script>/i : /<\/style>/i;
+                if (closeRe.test(line)) {
+                    // This line has the closing tag — treat as HTML
+                    insideTag = null;
+                } else {
+                    map[i] = insideTag;
+                }
+            } else {
+                // Check for opening tag (only if no close on same line)
+                const scriptOpen = /<script[\s>]/i.test(line) && !/<\/script>/i.test(line);
+                const styleOpen = /<style[\s>]/i.test(line) && !/<\/style>/i.test(line);
+                if (scriptOpen) insideTag = 'javascript';
+                else if (styleOpen) insideTag = 'css';
+            }
+        }
+        return map;
+    }
+
+    _renderLine(text, langCfg, langId) {
+        if (!text && text !== '') return '&nbsp;';
+        if (!langCfg) return CZEngine.escapeHTML(text) || '&nbsp;';
+        const tokens = CZEngine.tokenize(text, langCfg, langId);
+        const html = CZEngine.renderTokens(tokens);
+        return html || '&nbsp;';
+    }
+
+    // ===== CURSOR =====
+    _lastCursorLine = -1;
+    _lastCursorCol = -1;
+    _updateCursor(gutterW) {
+        const x = LINE_PAD + this.cursor.col * this.cw;
+        const y = this.cursor.line * this.lh;
+        this.cursorEl.style.left = x + 'px';
+        this.cursorEl.style.top = y + 'px';
+        this.cursorEl.style.height = this.lh + 'px';
+        // Only reposition textarea and restart blink when cursor actually moved
+        if (this.cursor.line !== this._lastCursorLine || this.cursor.col !== this._lastCursorCol) {
+            this._lastCursorLine = this.cursor.line;
+            this._lastCursorCol = this.cursor.col;
+            // Position hidden textarea at cursor for IME
+            this.inputEl.style.left = x + 'px';
+            this.inputEl.style.top = y + 'px';
+            this.inputEl.style.height = this.lh + 'px';
+            this.inputEl.style.fontSize = getComputedStyle(document.documentElement).getPropertyValue('--editor-font-size') || '15px';
+            // Restart blink animation
+            this.cursorEl.classList.remove('blink');
+            void this.cursorEl.offsetWidth; // force reflow
+            this.cursorEl.classList.add('blink');
+        }
+    }
+
+    _updateActiveLine(gutterW) {
+        this.activeLineEl.style.top = (this.cursor.line * this.lh) + 'px';
+        this.activeLineEl.style.height = this.lh + 'px';
+    }
+
+    // ===== SELECTION =====
+    hasSelection() {
+        return this.anchor !== null &&
+            (this.anchor.line !== this.cursor.line || this.anchor.col !== this.cursor.col);
+    }
+
+    getSelectionRange() {
+        if (!this.hasSelection()) return null;
+        const a = this.anchor, c = this.cursor;
+        let start, end;
+        if (a.line < c.line || (a.line === c.line && a.col < c.col)) {
+            start = a; end = c;
+        } else {
+            start = c; end = a;
+        }
+        return { startLine: start.line, startCol: start.col, endLine: end.line, endCol: end.col };
+    }
+
+    getSelectedText() {
+        const r = this.getSelectionRange();
+        if (!r) return '';
+        const m = this.model;
+        if (r.startLine === r.endLine) return m.getLine(r.startLine).substring(r.startCol, r.endCol);
+        let text = m.getLine(r.startLine).substring(r.startCol);
+        for (let i = r.startLine + 1; i < r.endLine; i++) text += '\n' + m.getLine(i);
+        text += '\n' + m.getLine(r.endLine).substring(0, r.endCol);
+        return text;
+    }
+
+    _updateSelection(gutterW) {
+        this.selLayer.innerHTML = '';
+        if (!this.hasSelection()) return;
+        const r = this.getSelectionRange();
+        for (let ln = r.startLine; ln <= r.endLine; ln++) {
+            const lineLen = this.model.getLineLength(ln);
+            const startCol = ln === r.startLine ? r.startCol : 0;
+            const endCol = ln === r.endLine ? r.endCol : lineLen;
+            if (startCol === endCol && ln !== r.endLine) {
+                // Empty line in selection — show thin highlight
+            }
+            const div = document.createElement('div');
+            div.className = 'virt-sel-rect';
+            div.style.top = (ln * this.lh) + 'px';
+            div.style.left = (LINE_PAD + startCol * this.cw) + 'px';
+            div.style.width = ((endCol - startCol) * this.cw || this.cw * 0.5) + 'px';
+            div.style.height = this.lh + 'px';
+            this.selLayer.appendChild(div);
+        }
+    }
+
+    _updateSearchHighlights(gutterW) {
+        // Remove old search highlights
+        this.selLayer.querySelectorAll('.virt-search-match').forEach(el => el.remove());
+        if (typeof CZFeatures === 'undefined') return;
+        const matches = CZFeatures.getSearchMatches();
+        if (!matches || matches.length === 0) return;
+        const currentIdx = CZFeatures.getSearchCurrentIdx();
+        const m = this.model;
+        const scrollTop = this.scrollEl.scrollTop;
+        const viewH = this.scrollEl.clientHeight;
+        const firstVisLine = Math.floor(scrollTop / this.lh);
+        const lastVisLine = Math.min(m.getLineCount() - 1, Math.ceil((scrollTop + viewH) / this.lh));
+
+        for (let i = 0; i < matches.length; i++) {
+            const match = matches[i];
+            const startPos = m.getPositionAt(match.start);
+            const endPos = m.getPositionAt(match.end);
+            // Skip matches outside visible area
+            if (endPos.line < firstVisLine || startPos.line > lastVisLine) continue;
+
+            for (let ln = startPos.line; ln <= endPos.line; ln++) {
+                if (ln < firstVisLine || ln > lastVisLine) continue;
+                const lineLen = m.getLineLength(ln);
+                const sc = ln === startPos.line ? startPos.col : 0;
+                const ec = ln === endPos.line ? endPos.col : lineLen;
+                const div = document.createElement('div');
+                div.className = i === currentIdx ? 'virt-search-match current' : 'virt-search-match';
+                div.style.top = (ln * this.lh) + 'px';
+                div.style.left = (LINE_PAD + sc * this.cw) + 'px';
+                div.style.width = ((ec - sc) * this.cw) + 'px';
+                div.style.height = this.lh + 'px';
+                this.selLayer.appendChild(div);
+            }
+        }
+    }
+
+    _updateBracketMatch(gutterW) {
+        // Remove old bracket highlights
+        this.selLayer.querySelectorAll('.virt-bracket-match').forEach(el => el.remove());
+        if (typeof CZEngine === 'undefined') return;
+        const text = this.model.getValue();
+        const offset = this.model.getOffsetAt(this.cursor.line, this.cursor.col);
+        const f = typeof CZUI !== 'undefined' ? CZUI.getActiveFile() : null;
+        const cfg = f ? CZEngine.getLangConfig(f.language) : null;
+        const brackets = CZEngine.getMatchingBrackets(text, offset, cfg);
+        if (!brackets || brackets.length !== 2) return;
+        for (const bpos of brackets) {
+            const pos = this.model.getPositionAt(bpos);
+            const div = document.createElement('div');
+            div.className = 'virt-bracket-match';
+            div.style.top = (pos.line * this.lh) + 'px';
+            div.style.left = (LINE_PAD + pos.col * this.cw) + 'px';
+            div.style.width = this.cw + 'px';
+            div.style.height = this.lh + 'px';
+            this.selLayer.appendChild(div);
+        }
+    }
+
+    // ===== INPUT HANDLING =====
+    _bindEvents() {
+        const el = this.inputEl;
+        const sc = this.scrollEl;
+
+        // Focus management
+        sc.addEventListener('mousedown', (e) => {
+            if (e.target === el) return;
+            // Ignore clicks on scrollbar area
+            const rect = sc.getBoundingClientRect();
+            if (e.clientX > rect.left + sc.clientWidth) return;
+            if (e.clientY > rect.top + sc.clientHeight) return;
+            // Ignore clicks below actual content (scroll-past-end area)
+            const totalLines = this.model.getLineCount();
+            const contentBottom = totalLines * this.lh - sc.scrollTop;
+            if (e.clientY - rect.top > contentBottom) return;
+            e.preventDefault();
+            this._handleMouseDown(e);
+        });
+        el.addEventListener('focus', () => { this._focused = true; this.cursorEl.classList.add('blink'); });
+        el.addEventListener('blur', () => { this._focused = false; this.cursorEl.classList.remove('blink'); });
+
+        // Input
+        el.addEventListener('compositionstart', () => { this._composing = true; });
+        el.addEventListener('compositionend', () => {
+            this._composing = false;
+            this._handleInput();
+        });
+        el.addEventListener('input', () => {
+            if (!this._composing) this._handleInput();
+        });
+
+        // Keyboard
+        el.addEventListener('keydown', (e) => this._handleKeydown(e));
+
+        // Scroll
+        // Scroll
+        sc.addEventListener('scroll', () => this._scheduleRender());
+
+        // Mouse selection: use document-level listeners so drag works outside editor
+        const onMouseMove = (e) => { if (this._mouseDown) this._handleMouseMove(e); };
+        const onMouseUp = () => {
+            this._mouseDown = false;
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+        };
+        // mousedown starts the drag and registers document-level listeners
+        this._startDragListeners = () => {
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+        };
+        sc.addEventListener('dblclick', (e) => this._handleDblClick(e));
+
+        // Paste
+        el.addEventListener('paste', (e) => {
+            e.preventDefault();
+            const text = (e.clipboardData || window.clipboardData).getData('text');
+            if (text) this.insertText(text);
+        });
+
+        // Copy/Cut
+        el.addEventListener('copy', (e) => {
+            e.preventDefault();
+            const sel = this.getSelectedText();
+            if (sel) e.clipboardData.setData('text/plain', sel);
+        });
+        el.addEventListener('cut', (e) => {
+            e.preventDefault();
+            const sel = this.getSelectedText();
+            if (sel) {
+                e.clipboardData.setData('text/plain', sel);
+                this.deleteSelection();
+            }
+        });
+
+        // Resize
+        this._resizeObs = new ResizeObserver(() => this._scheduleRender());
+        this._resizeObs.observe(sc);
+    }
+
+    _handleInput() {
+        const val = this.inputEl.value;
+        if (!val) return;
+        this.inputEl.value = '';
+        this.insertText(val);
+    }
+
+    insertText(text) {
+        if (this.hasSelection()) this.deleteSelection();
+        const endPos = this.model.insert(this.cursor, text);
+        this.cursor = { ...endPos };
+        this.anchor = null;
+        this._scrollToCursor();
+        this._onContentChange();
+    }
+
+    deleteSelection() {
+        const r = this.getSelectionRange();
+        if (!r) return '';
+        const deleted = this.model.delete(r);
+        this.cursor = { line: r.startLine, col: r.startCol };
+        this.anchor = null;
+        this._onContentChange();
+        return deleted;
+    }
+
+    _onContentChange() {
+        // Notify CZUI that content changed
+        if (typeof CZUI !== 'undefined') {
+            const f = CZUI.getActiveFile();
+            if (f) {
+                f.content = this.model.getValue();
+                f.dirty = true;
+                CZUI.triggerAutosave();
+                CZUI.updateFootbar();
+            }
+        }
+        // Trigger autocomplete
+        if (typeof CZFeatures !== 'undefined') CZFeatures.onInput();
+    }
+
+    // ===== KEYBOARD =====
+    _handleKeydown(e) {
+        const ctrl = e.ctrlKey || e.metaKey;
+        const shift = e.shiftKey;
+
+        // --- Delegate to CZFeatures for ALL feature handling ---
+        // CZFeatures handles: autocomplete, auto-close brackets, Emmet, save,
+        // comment toggle, duplicate line, move line, search, etc.
+        // If CZFeatures calls preventDefault(), we stop here.
+        if (typeof CZFeatures !== 'undefined') {
+            // Skip only Ctrl+Z/Y/A/C/V/X (EditorView native undo/redo/select/clipboard)
+            const isNativeCtrl = ctrl && ['z','y','a','c','v','x'].includes(e.key.toLowerCase());
+            // Skip arrow keys when autocomplete is NOT visible (EditorView handles cursor)
+            const isArrow = ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key);
+            const skipArrow = isArrow && !CZFeatures.acVisible;
+
+            if (!isNativeCtrl && !skipArrow) {
+                CZFeatures.handleKeydown(e);
+                if (e.defaultPrevented) return;
+            }
+        }
+
+        // Arrow keys
+        if (e.key === 'ArrowLeft') { e.preventDefault(); this._moveCursor(0, -1, shift, ctrl); return; }
+        if (e.key === 'ArrowRight') { e.preventDefault(); this._moveCursor(0, 1, shift, ctrl); return; }
+        if (e.key === 'ArrowUp') { e.preventDefault(); this._moveCursor(-1, 0, shift); return; }
+        if (e.key === 'ArrowDown') { e.preventDefault(); this._moveCursor(1, 0, shift); return; }
+
+        // Home/End
+        if (e.key === 'Home') {
+            e.preventDefault();
+            if (ctrl) this._setCursor(0, 0, shift);
+            else this._setCursor(this.cursor.line, 0, shift);
+            return;
+        }
+        if (e.key === 'End') {
+            e.preventDefault();
+            if (ctrl) {
+                const last = this.model.getLineCount() - 1;
+                this._setCursor(last, this.model.getLineLength(last), shift);
+            } else {
+                this._setCursor(this.cursor.line, this.model.getLineLength(this.cursor.line), shift);
+            }
+            return;
+        }
+
+        // Page Up/Down
+        if (e.key === 'PageUp') {
+            e.preventDefault();
+            const lines = Math.floor(this.scrollEl.clientHeight / this.lh);
+            this._moveCursor(-lines, 0, shift);
+            return;
+        }
+        if (e.key === 'PageDown') {
+            e.preventDefault();
+            const lines = Math.floor(this.scrollEl.clientHeight / this.lh);
+            this._moveCursor(lines, 0, shift);
+            return;
+        }
+
+        // Backspace
+        if (e.key === 'Backspace') {
+            e.preventDefault();
+            if (this.hasSelection()) { this.deleteSelection(); }
+            else if (this.cursor.col > 0) {
+                this.model.delete({ startLine: this.cursor.line, startCol: this.cursor.col - 1,
+                    endLine: this.cursor.line, endCol: this.cursor.col });
+                this.cursor.col--;
+            } else if (this.cursor.line > 0) {
+                const prevLen = this.model.getLineLength(this.cursor.line - 1);
+                this.model.delete({ startLine: this.cursor.line - 1, startCol: prevLen,
+                    endLine: this.cursor.line, endCol: 0 });
+                this.cursor = { line: this.cursor.line - 1, col: prevLen };
+            }
+            this._onContentChange();
+            this._scrollToCursor();
+            return;
+        }
+
+        // Delete key
+        if (e.key === 'Delete') {
+            e.preventDefault();
+            if (this.hasSelection()) { this.deleteSelection(); }
+            else if (this.cursor.col < this.model.getLineLength(this.cursor.line)) {
+                this.model.delete({ startLine: this.cursor.line, startCol: this.cursor.col,
+                    endLine: this.cursor.line, endCol: this.cursor.col + 1 });
+            } else if (this.cursor.line < this.model.getLineCount() - 1) {
+                this.model.delete({ startLine: this.cursor.line, startCol: this.cursor.col,
+                    endLine: this.cursor.line + 1, endCol: 0 });
+            }
+            this._onContentChange();
+            return;
+        }
+
+        // Enter
+        if (e.key === 'Enter' && !ctrl) {
+            e.preventDefault();
+            if (this.hasSelection()) this.deleteSelection();
+            // Smart indent
+            const line = this.model.getLine(this.cursor.line);
+            const indent = line.match(/^(\s*)/)[1];
+            const before = line.substring(0, this.cursor.col).trimEnd();
+            const lastChar = before.slice(-1);
+            let insert = '\n' + indent;
+            if (lastChar && '{(['.includes(lastChar)) insert += '\t';
+            this.insertText(insert);
+            return;
+        }
+
+        // Tab
+        if (e.key === 'Tab') {
+            e.preventDefault();
+            if (shift) {
+                // Outdent
+                const line = this.model.getLine(this.cursor.line);
+                if (line.startsWith('\t')) {
+                    this.model.delete({ startLine: this.cursor.line, startCol: 0,
+                        endLine: this.cursor.line, endCol: 1 });
+                    this.cursor.col = Math.max(0, this.cursor.col - 1);
+                    this._onContentChange();
+                }
+            } else {
+                this.insertText('\t');
+            }
+            return;
+        }
+
+        // Ctrl+Z: Undo
+        if (ctrl && e.key === 'z' && !shift) {
+            e.preventDefault();
+            const pos = this.model.undo();
+            if (pos) { this.cursor = pos; this.anchor = null; this._scrollToCursor(); this._onContentChange(); }
+            return;
+        }
+        // Ctrl+Y / Ctrl+Shift+Z: Redo
+        if (ctrl && (e.key === 'y' || (e.key === 'z' && shift))) {
+            e.preventDefault();
+            const pos = this.model.redo();
+            if (pos) { this.cursor = pos; this.anchor = null; this._scrollToCursor(); this._onContentChange(); }
+            return;
+        }
+
+        // Ctrl+A: Select all
+        if (ctrl && e.key === 'a') {
+            e.preventDefault();
+            this.anchor = { line: 0, col: 0 };
+            const last = this.model.getLineCount() - 1;
+            this.cursor = { line: last, col: this.model.getLineLength(last) };
+            this._scheduleRender();
+            return;
+        }
+    }
+
+    // ===== CURSOR MOVEMENT =====
+    _moveCursor(dLine, dCol, shift, wordJump) {
+        let { line, col } = this.cursor;
+        const m = this.model;
+
+        if (dCol !== 0) {
+            if (wordJump) {
+                // Ctrl+Arrow: jump by word
+                const lineText = m.getLine(line);
+                if (dCol > 0) {
+                    const after = lineText.substring(col);
+                    const match = after.match(/^\s*\w+|^\s*\S/);
+                    col += match ? match[0].length : 1;
+                } else {
+                    const before = lineText.substring(0, col);
+                    const match = before.match(/\w+\s*$|\S\s*$/);
+                    col -= match ? match[0].length : 1;
+                }
+            } else {
+                col += dCol;
+            }
+            // Wrap to prev/next line
+            if (col < 0) {
+                if (line > 0) { line--; col = m.getLineLength(line); }
+                else col = 0;
+            } else if (col > m.getLineLength(line)) {
+                if (line < m.getLineCount() - 1) { line++; col = 0; }
+                else col = m.getLineLength(line);
+            }
+        }
+        if (dLine !== 0) {
+            line = Math.max(0, Math.min(m.getLineCount() - 1, line + dLine));
+            col = Math.min(col, m.getLineLength(line));
+        }
+
+        this._setCursor(line, col, shift);
+    }
+
+    _setCursor(line, col, extendSelection) {
+        if (extendSelection) {
+            if (!this.anchor) this.anchor = { ...this.cursor };
+        } else {
+            this.anchor = null;
+        }
+        this.cursor = { line, col };
+        this._scrollToCursor();
+        this._scheduleRender();
+        // Notify autocomplete of cursor position change
+        if (typeof CZFeatures !== 'undefined') CZFeatures.handleCursorMove();
+    }
+
+    _scrollToCursor() {
+        const y = this.cursor.line * this.lh;
+        const viewH = this.scrollEl.clientHeight;
+        const st = this.scrollEl.scrollTop;
+        // Vertical auto-scroll — keep cursor visible with 1-line margin
+        if (y < st) this.scrollEl.scrollTop = Math.max(0, y);
+        else if (y + this.lh > st + viewH) this.scrollEl.scrollTop = y - viewH + this.lh;
+
+        // Horizontal auto-scroll — cursor position is relative to scroll container
+        const cursorX = LINE_PAD + this.cursor.col * this.cw;
+        const viewW = this.scrollEl.clientWidth;
+        const sl = this.scrollEl.scrollLeft;
+        const margin = this.cw * 2; // 2 char margin
+        if (cursorX - sl > viewW - margin) {
+            this.scrollEl.scrollLeft = cursorX - viewW + this.cw * 4;
+        } else if (cursorX - sl < margin) {
+            this.scrollEl.scrollLeft = Math.max(0, cursorX - this.cw * 4);
+        }
+    }
+
+    // ===== MOUSE =====
+    _mouseDown = false;
+    _getLineColFromMouse(e) {
+        const rect = this.scrollEl.getBoundingClientRect();
+        const x = e.clientX - rect.left + this.scrollEl.scrollLeft - LINE_PAD;
+        const y = e.clientY - rect.top + this.scrollEl.scrollTop;
+        const line = Math.max(0, Math.min(this.model.getLineCount() - 1, Math.floor(y / this.lh)));
+        const col = Math.max(0, Math.min(this.model.getLineLength(line), Math.round(x / this.cw)));
+        return { line, col };
+    }
+
+    _handleMouseDown(e) {
+        this.inputEl.focus({ preventScroll: true });
+        const pos = this._getLineColFromMouse(e);
+        if (e.shiftKey) {
+            if (!this.anchor) this.anchor = { ...this.cursor };
+            this.cursor = pos;
+        } else {
+            this.cursor = pos;
+            this.anchor = { ...pos };
+        }
+        this._mouseDown = true;
+        if (this._startDragListeners) this._startDragListeners();
+        this._scheduleRender();
+    }
+
+    _handleMouseMove(e) {
+        if (!this._mouseDown) return;
+        const pos = this._getLineColFromMouse(e);
+        this.cursor = pos;
+        this._scheduleRender();
+    }
+
+    _handleDblClick(e) {
+        const pos = this._getLineColFromMouse(e);
+        const line = this.model.getLine(pos.line);
+        // Select word under cursor (supports Unicode letters)
+        const isWordChar = (ch) => /[\p{L}\p{N}_]/u.test(ch);
+        let start = pos.col, end = pos.col;
+        while (start > 0 && isWordChar(line[start - 1])) start--;
+        while (end < line.length && isWordChar(line[end])) end++;
+        if (start === end) {
+            // Didn't match word chars, try selecting non-whitespace
+            while (start > 0 && /\S/.test(line[start - 1])) start--;
+            while (end < line.length && /\S/.test(line[end])) end++;
+        }
+        this.anchor = { line: pos.line, col: start };
+        this.cursor = { line: pos.line, col: end };
+        this._scheduleRender();
+    }
+
+    // ===== PUBLIC API =====
+    focus() { this.inputEl.focus({ preventScroll: true }); }
+
+    setValue(text) {
+        this.model.setValue(text);
+        this.cursor = { line: 0, col: 0 };
+        this.anchor = null;
+        this._visLines.forEach(d => { d.remove(); d._gutterEl?.remove(); });
+        this._visLines.clear();
+        this._scheduleRender();
+    }
+
+    getValue() { return this.model.getValue(); }
+
+    getCursorOffset() {
+        return this.model.getOffsetAt(this.cursor.line, this.cursor.col);
+    }
+
+    getScrollTop() { return this.scrollEl.scrollTop; }
+    setScrollTop(v) { this.scrollEl.scrollTop = v; }
+
+    /** Get cursor position info for footbar */
+    getCursorInfo() {
+        return { line: this.cursor.line + 1, col: this.cursor.col + 1 };
+    }
+
+    destroy() {
+        this._resizeObs?.disconnect();
+        this.container.innerHTML = '';
+    }
+}
+
+return { View };
+})();

@@ -1,5 +1,5 @@
 // CZEditor Service Worker — Enables PWA install + offline caching
-const CACHE_NAME = 'czeditor-v2.2.0';
+const CACHE_NAME = 'czeditor-v2.4.2';
 const ASSETS = [
     './',
     './index.html',
@@ -9,6 +9,9 @@ const ASSETS = [
     './script.js',
     './engine.js',
     './editor-ui.js',
+    './editor-view.js',
+    './editor-view.css',
+    './editor-model.js',
     './editor-features.js',
     './filesystem.js',
     './i18n.js',
@@ -26,6 +29,7 @@ const ASSETS = [
     './lang/html.json',
     './lang/java.json',
     './lang/javascript.json',
+    './lang/jsx.json',
     './lang/json.json',
     './lang/kotlin.json',
     './lang/markdown.json',
@@ -36,6 +40,7 @@ const ASSETS = [
     './lang/sql.json',
     './lang/typescript.json',
     './lang/vb.json',
+    './lang/vue.json',
     './lang/xml.json',
     './lang/yaml.json',
     // Fonts

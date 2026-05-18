@@ -1,20 +1,22 @@
 {
   "id": "json",
   "name": "JSON",
-  "extensions": ["json", "jsonc", "json5"],
-  "comment": { "line": "//", "blockStart": "/*", "blockEnd": "*/" },
-  "autoClosePairs": [
-    ["{", "}"], ["[", "]"], ["\"", "\""]
-  ],
-  "brackets": [["{", "}"], ["[", "]"]],
+  "extensions": ["json","jsonc","json5"],
+  "comment": {"line":"//","blockStart":"/*","blockEnd":"*/"},
+  "autoClosePairs": [["{","}"],["[","]"],["\"","\""]],
+  "brackets": [["{","}"],["[","]"]],
   "syntax": [
-    { "match": "\\/\\/[^\\n]*", "scope": "comment" },
-    { "match": "\\/\\*[\\s\\S]*?\\*\\/", "scope": "comment" },
-    { "match": "\"(?:[^\"\\\\]|\\\\.)*\"(?=\\s*:)", "scope": "property" },
-    { "match": "\"(?:[^\"\\\\]|\\\\.)*\"", "scope": "string" },
-    { "match": "\\b(?:true|false|null)\\b", "scope": "keyword" },
-    { "match": "-?\\b\\d+\\.?\\d*(?:e[+-]?\\d+)?\\b", "scope": "number" }
+    {"match":"\"(?:[^\"\\\\]|\\\\.)*\"(?=\\s*:)","scope":"property"},
+    {"match":"\"(?:[^\"\\\\]|\\\\.)*\"","scope":"string"},
+    {"match":"\\/\\/[^\\n]*","scope":"comment"},
+    {"match":"\\/\\*[\\s\\S]*?\\*\\/","scope":"comment"},
+    {"match":"\\b(?:true|false|null)\\b","scope":"keyword"},
+    {"match":"-?\\b\\d+\\.?\\d*(?:e[+-]?\\d+)?\\b","scope":"number"}
   ],
-  "autocomplete": { "keywords": ["true", "false", "null"], "builtins": [] },
-  "snippets": {}
+  "autocomplete": {
+    "keywords": ["true","false","null"],
+    "builtins": []
+  },
+  "snippets": {
+  }
 }

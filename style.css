@@ -367,6 +367,7 @@ body {
     display: flex;
     align-items: center;
     gap: 5px;
+    min-width: 90px;
 }
 
 .save-status.saved::before {

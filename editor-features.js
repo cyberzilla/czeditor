@@ -6,15 +6,24 @@ let acItems = [], acIndex = -1, acWord = '', acWordStart = 0, acVisible = false;
 let acSuppressUntil = 0;
 let acDismissedPos = -1; // Track where Escape was pressed to suppress until new word
 
-// ===== TEXT INSERT (preserves undo stack) =====
+// ===== TEXT INSERT (via EditorView model) =====
 function insertText(textarea, text) {
-    textarea.focus();
-    document.execCommand('insertText', false, text);
+    const view = CZUI.editorView;
+    if (view) { view.insertText(text); return; }
 }
 function replaceRange(textarea, start, end, text) {
-    textarea.focus();
-    textarea.setSelectionRange(start, end);
-    document.execCommand('insertText', false, text);
+    const view = CZUI.editorView;
+    if (!view) return;
+    const m = view.model;
+    const startPos = m.getPositionAt(start);
+    const endPos = m.getPositionAt(end);
+    m.delete({ startLine: startPos.line, startCol: startPos.col,
+               endLine: endPos.line, endCol: endPos.col });
+    const newPos = m.insert(startPos, text);
+    view.cursor = { ...newPos };
+    view.anchor = null;
+    view._scrollToCursor();
+    view._scheduleRender();
 }
 
 // ===== FILE SAVE (native filesystem first, fallback to download) =====
@@ -162,18 +171,33 @@ function renderAutocomplete() {
 }
 
 function positionAutocomplete(ta, pos) {
-    const text = ta.value.substring(0, pos);
-    const lines = text.split('\n');
-    const lineNum = lines.length - 1;
-    const colNum = lines[lines.length-1].length;
+    const view = CZUI.editorView;
     const lh = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--editor-line-height'))||24;
-    const fs = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--editor-font-size'))||15;
-    const rect = ta.getBoundingClientRect();
-    let top = rect.top + 20 + (lineNum+1)*lh - ta.scrollTop;
-    let left = rect.left + 20 + colNum*fs*0.6 - ta.scrollLeft;
-    if (top + 230 > window.innerHeight) top = top - 230 - lh;
-    if (left + 300 > window.innerWidth) left = window.innerWidth - 310;
-    acPopup.style.top = top+'px'; acPopup.style.left = Math.max(0,left)+'px';
+    if (view) {
+        // Use virtual editor cursor position
+        const rect = view.scrollEl.getBoundingClientRect();
+        const gutterW = view.gutter ? view.gutter.offsetWidth : 40;
+        const curLine = view.cursor.line;
+        const curCol = view.cursor.col;
+        let top = rect.top + (curLine + 1) * lh - view.scrollEl.scrollTop;
+        let left = rect.left + gutterW + 8 + curCol * view.cw - view.scrollEl.scrollLeft;
+        if (top + 230 > window.innerHeight) top = top - 230 - lh;
+        if (left + 300 > window.innerWidth) left = window.innerWidth - 310;
+        acPopup.style.top = top+'px'; acPopup.style.left = Math.max(0,left)+'px';
+    } else {
+        // Fallback for non-virtual mode
+        const text = ta.value.substring(0, pos);
+        const lines = text.split('\n');
+        const lineNum = lines.length - 1;
+        const colNum = lines[lines.length-1].length;
+        const fs = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--editor-font-size'))||15;
+        const rect = ta.getBoundingClientRect();
+        let top = rect.top + 20 + (lineNum+1)*lh - ta.scrollTop;
+        let left = rect.left + 20 + colNum*fs*0.6 - ta.scrollLeft;
+        if (top + 230 > window.innerHeight) top = top - 230 - lh;
+        if (left + 300 > window.innerWidth) left = window.innerWidth - 310;
+        acPopup.style.top = top+'px'; acPopup.style.left = Math.max(0,left)+'px';
+    }
 }
 
 function acceptAutocomplete(idx) {
@@ -741,8 +765,7 @@ function replaceOne() {
     const match = searchMatches[searchCurrentIdx];
     const ta = CZUI.getEditingArea();
     ta.focus();
-    ta.setSelectionRange(match.start, match.end);
-    document.execCommand('insertText', false, replaceInput.value);
+    replaceRange(ta, match.start, match.end, replaceInput.value);
     CZUI.handleInput();
     updateSearchMatches();
 }
@@ -751,12 +774,11 @@ function replaceAll() {
     if (searchMatches.length === 0) return;
     const ta = CZUI.getEditingArea();
     const replacement = replaceInput.value;
-    // Replace from end to start to preserve indices
     ta.focus();
+    // Replace from end to start to preserve indices
     const sorted = [...searchMatches].sort((a, b) => b.start - a.start);
     for (const match of sorted) {
-        ta.setSelectionRange(match.start, match.end);
-        document.execCommand('insertText', false, replacement);
+        replaceRange(ta, match.start, match.end, replacement);
     }
     CZUI.handleInput();
     updateSearchMatches();

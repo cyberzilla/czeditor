@@ -1,61 +1,36 @@
 {
   "id": "php",
   "name": "PHP",
-  "extensions": ["php", "phtml", "php3", "php4", "php5"],
-  "comment": { "line": "//", "blockStart": "/*", "blockEnd": "*/" },
-  "autoClosePairs": [
-    ["{", "}"], ["[", "]"], ["(", ")"], ["\"", "\""], ["'", "'"]
-  ],
-  "brackets": [["{", "}"], ["[", "]"], ["(", ")"]],
+  "extensions": ["php","phtml","php3","php4","php5"],
+  "comment": {"line":"//","blockStart":"/*","blockEnd":"*/"},
+  "autoClosePairs": [["{","}"],["[","]"],["(",")"],["\"","\""],["'","'"]],
+  "brackets": [["{","}"],["[","]"],["(",")"]],
   "syntax": [
-    { "match": "\\/\\/[^\\n]*", "scope": "comment" },
-    { "match": "#[^\\n]*", "scope": "comment" },
-    { "match": "\\/\\*[\\s\\S]*?\\*\\/", "scope": "comment" },
-    { "match": "\"(?:[^\"\\\\]|\\\\.)*\"", "scope": "string" },
-    { "match": "'(?:[^'\\\\]|\\\\.)*'", "scope": "string" },
-    { "match": "\\$[a-zA-Z_][a-zA-Z0-9_]*", "scope": "variable" },
-    { "match": "\\b(?:abstract|and|as|break|callable|case|catch|class|clone|const|continue|declare|default|do|echo|else|elseif|empty|enddeclare|endfor|endforeach|endif|endswitch|endwhile|enum|extends|final|finally|fn|for|foreach|function|global|goto|if|implements|include|include_once|instanceof|insteadof|interface|isset|list|match|namespace|new|or|print|private|protected|public|readonly|require|require_once|return|static|switch|throw|trait|try|unset|use|var|while|xor|yield|true|false|null|self|parent|array|string|int|float|bool|void|mixed|never|object)\\b", "scope": "keyword" },
-    { "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*(?=\\s*\\()", "scope": "function" },
-    { "match": "\\b(?:0x[0-9a-fA-F]+|\\d+\\.?\\d*(?:e[+-]?\\d+)?)\\b", "scope": "number" },
-    { "match": "(?:<\\?php|<\\?=|\\?>)", "scope": "tag" }
+    {"match":"\"(?:[^\"\\\\]|\\\\.)*\"","scope":"string"},
+    {"match":"'(?:[^'\\\\]|\\\\.)*'","scope":"string"},
+    {"match":"\\/\\/[^\\n]*","scope":"comment"},
+    {"match":"#[^\\n]*","scope":"comment"},
+    {"match":"\\/\\*[\\s\\S]*?\\*\\/","scope":"comment"},
+    {"match":"\\$[a-zA-Z_][a-zA-Z0-9_]*","scope":"variable"},
+    {"match":"\\b(?:abstract|and|as|break|callable|case|catch|class|clone|const|continue|declare|default|do|echo|else|elseif|empty|enddeclare|endfor|endforeach|endif|endswitch|endwhile|enum|extends|final|finally|fn|for|foreach|function|global|goto|if|implements|include|include_once|instanceof|insteadof|interface|isset|list|match|namespace|new|or|print|private|protected|public|readonly|require|require_once|return|static|switch|throw|trait|try|unset|use|var|while|xor|yield|true|false|null|self|parent|array|string|int|float|bool|void|mixed|never|object)\\b","scope":"keyword"},
+    {"match":"\\b[a-zA-Z_][a-zA-Z0-9_]*(?=\\s*\\()","scope":"function"},
+    {"match":"\\b(?:0x[0-9a-fA-F]+|\\d+\\.?\\d*(?:e[+-]?\\d+)?)\\b","scope":"number"},
+    {"match":"(?:<\\?php|<\\?=|\\?>)","scope":"tag"}
   ],
   "autocomplete": {
-    "keywords": [
-      "abstract", "and", "as", "break", "case", "catch", "class", "const",
-      "continue", "default", "do", "echo", "else", "elseif", "extends",
-      "final", "finally", "fn", "for", "foreach", "function", "global",
-      "if", "implements", "include", "instanceof", "interface", "match",
-      "namespace", "new", "or", "print", "private", "protected", "public",
-      "readonly", "require", "return", "static", "switch", "throw", "trait",
-      "try", "use", "var", "while", "yield", "true", "false", "null",
-      "array", "string", "int", "float", "bool", "void", "mixed"
-    ],
-    "builtins": [
-      "echo", "print", "var_dump", "print_r", "die", "exit",
-      "strlen", "strpos", "substr", "str_replace", "strtolower", "strtoupper",
-      "trim", "ltrim", "rtrim", "explode", "implode", "sprintf",
-      "array_push", "array_pop", "array_shift", "array_unshift",
-      "array_merge", "array_map", "array_filter", "array_keys", "array_values",
-      "count", "sizeof", "in_array", "array_search", "sort", "rsort",
-      "isset", "empty", "unset", "is_array", "is_string", "is_numeric",
-      "intval", "floatval", "strval", "json_encode", "json_decode",
-      "file_get_contents", "file_put_contents", "fopen", "fclose", "fwrite",
-      "date", "time", "strtotime", "mktime", "header", "session_start",
-      "preg_match", "preg_replace", "preg_split",
-      "htmlspecialchars", "htmlentities", "urlencode", "urldecode",
-      "mysqli_connect", "PDO", "Exception"
-    ]
+    "keywords": ["abstract","and","as","break","case","catch","class","const","continue","default","do","echo","else","elseif","extends","final","finally","fn","for","foreach","function","global","if","implements","include","instanceof","interface","match","namespace","new","or","print","private","protected","public","readonly","require","return","static","switch","throw","trait","try","use","var","while","yield","true","false","null","array","string","int","float","bool","void","mixed"],
+    "builtins": ["echo","print","var_dump","print_r","die","exit","strlen","strpos","substr","str_replace","strtolower","strtoupper","trim","ltrim","rtrim","explode","implode","sprintf","array_push","array_pop","array_shift","array_unshift","array_merge","array_map","array_filter","array_keys","array_values","count","sizeof","in_array","array_search","sort","rsort","isset","empty","unset","is_array","is_string","is_numeric","intval","floatval","strval","json_encode","json_decode","file_get_contents","file_put_contents","fopen","fclose","fwrite","date","time","strtotime","mktime","header","session_start","preg_match","preg_replace","preg_split","htmlspecialchars","htmlentities","urlencode","urldecode","mysqli_connect","PDO","Exception"]
   },
   "snippets": {
-    "php": { "body": "<?php\n$1\n?>", "description": "PHP Tags" },
-    "echo": { "body": "echo $1;", "description": "Echo" },
-    "fun": { "body": "function $1($2) {\n\t$3\n}", "description": "Function" },
-    "cls": { "body": "class $1 {\n\tpublic function __construct($2) {\n\t\t$3\n\t}\n}", "description": "Class" },
-    "if": { "body": "if ($1) {\n\t$2\n}", "description": "If" },
-    "ife": { "body": "if ($1) {\n\t$2\n} else {\n\t$3\n}", "description": "If...Else" },
-    "for": { "body": "for ($i = 0; $i < $1; $i++) {\n\t$2\n}", "description": "For" },
-    "fore": { "body": "foreach ($1 as $2) {\n\t$3\n}", "description": "Foreach" },
-    "tc": { "body": "try {\n\t$1\n} catch (Exception $e) {\n\t$2\n}", "description": "Try...Catch" },
-    "sw": { "body": "switch ($1) {\n\tcase $2:\n\t\t$3\n\t\tbreak;\n\tdefault:\n\t\t$4\n}", "description": "Switch" }
+    "php": {"body":"<?php\n$1\n?>","description":"PHP Tags"},
+    "echo": {"body":"echo $1;","description":"Echo"},
+    "fun": {"body":"function $1($2) {\n\t$3\n}","description":"Function"},
+    "cls": {"body":"class $1 {\n\tpublic function __construct($2) {\n\t\t$3\n\t}\n}","description":"Class"},
+    "if": {"body":"if ($1) {\n\t$2\n}","description":"If"},
+    "ife": {"body":"if ($1) {\n\t$2\n} else {\n\t$3\n}","description":"If...Else"},
+    "for": {"body":"for ($i = 0; $i < $1; $i++) {\n\t$2\n}","description":"For"},
+    "fore": {"body":"foreach ($1 as $2) {\n\t$3\n}","description":"Foreach"},
+    "tc": {"body":"try {\n\t$1\n} catch (Exception $e) {\n\t$2\n}","description":"Try...Catch"},
+    "sw": {"body":"switch ($1) {\n\tcase $2:\n\t\t$3\n\t\tbreak;\n\tdefault:\n\t\t$4\n}","description":"Switch"}
   }
 }

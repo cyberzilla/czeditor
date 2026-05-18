@@ -23,6 +23,7 @@
         })();
     </script>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="editor-view.css">
     <script>
         // Apply saved sidebar state BEFORE first paint to prevent visual flash
         (function () {
@@ -51,6 +52,10 @@
                 css += '#welcome-screen{display:none!important}';
                 // Suppress tab scroll animation during initial load
                 css += '#tabs-container{scroll-behavior:auto!important}';
+                // Match virtual editor background to prevent flash before JS renders
+                css += '.code-wrapper{background:var(--bg-main,#1e1e2e)}';
+                // Contain editor layout to prevent footer bounce during DOM swap
+                css += '.editor-split{overflow:hidden;min-height:0}';
             } else {
                 // No files: pin empty state from first paint to prevent layout shift
                 css += '#toolbar-right{display:none!important}';
@@ -200,14 +205,8 @@
                                 <!-- Preview toggle stays at editor-pane corner -->
                                 <button id="btn-preview-toggle" class="preview-toggle-btn hidden"
                                     title="Toggle Preview (Ctrl+Shift+V)">👁 Preview</button>
-                                <div class="line-numbers" id="line-numbers">1</div>
-                                <div class="code-wrapper">
-                                    <div class="active-line-highlight" id="active-line-highlight"></div>
-                                    <textarea id="editing" spellcheck="false" wrap="off" autocapitalize="off"
-                                        autocomplete="off" autocorrect="off"></textarea>
-                                    <pre id="highlighting"
-                                        aria-hidden="true"><code id="highlighting-content"></code></pre>
-                                </div>
+                                <!-- Virtual editor container (replaces textarea+pre overlay) -->
+                                <div id="virtual-editor" class="code-wrapper"></div>
                             </div>
                             <div class="preview-resize-handle hidden" id="preview-resize-handle"></div>
                             <div class="preview-pane hidden" id="preview-pane">
@@ -475,6 +474,7 @@
                     <div class="lang-picker-item" data-lang="html">HTML</div>
                     <div class="lang-picker-item" data-lang="java">Java</div>
                     <div class="lang-picker-item" data-lang="javascript">JavaScript</div>
+                    <div class="lang-picker-item" data-lang="jsx">JSX (React)</div>
                     <div class="lang-picker-item" data-lang="json">JSON</div>
                     <div class="lang-picker-item" data-lang="kotlin">Kotlin</div>
                     <div class="lang-picker-item" data-lang="markdown">Markdown</div>
@@ -486,6 +486,7 @@
                     <div class="lang-picker-item" data-lang="sql">SQL</div>
                     <div class="lang-picker-item" data-lang="typescript">TypeScript</div>
                     <div class="lang-picker-item" data-lang="vb">Visual Basic</div>
+                    <div class="lang-picker-item" data-lang="vue">Vue</div>
                     <div class="lang-picker-item" data-lang="xml">XML/SVG</div>
                     <div class="lang-picker-item" data-lang="yaml">YAML</div>
                 </div>
@@ -527,6 +528,7 @@
         <option value="html">HTML</option>
         <option value="java">Java</option>
         <option value="javascript">JavaScript</option>
+        <option value="jsx">JSX (React)</option>
         <option value="json">JSON</option>
         <option value="kotlin">Kotlin</option>
         <option value="markdown">Markdown</option>
@@ -537,6 +539,7 @@
         <option value="sql">SQL</option>
         <option value="typescript">TypeScript</option>
         <option value="vb">Visual Basic</option>
+        <option value="vue">Vue</option>
         <option value="xml">XML/SVG</option>
         <option value="yaml">YAML</option>
     </select>
@@ -583,26 +586,53 @@
                     if (files[j].id === activeId) { active = files[j]; break; }
                 }
                 if (active && active.content && !active.isImage && !active.isBinary) {
-                    var ta = document.getElementById('editing');
-                    if (ta) {
-                        ta.value = active.content;
-                        // Make text visible until syntax highlighting takes over
-                        ta.classList.add('preload-visible');
-                    }
-                    // Pre-render line numbers + store count for CZUI init
-                    var ln = document.getElementById('line-numbers');
-                    if (ln && active.content) {
-                        var lines = active.content.split('\n').length;
+                    // Pre-render static placeholder matching virtual editor layout
+                    var ve = document.getElementById('virtual-editor');
+                    if (ve) {
+                        var lines = active.content.split('\n');
+                        var lineCount = lines.length;
+                        var visCount = Math.min(lineCount, 80); // enough for most screens
+                        // Calculate gutter width to match EditorView: (digits+1) * charWidth + 12px
+                        var digits = String(lineCount).length;
+                        var gutterChars = digits + 1; // EditorView uses (digits+1) chars
+                        // Build line numbers string (right-aligned by padding)
                         var nums = [];
-                        for (var k = 1; k <= lines; k++) nums.push(k);
-                        ln.innerHTML = nums.join('<br>');
-                        ln.dataset.preloadCount = lines;
+                        for (var k = 1; k <= visCount; k++) nums.push(k);
+                        // Build text content (first N lines)
+                        var textLines = [];
+                        for (var k = 0; k < visCount; k++) {
+                            // Escape HTML
+                            var ln = lines[k] || '';
+                            ln = ln.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+                            textLines.push(ln || '&nbsp;');
+                        }
+                        // Use a flex layout placeholder with same CSS vars
+                        // Position absolute so placeholder doesn't affect parent flex layout
+                        ve.innerHTML =
+                            '<div style="position:absolute;inset:0;display:flex;overflow:hidden;background:var(--bg-main,#1e1e2e)">' +
+                                '<div style="width:calc(' + gutterChars + 'ch + 12px);min-width:40px;padding:0 8px 0 0;text-align:right;' +
+                                    'background:var(--bg-main,#1e1e2e);color:var(--line-num-color,#555);' +
+                                    'border-right:1px solid var(--border-color,#333);' +
+                                    'font-family:var(--font-mono);font-size:var(--editor-font-size,15px);' +
+                                    'font-weight:var(--editor-font-weight,400);line-height:var(--editor-line-height,24px);' +
+                                    'user-select:none;white-space:pre;overflow:hidden;flex-shrink:0">' +
+                                    nums.join('\n') +
+                                '</div>' +
+                                '<pre style="margin:0;flex:1;padding-left:8px;overflow:hidden;' +
+                                    'font-family:var(--font-mono);font-size:var(--editor-font-size,15px);' +
+                                    'font-weight:var(--editor-font-weight,400);line-height:var(--editor-line-height,24px);' +
+                                    'color:var(--text-main,#cdd6f4);white-space:pre;tab-size:4;' +
+                                    'font-variant-ligatures:contextual common-ligatures;' +
+                                    'font-feature-settings:&quot;liga&quot; 1,&quot;calt&quot; 1">' +
+                                    textLines.join('\n') +
+                                '</pre>' +
+                            '</div>';
                     }
                     // Pre-fill footer stats
                     var sl = document.getElementById('stat-length');
                     var sli = document.getElementById('stat-lines');
                     if (sl) sl.textContent = 'Length: ' + active.content.length;
-                    if (sli) sli.textContent = 'Lines: ' + active.content.split('\n').length;
+                    if (sli) sli.textContent = 'Lines: ' + lineCount;
                 }
                 // Pre-fill footer language, encoding, EOL from active file
                 if (active) {
@@ -644,6 +674,8 @@
     <script src="engine.js"></script>
     <script src="i18n.js"></script>
     <script src="filesystem.js"></script>
+    <script src="editor-model.js"></script>
+    <script src="editor-view.js"></script>
     <script src="editor-ui.js"></script>
     <script src="editor-features.js"></script>
     <script src="script.js"></script>

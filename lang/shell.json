@@ -1,31 +1,31 @@
 {
   "id": "shell",
   "name": "Shell/Bash",
-  "extensions": ["sh", "bash", "zsh", "fish", "ksh"],
-  "comment": { "line": "#", "blockStart": null, "blockEnd": null },
-  "autoClosePairs": [["(", ")"], ["{", "}"], ["[", "]"], ["\"", "\""], ["'", "'"], ["`", "`"]],
-  "brackets": [["(", ")"], ["{", "}"], ["[", "]"]],
+  "extensions": ["sh","bash","zsh","fish","ksh"],
+  "comment": {"line":"#","blockStart":null,"blockEnd":null},
+  "autoClosePairs": [["(",")"],["{","}"],["[","]"],["\"","\""],["'","'"],["`","`"]],
+  "brackets": [["(",")"],["{","}"],["[","]"]],
   "syntax": [
-    { "match": "#.*$", "scope": "comment", "flags": "m" },
-    { "match": "\"(?:[^\"\\\\]|\\\\.)*\"", "scope": "string" },
-    { "match": "'[^']*'", "scope": "string" },
-    { "match": "`[^`]*`", "scope": "string" },
-    { "match": "\\$\\{[^}]*\\}|\\$\\([^)]*\\)|\\$[a-zA-Z_][a-zA-Z0-9_]*|\\$[0-9@#?!$*-]", "scope": "variable" },
-    { "match": "\\b(?:if|then|else|elif|fi|for|while|until|do|done|case|esac|in|function|select|time|coproc|break|continue|return|exit|source|eval|exec|export|readonly|declare|local|typeset|unset|shift|set|trap|wait|read|echo|printf|test|true|false)\\b", "scope": "keyword" },
-    { "match": "\\b(?:cd|ls|cp|mv|rm|mkdir|rmdir|touch|cat|grep|sed|awk|find|sort|uniq|wc|head|tail|cut|tr|xargs|tee|diff|chmod|chown|chgrp|ln|tar|gzip|gunzip|zip|unzip|curl|wget|ssh|scp|rsync|ps|kill|bg|fg|jobs|nohup|sudo|su|mount|umount|df|du|free|top|htop|ping|ifconfig|ip|netstat|systemctl|service|apt|yum|dnf|pacman|brew|npm|pip|git|docker|make|cmake|gcc|g\\+\\+|python|node|java|go|rustc|cargo)\\b", "scope": "function" },
-    { "match": "\\b\\d+\\.?\\d*\\b", "scope": "number" },
-    { "match": "\\|\\||&&|;;|<<|>>|<&|>&|[|&;]", "scope": "operator" }
+    {"match":"\"(?:[^\"\\\\]|\\\\.)*\"","scope":"string"},
+    {"match":"'[^']*'","scope":"string"},
+    {"match":"`[^`]*`","scope":"string"},
+    {"match":"#.*$","scope":"comment","flags":"m"},
+    {"match":"\\$\\{[^}]*\\}|\\$\\([^)]*\\)|\\$[a-zA-Z_][a-zA-Z0-9_]*|\\$[0-9@#?!$*-]","scope":"variable"},
+    {"match":"\\b(?:if|then|else|elif|fi|for|while|until|do|done|case|esac|in|function|select|time|coproc|break|continue|return|exit|source|eval|exec|export|readonly|declare|local|typeset|unset|shift|set|trap|wait|read|echo|printf|test|true|false)\\b","scope":"keyword"},
+    {"match":"\\b(?:cd|ls|cp|mv|rm|mkdir|rmdir|touch|cat|grep|sed|awk|find|sort|uniq|wc|head|tail|cut|tr|xargs|tee|diff|chmod|chown|chgrp|ln|tar|gzip|gunzip|zip|unzip|curl|wget|ssh|scp|rsync|ps|kill|bg|fg|jobs|nohup|sudo|su|mount|umount|df|du|free|top|htop|ping|ifconfig|ip|netstat|systemctl|service|apt|yum|dnf|pacman|brew|npm|pip|git|docker|make|cmake|gcc|g\\+\\+|python|node|java|go|rustc|cargo)\\b","scope":"function"},
+    {"match":"\\b\\d+\\.?\\d*\\b","scope":"number"},
+    {"match":"\\|\\||&&|;;|<<|>>|<&|>&|[|&;]","scope":"operator"}
   ],
   "autocomplete": {
-    "keywords": ["if", "then", "else", "elif", "fi", "for", "while", "until", "do", "done", "case", "esac", "in", "function", "break", "continue", "return", "exit", "export", "declare", "local", "unset", "shift", "set", "trap", "read", "echo", "printf"],
-    "builtins": ["cd", "ls", "cp", "mv", "rm", "mkdir", "touch", "cat", "grep", "sed", "awk", "find", "sort", "uniq", "wc", "head", "tail", "cut", "xargs", "chmod", "curl", "wget", "tar", "git", "docker", "npm", "pip", "sudo"]
+    "keywords": ["if","then","else","elif","fi","for","while","until","do","done","case","esac","in","function","break","continue","return","exit","export","declare","local","unset","shift","set","trap","read","echo","printf"],
+    "builtins": ["cd","ls","cp","mv","rm","mkdir","touch","cat","grep","sed","awk","find","sort","uniq","wc","head","tail","cut","xargs","chmod","curl","wget","tar","git","docker","npm","pip","sudo"]
   },
   "snippets": {
-    "shebang": { "body": "#!/bin/bash\n$1", "description": "Bash shebang" },
-    "if": { "body": "if [ $1 ]; then\n\t$2\nfi", "description": "If block" },
-    "ifelse": { "body": "if [ $1 ]; then\n\t$2\nelse\n\t$3\nfi", "description": "If-else" },
-    "for": { "body": "for $1 in $2; do\n\t$3\ndone", "description": "For loop" },
-    "while": { "body": "while [ $1 ]; do\n\t$2\ndone", "description": "While loop" },
-    "func": { "body": "$1() {\n\t$2\n}", "description": "Function" }
+    "shebang": {"body":"#!/bin/bash\n$1","description":"Bash shebang"},
+    "if": {"body":"if [ $1 ]; then\n\t$2\nfi","description":"If block"},
+    "ifelse": {"body":"if [ $1 ]; then\n\t$2\nelse\n\t$3\nfi","description":"If-else"},
+    "for": {"body":"for $1 in $2; do\n\t$3\ndone","description":"For loop"},
+    "while": {"body":"while [ $1 ]; do\n\t$2\ndone","description":"While loop"},
+    "func": {"body":"$1() {\n\t$2\n}","description":"Function"}
   }
 }
