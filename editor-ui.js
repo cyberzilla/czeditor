@@ -489,7 +489,7 @@ const CZUI = (() => {
             if (err) { openAlert(CZi18n.t('alert_title'), CZi18n.t(err)); return; }
             f.name = newName;
             const ext = newName.split('.').pop().toLowerCase();
-            const detected = CZEngine.detectByExtension(ext);
+            const detected = CZEngine.detectByFilename(newName) || CZEngine.detectByExtension(ext);
             if (detected) f.language = detected;
             if (id === activeFileId) langSelector.value = f.language;
 
@@ -649,7 +649,7 @@ const CZUI = (() => {
             f.isBinary = false;
             f.isImage = false;
             const extM = f.name.match(/\.([a-z0-9]+)$/i);
-            f.language = extM ? (CZEngine.detectByExtension(extM[1].toLowerCase()) || 'plaintext') : 'plaintext';
+            f.language = CZEngine.detectByFilename(f.name) || (extM ? (CZEngine.detectByExtension(extM[1].toLowerCase()) || 'plaintext') : 'plaintext');
             switchFile(f.id);
         } catch (e) {
             console.error('[CZUI] Failed to read binary as code:', e);
@@ -1236,6 +1236,49 @@ const CZUI = (() => {
         if (sel && sel.value !== name) sel.value = name;
     }
 
+    // ===== DYNAMIC LANGUAGE PICKER =====
+    // Builds lang picker + hidden select from CZEngine registry
+    function buildLangPicker() {
+        const registry = CZEngine.getRegistry();
+        if (!registry || registry.length === 0) return;
+
+        // Build lang picker dropdown
+        const picker = $('lang-picker');
+        if (picker) {
+            // Clear existing lang items (keep non-lang items if any)
+            picker.querySelectorAll('.lang-picker-item[data-lang]').forEach(el => el.remove());
+            // Add Plain Text first
+            const ptEl = document.createElement('div');
+            ptEl.className = 'lang-picker-item';
+            ptEl.dataset.lang = 'plaintext';
+            ptEl.textContent = 'Plain Text';
+            picker.appendChild(ptEl);
+            // Add registry languages
+            for (const lang of registry) {
+                const el = document.createElement('div');
+                el.className = 'lang-picker-item';
+                el.dataset.lang = lang.id;
+                el.textContent = lang.name;
+                picker.appendChild(el);
+            }
+        }
+
+        // Build hidden select
+        if (langSelector) {
+            langSelector.innerHTML = '';
+            const ptOpt = document.createElement('option');
+            ptOpt.value = 'plaintext';
+            ptOpt.textContent = 'Plain Text';
+            langSelector.appendChild(ptOpt);
+            for (const lang of registry) {
+                const opt = document.createElement('option');
+                opt.value = lang.id;
+                opt.textContent = lang.name;
+                langSelector.appendChild(opt);
+            }
+        }
+    }
+
     // Remove preload flash-prevention styles after sidebar is fully initialized
     function removePreloadStyles() {
         const preload = document.getElementById('cz-preload-styles');
@@ -1641,9 +1684,9 @@ const CZUI = (() => {
             // Text-based file (code, SVG, config, etc.)
             const data = await CZFS.readFile(fileHandle);
             const extM = fileName.match(/\.([a-z0-9]+)$/i);
-            let lang = 'plaintext';
-            if (extM) { lang = CZEngine.detectByExtension(extM[1].toLowerCase()) || CZEngine.detectLanguage(data.content); }
-            else { lang = CZEngine.detectLanguage(data.content); }
+            let lang = CZEngine.detectByFilename(fileName) || 'plaintext';
+            if (lang === 'plaintext' && extM) { lang = CZEngine.detectByExtension(extM[1].toLowerCase()) || CZEngine.detectLanguage(data.content); }
+            else if (lang === 'plaintext') { lang = CZEngine.detectLanguage(data.content); }
 
             const nf = {
                 id: 'file_' + Math.random().toString(36).substr(2, 9),
@@ -1803,7 +1846,7 @@ const CZUI = (() => {
                         openFile.fileHandle = result;
                         openFile.parentHandle = parentHandle;
                         const ext = newName.split('.').pop().toLowerCase();
-                        const detected = CZEngine.detectByExtension(ext);
+                        const detected = CZEngine.detectByFilename(newName) || CZEngine.detectByExtension(ext);
                         if (detected) openFile.language = detected;
                         if (openFile.id === activeFileId) langSelector.value = openFile.language;
                         renderTabs();
@@ -1942,9 +1985,9 @@ const CZUI = (() => {
                 content = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 
                 const extM = name.match(/\.([a-z0-9]+)$/i);
-                let lang = 'plaintext';
-                if (extM) { lang = CZEngine.detectByExtension(extM[1].toLowerCase()) || CZEngine.detectLanguage(content); }
-                else { lang = CZEngine.detectLanguage(content); }
+                let lang = CZEngine.detectByFilename(name) || 'plaintext';
+                if (lang === 'plaintext' && extM) { lang = CZEngine.detectByExtension(extM[1].toLowerCase()) || CZEngine.detectLanguage(content); }
+                else if (lang === 'plaintext') { lang = CZEngine.detectLanguage(content); }
                 const nf = {
                     id: 'file_' + Math.random().toString(36).substr(2, 9),
                     name, language: lang, content, isPinned: false,
@@ -2141,7 +2184,7 @@ const CZUI = (() => {
         initVirtualEditor,
         get editorView() { return editorView; },
         // Sidebar
-        toggleSidebar, isSidebarOpen, restoreSidebarState, removePreloadStyles, setTheme,
+        toggleSidebar, isSidebarOpen, restoreSidebarState, removePreloadStyles, setTheme, buildLangPicker,
         renderSidebar, refreshSidebar, collapseAllFolders, closeFolder,
         openFileFromTree, highlightActiveInTree, renderRecentFolders, reattachFileHandles,
         executeSidebarAction, openExplorerSettings, applyExplorerSettings,

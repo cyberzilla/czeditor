@@ -233,6 +233,7 @@ class View {
         this._updateSearchHighlights(gutterW);
         this._updateBracketMatch(gutterW);
         this._updateActiveLine(gutterW);
+        this._updateGutterActive();
     }
 
     _buildHTMLLangMap(model, firstVisible, lastVisible) {
@@ -299,6 +300,22 @@ class View {
     _updateActiveLine(gutterW) {
         this.activeLineEl.style.top = (this.cursor.line * this.lh) + 'px';
         this.activeLineEl.style.height = this.lh + 'px';
+    }
+
+    _updateGutterActive() {
+        const curLine = this.cursor.line;
+        // Remove previous active
+        if (this._activeGutterEl && this._activeGutterLine !== curLine) {
+            this._activeGutterEl.classList.remove('active');
+            this._activeGutterEl = null;
+        }
+        // Find current gutter element
+        const div = this._visLines.get(curLine);
+        if (div && div._gutterEl) {
+            div._gutterEl.classList.add('active');
+            this._activeGutterEl = div._gutterEl;
+            this._activeGutterLine = curLine;
+        }
     }
 
     // ===== SELECTION =====
@@ -413,6 +430,20 @@ class View {
     _bindEvents() {
         const el = this.inputEl;
         const sc = this.scrollEl;
+
+        // Gutter click: select entire line and focus editor
+        this.gutter.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            const rect = this.gutter.getBoundingClientRect();
+            const y = e.clientY - rect.top + sc.scrollTop;
+            const line = Math.max(0, Math.min(this.model.getLineCount() - 1, Math.floor(y / this.lh)));
+            const lineLen = this.model.getLineLength(line);
+            // Select the full line
+            this.anchor = { line, col: 0 };
+            this.cursor = { line, col: lineLen };
+            this.inputEl.focus({ preventScroll: true });
+            this._scheduleRender();
+        });
 
         // Focus management
         sc.addEventListener('mousedown', (e) => {

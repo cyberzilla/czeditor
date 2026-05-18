@@ -479,58 +479,58 @@ const CZEngine = (() => {
         return 'plaintext';
     }
 
+    // ===== DYNAMIC LANGUAGE REGISTRY =====
+    let _registry = [];          // [{id, name, extensions, filenames?}, ...]
+    const _extMap = {};           // extension → langId
+    const _filenameMap = {};      // lowercased filename → langId
+    let _registryReady = false;
+    let _registryPromise = null;
+
+    function loadRegistry() {
+        if (_registryPromise) return _registryPromise;
+        _registryPromise = fetch(`${LANG_DIR}/registry.json`)
+            .then(r => r.ok ? r.json() : [])
+            .then(list => {
+                _registry = list;
+                // Clear and rebuild maps
+                for (const k in _extMap) delete _extMap[k];
+                for (const k in _filenameMap) delete _filenameMap[k];
+                for (const lang of list) {
+                    for (const ext of (lang.extensions || [])) {
+                        _extMap[ext.toLowerCase()] = lang.id;
+                    }
+                    for (const fn of (lang.filenames || [])) {
+                        _filenameMap[fn.toLowerCase()] = lang.id;
+                    }
+                }
+                _registryReady = true;
+                return _registry;
+            })
+            .catch(e => { console.warn('Registry load fail:', e); return []; });
+        return _registryPromise;
+    }
+
+    function getRegistry() { return _registry; }
+    function isRegistryReady() { return _registryReady; }
+
     function detectByExtension(ext) {
-        const map = {
-            // JavaScript
-            js:'javascript', mjs:'javascript', cjs:'javascript', jsx:'javascript',
-            // TypeScript
-            ts:'typescript', tsx:'typescript', mts:'typescript',
-            // Web
-            html:'html', htm:'html', xhtml:'html',
-            css:'css', scss:'css', less:'css',
-            // XML/SVG
-            xml:'xml', svg:'xml', xsl:'xml', xslt:'xml', xsd:'xml',
-            rss:'xml', atom:'xml', xaml:'xml', plist:'xml',
-            csproj:'xml', fsproj:'xml', vbproj:'xml', vcxproj:'xml',
-            props:'xml', targets:'xml', resx:'xml', nuspec:'xml', wsdl:'xml',
-            // Python
-            py:'python', pyw:'python',
-            // PHP
-            php:'php', phtml:'php',
-            // Java
-            java:'java',
-            // Kotlin
-            kt:'kotlin', kts:'kotlin',
-            // C#
-            cs:'csharp',
-            // C/C++
-            c:'c', h:'c', cpp:'c', hpp:'c', cc:'c', cxx:'c', hh:'c', hxx:'c', ino:'c',
-            // Visual Basic
-            vb:'vb', vbs:'vb', bas:'vb', cls:'vb', frm:'vb',
-            // SQL
-            sql:'sql', ddl:'sql', dml:'sql',
-            // Shell
-            sh:'shell', bash:'shell', zsh:'shell', fish:'shell', ksh:'shell',
-            // Windows scripting
-            bat:'batch', cmd:'batch',
-            ps1:'powershell', psm1:'powershell', psd1:'powershell', ps1xml:'powershell',
-            // Data formats
-            json:'json', jsonc:'json', json5:'json',
-            yml:'yaml', yaml:'yaml',
-            // Markdown
-            md:'markdown', markdown:'markdown',
-            // Config (treat as YAML or relevant)
-            toml:'yaml', ini:'yaml', cfg:'yaml',
-            // Dockerfile / Makefile (shell-like)
-            dockerfile:'shell', makefile:'shell'
-        };
-        return map[ext] || null;
+        return _extMap[ext.toLowerCase()] || null;
+    }
+
+    function detectByFilename(filename) {
+        const lower = filename.toLowerCase();
+        // Exact match
+        if (_filenameMap[lower]) return _filenameMap[lower];
+        // .env.* pattern
+        if (/^\.env\..+$/.test(lower)) return _extMap['env'] || null;
+        return null;
     }
 
     // ===== PUBLIC API =====
     return {
         loadLanguage, getLangConfig, tokenize, renderTokens,
         getMatchingBrackets, getAutocompleteItems, highlightMatch,
-        expandEmmet, getAutoCloseTag, detectLanguage, detectByExtension, escapeHTML
+        expandEmmet, getAutoCloseTag, detectLanguage, detectByExtension, detectByFilename,
+        loadRegistry, getRegistry, isRegistryReady, escapeHTML
     };
 })();

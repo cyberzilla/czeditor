@@ -37,7 +37,7 @@
     background: var(--bg-main, #1e1e2e);
     border-right: 1px solid var(--border-color);
     user-select: none;
-    pointer-events: none;
+    cursor: pointer;
     overflow: hidden;
 }
 
@@ -51,6 +51,11 @@
     font-weight: var(--editor-font-weight, 400);
     line-height: var(--editor-line-height, 24px);
     white-space: nowrap;
+    transition: color 0.1s;
+}
+
+.virt-gutter-num.active {
+    color: var(--line-num-active, #cdd6f4);
 }
 
 /* Lines container */

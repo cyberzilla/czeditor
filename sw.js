@@ -1,5 +1,5 @@
 // CZEditor Service Worker — Enables PWA install + offline caching
-const CACHE_NAME = 'czeditor-v2.4.2';
+const CACHE_NAME = 'czeditor-v2.6.1';
 const ASSETS = [
     './',
     './index.html',
@@ -21,28 +21,8 @@ const ASSETS = [
     // i18n translations
     './i18n/en.json',
     './i18n/id.json',
-    // Language configs
-    './lang/batch.json',
-    './lang/c.json',
-    './lang/csharp.json',
-    './lang/css.json',
-    './lang/html.json',
-    './lang/java.json',
-    './lang/javascript.json',
-    './lang/jsx.json',
-    './lang/json.json',
-    './lang/kotlin.json',
-    './lang/markdown.json',
-    './lang/php.json',
-    './lang/powershell.json',
-    './lang/python.json',
-    './lang/shell.json',
-    './lang/sql.json',
-    './lang/typescript.json',
-    './lang/vb.json',
-    './lang/vue.json',
-    './lang/xml.json',
-    './lang/yaml.json',
+    // Language registry (individual lang files are cached dynamically)
+    './lang/registry.json',
     // Fonts
     './font/config.json',
     './font/MapleMono-Regular.ttf.woff2',
@@ -63,10 +43,21 @@ const ASSETS = [
     './font/MapleMono-ExtraBoldItalic.ttf.woff2'
 ];
 
-// Install: cache core assets
+// Install: cache core assets + dynamically cache all lang files from registry
 self.addEventListener('install', e => {
     e.waitUntil(
-        caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
+        caches.open(CACHE_NAME).then(async cache => {
+            await cache.addAll(ASSETS);
+            // Dynamically cache all language config files from registry
+            try {
+                const resp = await fetch('./lang/registry.json');
+                if (resp.ok) {
+                    const registry = await resp.json();
+                    const langUrls = registry.map(lang => `./lang/${lang.id}.json`);
+                    await cache.addAll(langUrls);
+                }
+            } catch (e) { /* registry fetch failed, lang files will be cached on demand */ }
+        })
     );
     self.skipWaiting();
 });

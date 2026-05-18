@@ -467,28 +467,7 @@
             <div class="lang-picker-wrapper">
                 <span id="stat-lang" class="footer-lang-btn">Plain Text</span>
                 <div id="lang-picker" class="lang-picker hidden">
-                    <div class="lang-picker-item" data-lang="batch">Batch (CMD)</div>
-                    <div class="lang-picker-item" data-lang="c">C/C++</div>
-                    <div class="lang-picker-item" data-lang="csharp">C#</div>
-                    <div class="lang-picker-item" data-lang="css">CSS</div>
-                    <div class="lang-picker-item" data-lang="html">HTML</div>
-                    <div class="lang-picker-item" data-lang="java">Java</div>
-                    <div class="lang-picker-item" data-lang="javascript">JavaScript</div>
-                    <div class="lang-picker-item" data-lang="jsx">JSX (React)</div>
-                    <div class="lang-picker-item" data-lang="json">JSON</div>
-                    <div class="lang-picker-item" data-lang="kotlin">Kotlin</div>
-                    <div class="lang-picker-item" data-lang="markdown">Markdown</div>
-                    <div class="lang-picker-item" data-lang="php">PHP</div>
-                    <div class="lang-picker-item" data-lang="plaintext">Plain Text</div>
-                    <div class="lang-picker-item" data-lang="powershell">PowerShell</div>
-                    <div class="lang-picker-item" data-lang="python">Python</div>
-                    <div class="lang-picker-item" data-lang="shell">Shell/Bash</div>
-                    <div class="lang-picker-item" data-lang="sql">SQL</div>
-                    <div class="lang-picker-item" data-lang="typescript">TypeScript</div>
-                    <div class="lang-picker-item" data-lang="vb">Visual Basic</div>
-                    <div class="lang-picker-item" data-lang="vue">Vue</div>
-                    <div class="lang-picker-item" data-lang="xml">XML/SVG</div>
-                    <div class="lang-picker-item" data-lang="yaml">YAML</div>
+                    <!-- Populated dynamically by buildLangPicker() from lang/registry.json -->
                 </div>
             </div>
         </div>
@@ -520,28 +499,8 @@
     </div>
 
     <select class="hidden" id="lang-selector">
+        <!-- Populated dynamically by buildLangPicker() from lang/registry.json -->
         <option value="plaintext">Plain Text</option>
-        <option value="batch">Batch (CMD)</option>
-        <option value="c">C/C++</option>
-        <option value="csharp">C#</option>
-        <option value="css">CSS</option>
-        <option value="html">HTML</option>
-        <option value="java">Java</option>
-        <option value="javascript">JavaScript</option>
-        <option value="jsx">JSX (React)</option>
-        <option value="json">JSON</option>
-        <option value="kotlin">Kotlin</option>
-        <option value="markdown">Markdown</option>
-        <option value="php">PHP</option>
-        <option value="powershell">PowerShell</option>
-        <option value="python">Python</option>
-        <option value="shell">Shell/Bash</option>
-        <option value="sql">SQL</option>
-        <option value="typescript">TypeScript</option>
-        <option value="vb">Visual Basic</option>
-        <option value="vue">Vue</option>
-        <option value="xml">XML/SVG</option>
-        <option value="yaml">YAML</option>
     </select>
 
     <script>

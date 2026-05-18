@@ -1,0 +1,39 @@
+{
+  "id": "ini",
+  "name": "INI / Config",
+  "extensions": ["ini", "cfg", "properties", "editorconfig", "gitconfig", "npmrc", "flake8", "pylintrc"],
+  "filenames": [".editorconfig", ".gitconfig", ".npmrc", "php.ini", "my.cnf", "config.ini", "setup.cfg"],
+  "comment": { "line": ";", "blockStart": null, "blockEnd": null },
+  "autoClosePairs": [
+    ["\"", "\""], ["'", "'"],
+    ["[", "]"], ["{", "}"], ["(", ")"]
+  ],
+  "brackets": [["[", "]"], ["{", "}"], ["(", ")"]],
+  "syntax": [
+    { "match": "\"(?:[^\"\\\\]|\\\\.)*\"", "scope": "string" },
+    { "match": "'(?:[^'\\\\]|\\\\.)*'", "scope": "string" },
+    { "match": "[;#][^\\n]*", "scope": "comment" },
+    { "match": "^\\s*\\[[^\\]]*\\]", "scope": "tag", "flags": "m" },
+    { "match": "^[a-zA-Z_][a-zA-Z0-9_.\\-]*(?=\\s*=)", "scope": "property", "flags": "m" },
+    { "match": "\\b(?:true|false|yes|no|on|off|none|null|auto)\\b", "scope": "keyword", "flags": "i" },
+    { "match": "\\b\\d+\\.?\\d*(?:[KMGkmg][Bb]?)?\\b", "scope": "number" },
+    { "match": "\\$\\{[^}]+\\}", "scope": "class" },
+    { "match": "%\\([^)]+\\)s", "scope": "class" }
+  ],
+  "autocomplete": {
+    "keywords": ["true", "false", "yes", "no", "on", "off", "none", "null", "auto"],
+    "builtins": [
+      "root", "indent_style", "indent_size", "tab_width", "end_of_line",
+      "charset", "trim_trailing_whitespace", "insert_final_newline", "max_line_length",
+      "space", "tab", "lf", "crlf", "cr", "utf-8", "utf-8-bom", "latin1",
+      "extension", "memory_limit", "max_execution_time", "upload_max_filesize",
+      "post_max_size", "display_errors", "error_reporting", "date.timezone",
+      "default", "master", "main", "production", "development", "staging", "test"
+    ]
+  },
+  "snippets": {
+    "sec": { "body": "[$1]\n$2 = $3", "description": "INI Section" },
+    "ec": { "body": "root = true\n\n[*]\nindent_style = space\nindent_size = 4\nend_of_line = lf\ncharset = utf-8\ntrim_trailing_whitespace = true\ninsert_final_newline = true", "description": "EditorConfig" },
+    "php": { "body": "[PHP]\nmemory_limit = $1\nmax_execution_time = $2\nupload_max_filesize = $3\npost_max_size = $4\ndisplay_errors = $5\nerror_reporting = $6", "description": "PHP INI" }
+  }
+}

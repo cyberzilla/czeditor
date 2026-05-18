@@ -1,0 +1,81 @@
+{
+  "id": "apacheconf",
+  "name": "Apache Config",
+  "extensions": ["htaccess", "conf", "apache", "apache2"],
+  "filenames": [".htaccess", "httpd.conf", "apache2.conf", "sites-available", "sites-enabled"],
+  "comment": { "line": "#", "blockStart": null, "blockEnd": null },
+  "autoClosePairs": [
+    ["\"", "\""], ["'", "'"],
+    ["<", ">"], ["{", "}"], ["[", "]"], ["(", ")"]
+  ],
+  "brackets": [["<", ">"], ["{", "}"], ["[", "]"], ["(", ")"]],
+  "syntax": [
+    { "match": "\"(?:[^\"\\\\]|\\\\.)*\"", "scope": "string" },
+    { "match": "'(?:[^'\\\\]|\\\\.)*'", "scope": "string" },
+    { "match": "#[^\\n]*", "scope": "comment" },
+    { "match": "\\b(?:RewriteEngine|RewriteRule|RewriteCond|RewriteBase|RewriteMap|RewriteOptions|RewriteLock)\\b", "scope": "keyword" },
+    { "match": "\\b(?:Options|AllowOverride|Order|Allow|Deny|Require|Satisfy|SetHandler|AddHandler|AddType|AddOutputFilterByType|AddDefaultCharset|AddEncoding|AddLanguage|AddCharset)\\b", "scope": "keyword" },
+    { "match": "\\b(?:ServerName|ServerAlias|ServerAdmin|ServerRoot|DocumentRoot|DirectoryIndex|ErrorDocument|ErrorLog|CustomLog|LogLevel|LogFormat)\\b", "scope": "keyword" },
+    { "match": "\\b(?:Header|RequestHeader|SetEnv|SetEnvIf|SetEnvIfNoCase|PassEnv|UnsetEnv|BrowserMatch)\\b", "scope": "keyword" },
+    { "match": "\\b(?:Redirect|RedirectMatch|RedirectPermanent|RedirectTemp|Alias|AliasMatch|ScriptAlias)\\b", "scope": "keyword" },
+    { "match": "\\b(?:SSLEngine|SSLCertificateFile|SSLCertificateKeyFile|SSLCertificateChainFile|SSLProtocol|SSLCipherSuite)\\b", "scope": "keyword" },
+    { "match": "\\b(?:ProxyPass|ProxyPassReverse|ProxyPreserveHost|ProxyRequests|ProxyTimeout)\\b", "scope": "keyword" },
+    { "match": "\\b(?:Include|IncludeOptional|LoadModule|Define|Use|IfModule|IfDefine|IfVersion)\\b", "scope": "keyword" },
+    { "match": "\\b(?:ExpiresActive|ExpiresByType|ExpiresDefault|FileETag|CacheControl)\\b", "scope": "keyword" },
+    { "match": "\\b(?:AuthType|AuthName|AuthUserFile|AuthGroupFile|AuthBasicProvider)\\b", "scope": "keyword" },
+    { "match": "\\b(?:php_value|php_flag|php_admin_value|php_admin_flag)\\b", "scope": "keyword" },
+    { "match": "</?(?:Directory|DirectoryMatch|Files|FilesMatch|Location|LocationMatch|VirtualHost|IfModule|IfDefine|IfVersion|Proxy|ProxyMatch|Limit|LimitExcept|RequireAll|RequireAny|RequireNone|AuthnProviderAlias|Else|ElseIf|If)[^>]*>", "scope": "tag" },
+    { "match": "\\[(?:[A-Z]+(?:=[^\\]]*)?(?:,\\s*[A-Z]+(?:=[^\\]]*)?)*)\\]", "scope": "attr" },
+    { "match": "%\\{[A-Z_]+\\}", "scope": "class" },
+    { "match": "\\$[0-9]+", "scope": "number" },
+    { "match": "\\b(?:On|Off|All|None|Indexes|FollowSymLinks|MultiViews|ExecCGI|Includes|IncludesNOEXEC|SymLinksIfOwnerMatch|FileInfo|AuthConfig|Limit|granted|denied)\\b", "scope": "number" },
+    { "match": "\\b(?:from|to|all|any|valid-user|env|user|group|ip|host|method)\\b", "scope": "attr" },
+    { "match": "\\b\\d+\\b", "scope": "number" },
+    { "match": "(?:\\^|\\$|\\*|\\+|\\?|\\||\\\\[dDwWsSbB])", "scope": "regex" }
+  ],
+  "autocomplete": {
+    "keywords": [
+      "RewriteEngine", "RewriteRule", "RewriteCond", "RewriteBase",
+      "Options", "AllowOverride", "Order", "Allow", "Deny", "Require",
+      "ServerName", "ServerAlias", "DocumentRoot", "DirectoryIndex",
+      "ErrorDocument", "ErrorLog", "CustomLog", "LogLevel",
+      "Header", "RequestHeader", "SetEnv", "SetEnvIf",
+      "Redirect", "RedirectMatch", "RedirectPermanent",
+      "SSLEngine", "SSLCertificateFile", "SSLCertificateKeyFile",
+      "ProxyPass", "ProxyPassReverse", "ProxyPreserveHost",
+      "Include", "IncludeOptional", "LoadModule",
+      "ExpiresActive", "ExpiresByType", "ExpiresDefault",
+      "AuthType", "AuthName", "AuthUserFile",
+      "AddHandler", "AddType", "AddOutputFilterByType", "AddDefaultCharset",
+      "SetHandler", "Alias", "ScriptAlias",
+      "php_value", "php_flag"
+    ],
+    "builtins": [
+      "HTTP_HOST", "HTTP_USER_AGENT", "HTTP_REFERER", "HTTP_COOKIE",
+      "HTTP_ACCEPT", "HTTP_ACCEPT_LANGUAGE", "HTTP_ACCEPT_ENCODING",
+      "REMOTE_ADDR", "REMOTE_HOST", "REMOTE_USER", "REMOTE_IDENT",
+      "REQUEST_METHOD", "REQUEST_URI", "REQUEST_FILENAME",
+      "SCRIPT_FILENAME", "PATH_INFO", "QUERY_STRING",
+      "AUTH_TYPE", "DOCUMENT_ROOT", "SERVER_ADMIN",
+      "SERVER_NAME", "SERVER_ADDR", "SERVER_PORT", "SERVER_PROTOCOL",
+      "SERVER_SOFTWARE", "TIME_YEAR", "TIME_MON", "TIME_DAY",
+      "TIME_HOUR", "TIME_MIN", "TIME_SEC", "TIME_WDAY", "TIME",
+      "HTTPS", "THE_REQUEST", "IS_SUBREQ", "API_VERSION",
+      "REQUEST_SCHEME", "CONN_REMOTE_ADDR"
+    ]
+  },
+  "snippets": {
+    "rw": { "body": "RewriteEngine On\nRewriteRule ^$1$ $2 [$3]", "description": "Rewrite Rule" },
+    "rc": { "body": "RewriteCond %{$1} $2", "description": "Rewrite Condition" },
+    "r301": { "body": "RewriteRule ^$1$ $2 [R=301,L]", "description": "301 Redirect" },
+    "r302": { "body": "RewriteRule ^$1$ $2 [R=302,L]", "description": "302 Redirect" },
+    "rwww": { "body": "RewriteEngine On\nRewriteCond %{HTTP_HOST} !^www\\. [NC]\nRewriteRule ^(.*)$ https://www.%{HTTP_HOST}/$1 [R=301,L]", "description": "Force www" },
+    "rhttps": { "body": "RewriteEngine On\nRewriteCond %{HTTPS} off\nRewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]", "description": "Force HTTPS" },
+    "err": { "body": "ErrorDocument $1 /$2", "description": "Error Document" },
+    "deny": { "body": "Order deny,allow\nDeny from all", "description": "Deny All" },
+    "cors": { "body": "Header set Access-Control-Allow-Origin \"$1\"\nHeader set Access-Control-Allow-Methods \"GET, POST, OPTIONS\"\nHeader set Access-Control-Allow-Headers \"Content-Type\"", "description": "CORS Headers" },
+    "cache": { "body": "<IfModule mod_expires.c>\n\tExpiresActive On\n\tExpiresByType image/jpeg \"access plus 1 year\"\n\tExpiresByType image/png \"access plus 1 year\"\n\tExpiresByType text/css \"access plus 1 month\"\n\tExpiresByType application/javascript \"access plus 1 month\"\n</IfModule>", "description": "Cache Control" },
+    "gzip": { "body": "<IfModule mod_deflate.c>\n\tAddOutputFilterByType DEFLATE text/html text/plain text/xml\n\tAddOutputFilterByType DEFLATE text/css application/javascript\n\tAddOutputFilterByType DEFLATE application/json application/xml\n</IfModule>", "description": "Gzip Compression" },
+    "php": { "body": "php_value $1 $2", "description": "PHP Value" }
+  }
+}

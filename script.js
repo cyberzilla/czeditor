@@ -17,6 +17,10 @@
         // Initialize virtual editor engine
         CZUI.initVirtualEditor();
 
+        // Load language registry (builds extension/filename maps + populates UI)
+        await CZEngine.loadRegistry();
+        CZUI.buildLangPicker();
+
         if (savedFiles) {
             let files = JSON.parse(savedFiles);
             // Filter out entries that truly can't be restored
@@ -246,21 +250,21 @@
                 });
             }
         };
-        langPicker.querySelectorAll('.lang-picker-item').forEach(el => {
-            el.onclick = (ev) => {
-                ev.stopPropagation();
-                const f = CZUI.getActiveFile();
-                if (!f) return;
-                f.language = el.dataset.lang;
-                CZUI.langSelector.value = f.language;
-                langPicker.classList.add('hidden');
-                CZEngine.loadLanguage(f.language).then(() => {
-                    CZUI.updateEditorVisuals();
-                    CZUI.updateFootbar();
-                    CZUI.saveData();
-                    CZUI.editingArea.focus();
-                });
-            };
+        langPicker.addEventListener('click', (ev) => {
+            const el = ev.target.closest('.lang-picker-item[data-lang]');
+            if (!el) return;
+            ev.stopPropagation();
+            const f = CZUI.getActiveFile();
+            if (!f) return;
+            f.language = el.dataset.lang;
+            CZUI.langSelector.value = f.language;
+            langPicker.classList.add('hidden');
+            CZEngine.loadLanguage(f.language).then(() => {
+                CZUI.updateEditorVisuals();
+                CZUI.updateFootbar();
+                CZUI.saveData();
+                CZUI.editingArea.focus();
+            });
         });
 
         // Footer EOL picker dropdown
