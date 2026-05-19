@@ -697,7 +697,7 @@ body.sidebar-resizing {
     flex-grow: 1;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 0;
+    padding: 0 0 25px 0;
 }
 
 .sidebar-empty {
@@ -1488,7 +1488,7 @@ body.sidebar-resizing {
 }
 
 /* .tree-root-children { */
-    /* padding-top: 4px; */
+/* padding-top: 4px; */
 /* } */
 
 .tree-root-folder .tree-name {

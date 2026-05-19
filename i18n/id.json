@@ -1,7 +1,6 @@
 {
     "_lang": "Bahasa Indonesia",
     "_code": "id",
-
     "drop_overlay": "Jatuhkan File di Sini",
     "btn_new_file_title": "File Baru (Ctrl+N)",
     "btn_open_file_title": "Buka File",
@@ -12,15 +11,12 @@
     "menu_theme": "Tema",
     "theme_dark": "Gelap",
     "theme_light": "Terang",
-
     "welcome_hint": "Tekan <strong>Ctrl+N</strong> atau <strong>Drag & Drop</strong> file untuk mulai",
     "pwa_install": "<span class=\"fi fi-ui fi-ui-download\"></span> Install sebagai Aplikasi",
-
     "shortcut_save": "Save",
     "shortcut_emmet": "Emmet / Indent",
     "shortcut_comment": "Comment",
     "shortcut_palette": "Command Palette",
-
     "shortcuts_title": "<span class=\"fi fi-ui fi-ui-keyboard\"></span> Keyboard Shortcuts",
     "sc_new_file": "File Baru",
     "sc_save": "Simpan / Download",
@@ -34,11 +30,9 @@
     "sc_palette": "Command Palette",
     "sc_emmet": "Emmet Expand / Indent",
     "sc_close_popup": "Tutup Popup",
-
     "font_config_title": "Konfigurasi Font",
     "font_weight_label": "Jenis & Bobot Font (Maple Mono NF):",
     "font_size_label": "Ukuran Font (px):",
-
     "prompt_rename_title": "Ubah Nama",
     "btn_cancel": "Batal",
     "btn_rename": "Ubah",
@@ -46,12 +40,10 @@
     "btn_close": "Tutup",
     "alert_title": "Peringatan",
     "btn_ok": "OK",
-
     "status_saved": "Tersimpan",
     "status_saving": "Menyimpan...",
     "stat_length": "Length: {0}",
     "stat_lines": "Lines: {0}",
-
     "ctx_close": "<span class=\"fi fi-ui fi-ui-close\"></span> Tutup",
     "ctx_close_other": "<span class=\"fi fi-ui fi-ui-close\"></span> Tutup Lainnya",
     "ctx_close_all": "<span class=\"fi fi-ui fi-ui-close\"></span> Tutup Semua",
@@ -60,14 +52,15 @@
     "ctx_reload": "<span class=\"fi fi-ui fi-ui-refresh\"></span> Muat Ulang File",
     "ctx_reload_error": "Gagal memuat ulang file.",
     "ctx_rename": "<span class=\"fi fi-ui fi-ui-edit\"></span> Ganti Nama File",
-
+    "ctx_duplicate_entry": "<span class=\"fi fi-ui fi-ui-clone\"></span> Duplikat",
+    "ctx_duplicate": "<span class=\"fi fi-ui fi-ui-clone\"></span> Duplikat File",
+    "prompt_duplicate_title": "Duplikat File",
     "confirm_close_file": "Tutup file '{0}'?",
     "confirm_close_other": "Tutup semua kecuali '{0}'?",
     "confirm_close_all": "Tutup seluruh file?",
     "confirm_close_title": "Tutup File",
     "confirm_close_other_title": "Tutup Lainnya",
     "confirm_close_all_title": "Tutup Semua",
-
     "cmd_new_file": "File Baru",
     "cmd_save": "Simpan",
     "cmd_toggle_comment": "Toggle Komentar",
@@ -75,43 +68,35 @@
     "cmd_open_folder": "Buka Folder",
     "cmd_toggle_sidebar": "Toggle Sidebar",
     "cmd_palette_placeholder": "Ketik perintah...",
-
     "sidebar_explorer": "Explorer",
     "btn_open_folder_title": "<span class=\"fi fi-folder-open\" style=\"margin-right:4px\"></span> Buka Folder",
     "btn_toggle_sidebar_title": "Toggle Sidebar (Ctrl+B)",
     "sidebar_no_folder": "Belum ada folder dibuka",
     "recent_folders_title": "Folder Terbaru",
     "btn_regrant_permission": "<span class=\"fi fi-ui fi-ui-folder-open\"></span> Izinkan Akses",
-
     "ctx_new_file": "<span class=\"fi fi-ui fi-ui-new-file\"></span> File Baru",
     "ctx_new_folder": "<span class=\"fi fi-ui fi-ui-new-folder\"></span> Folder Baru",
     "ctx_rename_entry": "<span class=\"fi fi-ui fi-ui-edit\"></span> Ganti Nama",
     "ctx_delete_entry": "<span class=\"fi fi-ui fi-ui-trash\"></span> Hapus",
     "ctx_close_folder": "<span class=\"fi fi-ui fi-ui-close\"></span> Tutup Folder",
     "ctx_explorer_settings": "<span class=\"fi fi-ui fi-ui-settings\"></span> Pengaturan Explorer",
-
     "prompt_new_file_title": "File Baru",
     "prompt_new_folder_title": "Folder Baru",
     "confirm_delete_title": "Hapus",
     "confirm_delete_entry": "Hapus '{0}'?",
-
     "explorer_settings_title": "<span class=\"fi fi-ui fi-ui-settings\"></span> Pengaturan Explorer",
     "explorer_depth_label": "Kedalaman Folder Maksimal:",
     "explorer_filter_label": "Pola Pengecualian (satu per baris):",
-
     "fs_not_supported": "File System Access API tidak didukung di browser ini. Gunakan Chrome atau Edge.",
     "sc_toggle_sidebar": "Toggle Sidebar",
     "svg_preview_title": "Preview SVG",
-
     "binary_file_msg": "File ini dalam format biner dan tidak bisa ditampilkan sebagai teks.",
     "binary_open_code": "Buka sebagai Kode",
     "binary_open_external": "Buka Eksternal",
     "binary_open_error": "Gagal membaca file biner.",
     "binary_no_handle": "File handle tidak tersedia. Silakan buka ulang foldernya.",
-
     "alert_file_exists": "File dengan nama tersebut sudah ada di folder ini.",
     "alert_folder_exists": "Folder dengan nama tersebut sudah ada.",
-
     "filename_empty": "Nama file tidak boleh kosong.",
     "filename_illegal_chars": "Nama file mengandung karakter yang tidak diizinkan: \\ / : * ? \" < > |",
     "filename_reserved": "Nama ini merupakan nama yang direservasi oleh sistem (CON, PRN, NUL, dll).",

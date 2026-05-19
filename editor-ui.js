@@ -1962,11 +1962,11 @@ const CZUI = (() => {
                 // Files: no "new-file", "new-folder", "close-folder"
                 if (['new-file', 'new-folder', 'close-folder'].includes(action)) show = false;
             } else if (kind === 'directory') {
-                // Folders: no "close-folder" (that's for root only)
-                if (action === 'close-folder') show = false;
+                // Folders: no "close-folder", "duplicate" (duplicate is for files only)
+                if (['close-folder', 'duplicate'].includes(action)) show = false;
             } else if (kind === 'root') {
-                // Root folder: no "rename", "delete"
-                if (['rename', 'delete'].includes(action)) show = false;
+                // Root folder: no "rename", "delete", "duplicate"
+                if (['rename', 'delete', 'duplicate'].includes(action)) show = false;
             }
             el.style.display = show ? '' : 'none';
         });
@@ -2251,6 +2251,72 @@ const CZUI = (() => {
                 }
                 await refreshSidebar();
             }
+        } else if (action === 'duplicate') {
+            if (target.kind !== 'file') return;
+            await duplicateFileOnDisk(target.handle, target.name, parentHandle);
+        }
+    }
+
+    // Generate duplicate name: "file(1).ext", "file(2).ext", etc.
+    function generateDuplicateName(originalName) {
+        const dotIdx = originalName.lastIndexOf('.');
+        const baseName = dotIdx > 0 ? originalName.slice(0, dotIdx) : originalName;
+        const ext = dotIdx > 0 ? originalName.slice(dotIdx) : '';
+        const stripped = baseName.replace(/\(\d+\)$/, '').trimEnd();
+        return `${stripped}(1)${ext}`;
+    }
+
+    // Find next available duplicate name by checking existence
+    async function findAvailableName(parentHandle, originalName) {
+        const dotIdx = originalName.lastIndexOf('.');
+        const baseName = dotIdx > 0 ? originalName.slice(0, dotIdx) : originalName;
+        const ext = dotIdx > 0 ? originalName.slice(dotIdx) : '';
+        const stripped = baseName.replace(/\(\d+\)$/, '').trimEnd();
+        let counter = 1;
+        while (true) {
+            const candidate = `${stripped}(${counter})${ext}`;
+            try {
+                await parentHandle.getFileHandle(candidate);
+                counter++; // exists, try next
+            } catch {
+                return candidate; // doesn't exist
+            }
+        }
+    }
+
+    // Duplicate file on disk with prompt
+    async function duplicateFileOnDisk(sourceHandle, sourceName, parentHandle) {
+        if (!parentHandle) return;
+        const autoName = await findAvailableName(parentHandle, sourceName);
+        const newName = await openPrompt(
+            CZi18n.t('prompt_duplicate_title') || 'Duplicate File',
+            autoName,
+            { validateFilename: true }
+        );
+        if (!newName || !newName.trim()) return;
+        const trimmed = newName.trim();
+        const err = validateFileName(trimmed);
+        if (err) { openAlert(CZi18n.t('alert_title'), CZi18n.t(err)); return; }
+        // Check if file exists
+        try {
+            await parentHandle.getFileHandle(trimmed);
+            openAlert(CZi18n.t('alert_title'), CZi18n.t('alert_file_exists') || `File '${trimmed}' already exists.`);
+            return;
+        } catch { /* doesn't exist — good */ }
+        // Read source content
+        try {
+            const srcFile = await sourceHandle.getFile();
+            const content = await srcFile.text();
+            // Create new file and write content
+            const newHandle = await parentHandle.getFileHandle(trimmed, { create: true });
+            const writable = await newHandle.createWritable();
+            await writable.write(content);
+            await writable.close();
+            // Refresh tree and open new file
+            await refreshSidebar();
+            await openFileFromTree(newHandle, trimmed, parentHandle);
+        } catch (e) {
+            openAlert(CZi18n.t('alert_title'), 'Failed to duplicate: ' + e.message);
         }
     }
 
@@ -2551,6 +2617,20 @@ const CZUI = (() => {
                 }
             }
         } else if (action === 'rename') renameFile(targetContextTabId);
+        else if (action === 'duplicate') {
+            // Duplicate from tab — need file handle + parent handle
+            if (tf && tf.fileHandle && tf.parentHandle) {
+                await duplicateFileOnDisk(tf.fileHandle, tf.name, tf.parentHandle);
+            } else if (tf) {
+                // Non-folder file (imported): duplicate as in-memory tab
+                const dupName = generateDuplicateName(tf.name);
+                const newName = await openPrompt(CZi18n.t('prompt_duplicate_title') || 'Duplicate File', dupName, { validateFilename: true });
+                if (!newName || !newName.trim()) return;
+                const nf = { id: Date.now().toString(), name: newName.trim(), content: tf.content, language: tf.language, dirty: false };
+                files.push(nf);
+                switchFile(nf.id);
+            }
+        }
     }
 
     return {

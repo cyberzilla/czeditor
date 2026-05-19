@@ -1361,3 +1361,8 @@
     -webkit-mask-image: url('icons/ui/pin.svg');
     mask-image: url('icons/ui/pin.svg');
 }
+
+.fi-ui-clone {
+    -webkit-mask-image: url('icons/ui/clone.svg');
+    mask-image: url('icons/ui/clone.svg');
+}
