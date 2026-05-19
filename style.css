@@ -203,7 +203,8 @@ body {
     height: 36px;
     align-items: center;
     justify-content: space-between;
-    z-index: 10;
+    position: relative;
+    z-index: 100;
     flex-shrink: 0;
 }
 
@@ -432,7 +433,7 @@ body {
     border: 1px solid var(--border-color);
     border-radius: 6px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    z-index: 100;
+    z-index: 1000;
     padding: 5px 0;
 }
 
@@ -442,6 +443,9 @@ body {
     cursor: pointer;
     color: var(--text-main);
     transition: 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .settings-item:hover {
@@ -449,8 +453,6 @@ body {
 }
 
 .settings-item:has(.settings-select) {
-    display: flex;
-    align-items: center;
     justify-content: space-between;
     cursor: default;
 }
@@ -474,6 +476,60 @@ body {
 .settings-select option {
     background: var(--bg-main);
     color: var(--text-main);
+}
+
+/* Settings accordion (shared by language + theme) */
+.settings-accordion-toggle {
+    justify-content: space-between;
+}
+
+.settings-item-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.settings-accordion-badge {
+    font-size: 10px;
+    color: var(--text-muted);
+    background: rgba(var(--surface-rgb), 0.08);
+    padding: 2px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.3px;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.settings-accordion-options {
+    padding: 0;
+}
+
+.settings-accordion-options.hidden {
+    display: none;
+}
+
+.settings-accordion-option {
+    padding: 8px 15px 8px 30px;
+    font-size: 12px;
+    cursor: pointer;
+    color: var(--text-main);
+    transition: 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.settings-accordion-option:hover {
+    background-color: rgba(var(--surface-rgb), 0.05);
+}
+
+.accordion-check {
+    width: 14px;
+    font-size: 11px;
+    color: var(--accent-color);
+    flex-shrink: 0;
 }
 
 /* ===== SIDEBAR ===== */
@@ -582,7 +638,7 @@ body.sidebar-resizing {
     overflow: hidden;
 }
 
-/* Sidebar tree area â€” position context for floating actions */
+/* Sidebar tree area — position context for floating actions */
 .sidebar-tree-area {
     flex-grow: 1;
     position: relative;
@@ -591,21 +647,25 @@ body.sidebar-resizing {
     flex-direction: column;
 }
 
-/* Sidebar actions â€” absolute overlay on root folder row */
+/* Sidebar actions — inline within root folder row (VS Code style) */
 .sidebar-actions {
-    position: absolute;
-    top: 0;
-    right: 4px;
-    z-index: 5;
     display: flex;
-    gap: 2px;
-    height: 26px;
+    gap: 3px;
     align-items: center;
-    padding: 0 2px;
+    flex-shrink: 0;
+    margin-left: auto;
+    max-width: 0;
+    overflow: hidden;
 }
 
 .sidebar-actions.hidden {
     display: none !important;
+}
+
+/* Expand actions on hover — takes space and pushes name into ellipsis */
+.tree-root-folder:hover .sidebar-actions {
+    max-width: 200px;
+    overflow: visible;
 }
 
 .sidebar-btn {
@@ -613,17 +673,17 @@ body.sidebar-resizing {
     border: none;
     color: var(--text-muted);
     cursor: pointer;
-    padding: 3px 5px;
     border-radius: 4px;
     font-size: 12px;
     line-height: 1;
-    transition: 0.15s;
+    transition: opacity 0.15s;
     opacity: 0;
     pointer-events: auto;
+    flex-shrink: 0;
 }
 
 /* Show actions when hovering root folder or the actions bar itself */
-.sidebar-tree-area:has(.tree-root-folder:hover) .sidebar-actions .sidebar-btn,
+.tree-root-folder:hover .sidebar-actions .sidebar-btn,
 .sidebar-actions:hover .sidebar-btn {
     opacity: 1;
 }
@@ -1409,9 +1469,20 @@ body.sidebar-resizing {
     accent-color: var(--accent-color);
 }
 
-/* Root folder item */
+/* Root folder item — flex row with inline actions (VS Code style) */
 .tree-root-folder {
     padding-bottom: 2px;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+}
+
+.tree-root-folder .tree-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* ===== WELCOME SCREEN ===== */

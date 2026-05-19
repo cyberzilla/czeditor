@@ -231,7 +231,7 @@ const CZFS = (() => {
                         kind: 'directory',
                         handle,
                         children,
-                        expanded: depth < 1 // Auto-expand first level
+                        expanded: false // All collapsed by default
                     });
                 } else {
                     entries.push({

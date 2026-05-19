@@ -99,7 +99,11 @@
             Array.from(e.target.files).forEach(f => CZUI.processImportedFile(f));
             e.target.value = '';
         };
-        document.getElementById('btn-settings').onclick = () => CZUI.settingsPopup.classList.toggle('hidden');
+        document.getElementById('btn-settings').onclick = () => {
+            CZUI.settingsPopup.classList.toggle('hidden');
+            // Collapse all accordion sub-menus when opening
+            document.querySelectorAll('.settings-accordion-options').forEach(el => el.classList.add('hidden'));
+        };
         document.getElementById('btn-toggle-sidebar').onclick = () => CZUI.toggleSidebar();
         document.getElementById('btn-sidebar-reopen').onclick = () => CZUI.toggleSidebar();
 
@@ -155,30 +159,76 @@
             document.getElementById('shortcuts-modal').classList.remove('hidden');
             CZUI.settingsPopup.classList.add('hidden');
         };
-        document.getElementById('menu-language').onclick = () => {
-            const list = document.getElementById('language-list');
-            const langs = CZi18n.getAvailableLanguages();
-            const current = CZi18n.getCurrentLang();
-            list.innerHTML = langs.map(l => 
-                `<div class="lang-picker-item${l.code === current ? ' active' : ''}" data-ui-lang="${l.code}">${l.name}</div>`
-            ).join('');
-            list.querySelectorAll('.lang-picker-item').forEach(el => {
-                el.onclick = async () => {
-                    await CZi18n.loadLanguage(el.dataset.uiLang);
-                    document.getElementById('language-modal').classList.add('hidden');
-                };
-            });
-            document.getElementById('language-modal').classList.remove('hidden');
-            CZUI.settingsPopup.classList.add('hidden');
-        };
-        document.getElementById('close-language').onclick = () => document.getElementById('language-modal').classList.add('hidden');
 
-        // Theme selector
-        const themeSelector = document.getElementById('theme-selector');
-        if (themeSelector) {
-            themeSelector.value = localStorage.getItem('cz_theme') || 'dark';
-            themeSelector.onchange = () => CZUI.setTheme(themeSelector.value);
+        // Language accordion toggle
+        const langToggle = document.getElementById('menu-language');
+        const langOptions = document.getElementById('lang-options');
+        const langBadge = document.getElementById('lang-badge');
+
+        function updateLangUI() {
+            const current = CZi18n.getCurrentLang();
+            const langs = CZi18n.getAvailableLanguages();
+            const currentLangObj = langs.find(l => l.code === current);
+            if (langBadge) langBadge.textContent = currentLangObj ? currentLangObj.name : current;
+            // Rebuild options
+            if (langOptions) {
+                langOptions.innerHTML = langs.map(l =>
+                    `<div class="settings-accordion-option" data-lang="${l.code}"><span class="accordion-check">${l.code === current ? '✓' : ''}</span> ${l.name}</div>`
+                ).join('');
+                langOptions.querySelectorAll('.settings-accordion-option').forEach(el => {
+                    el.onclick = async (e) => {
+                        e.stopPropagation();
+                        await CZi18n.loadLanguage(el.dataset.lang);
+                        updateLangUI();
+                        updateThemeUI(localStorage.getItem('cz_theme') || 'dark');
+                    };
+                });
+            }
         }
+        updateLangUI();
+
+        if (langToggle) {
+            langToggle.onclick = (e) => {
+                e.stopPropagation();
+                // Close theme options if open
+                themeOptions?.classList.add('hidden');
+                langOptions?.classList.toggle('hidden');
+            };
+        }
+
+        // Theme accordion toggle
+        const themeToggle = document.getElementById('menu-theme');
+        const themeOptions = document.getElementById('theme-options');
+        const themeBadge = document.getElementById('theme-badge');
+        const currentTheme = localStorage.getItem('cz_theme') || 'dark';
+
+        function updateThemeUI(theme) {
+            if (themeBadge) {
+                const opt = themeOptions?.querySelector(`[data-theme="${theme}"] span:last-child`);
+                themeBadge.textContent = opt ? opt.textContent : theme;
+            }
+            themeOptions?.querySelectorAll('.accordion-check').forEach(el => el.textContent = '');
+            const activeCheck = document.getElementById('theme-check-' + theme);
+            if (activeCheck) activeCheck.textContent = '✓';
+        }
+        updateThemeUI(currentTheme);
+
+        if (themeToggle) {
+            themeToggle.onclick = (e) => {
+                e.stopPropagation();
+                // Close lang options if open
+                langOptions?.classList.add('hidden');
+                themeOptions?.classList.toggle('hidden');
+            };
+        }
+        themeOptions?.querySelectorAll('.settings-accordion-option').forEach(el => {
+            el.onclick = (e) => {
+                e.stopPropagation();
+                const theme = el.dataset.theme;
+                CZUI.setTheme(theme);
+                updateThemeUI(theme);
+            };
+        });
 
         // Font config
         document.getElementById('font-weight-select').onchange = () => CZUI.applyFontSettings();
@@ -342,8 +392,8 @@
             if (e.key === 'Escape') CZFeatures.toggleCommandPalette();
         });
 
-        // Global listeners
-        document.addEventListener('click', e => {
+        // Global listeners — use mousedown to catch all button types (left, right, middle)
+        document.addEventListener('mousedown', e => {
             if (!e.target.closest('#settings-popup') && !e.target.closest('.settings-btn'))
                 CZUI.settingsPopup.classList.add('hidden');
             if (!e.target.closest('#tab-context-menu'))

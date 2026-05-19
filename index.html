@@ -135,20 +135,24 @@
                         <button class="settings-btn" id="btn-settings" data-i18n="btn_settings_title"
                             data-i18n-attr="title" title="Pengaturan"><span class="fi fi-ui fi-ui-settings"></span></button>
                         <div class="settings-popup hidden" id="settings-popup">
-                            <div class="settings-item" id="menu-font-config" data-i18n="menu_font_config" data-i18n-html><span class="fi fi-ui fi-ui-text-size"></span> Konfigurasi
-                                Font
+                            <div class="settings-item" id="menu-font-config">
+                                <span class="settings-item-left"><span class="fi fi-ui fi-ui-text-size"></span> <span data-i18n="menu_font_config">Konfigurasi Font</span></span>
                             </div>
-                            <div class="settings-item" id="menu-shortcuts" data-i18n="menu_shortcuts" data-i18n-html><span class="fi fi-ui fi-ui-keyboard"></span> Keyboard
-                                Shortcuts
+                            <div class="settings-item" id="menu-shortcuts">
+                                <span class="settings-item-left"><span class="fi fi-ui fi-ui-keyboard"></span> <span data-i18n="menu_shortcuts">Keyboard Shortcuts</span></span>
                             </div>
-                            <div class="settings-item" id="menu-language"><span class="fi fi-ui fi-ui-globe"></span> <span data-i18n="menu_language"
-                                    id="menu-language-text">Bahasa</span></div>
-                            <div class="settings-item" id="menu-theme"><span class="fi fi-ui fi-ui-color-mode"></span> <span data-i18n="menu_theme"
-                                    id="menu-theme-text">Tema</span>
-                                <select id="theme-selector" class="settings-select">
-                                    <option value="dark" data-i18n="theme_dark">Dark</option>
-                                    <option value="light" data-i18n="theme_light">Light</option>
-                                </select>
+                            <div class="settings-item settings-accordion-toggle" id="menu-language">
+                                <span class="settings-item-left"><span class="fi fi-ui fi-ui-globe"></span> <span data-i18n="menu_language" id="menu-language-text">Bahasa</span></span>
+                                <span class="settings-accordion-badge" id="lang-badge">Bahasa Indonesia</span>
+                            </div>
+                            <div class="settings-accordion-options hidden" id="lang-options"></div>
+                            <div class="settings-item settings-accordion-toggle" id="menu-theme">
+                                <span class="settings-item-left"><span class="fi fi-ui fi-ui-color-mode"></span> <span data-i18n="menu_theme" id="menu-theme-text">Tema</span></span>
+                                <span class="settings-accordion-badge" id="theme-badge">Dark</span>
+                            </div>
+                            <div class="settings-accordion-options hidden" id="theme-options">
+                                <div class="settings-accordion-option" data-theme="dark"><span class="accordion-check" id="theme-check-dark">✓</span> <span data-i18n="theme_dark">Dark</span></div>
+                                <div class="settings-accordion-option" data-theme="light"><span class="accordion-check" id="theme-check-light"></span> <span data-i18n="theme_light">Light</span></div>
                             </div>
                         </div>
                     </div>
@@ -349,17 +353,6 @@
                     <input type="number" id="font-size-input" value="15" min="10" max="40">
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- Language Picker Modal -->
-    <div id="language-modal" class="modal hidden">
-        <div class="modal-content" style="width: 300px;">
-            <div class="modal-header">
-                <h3><span class="fi fi-ui fi-ui-globe" style="margin-right:4px"></span> Language</h3>
-                <span class="close-modal" id="close-language">&times;</span>
-            </div>
-            <div class="modal-body" id="language-list"></div>
         </div>
     </div>
 
@@ -647,9 +640,14 @@
                         st.insertAdjacentHTML('afterbegin', treeHtml);
                         st.dataset.preloaded = '1';
                     }
-                    // Show sidebar action buttons
+                    // Show sidebar action buttons and move into root folder header
                     var sa = document.getElementById('sidebar-actions');
-                    if (sa) sa.classList.remove('hidden');
+                    if (sa) {
+                        sa.classList.remove('hidden');
+                        // Move actions inside root folder for inline layout
+                        var rf = st.querySelector('.tree-root-folder');
+                        if (rf) rf.appendChild(sa);
+                    }
                 }
             } catch (e) { /* silent */ }
         })();

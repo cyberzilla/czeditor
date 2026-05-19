@@ -47,6 +47,9 @@
     --scrollbar-thumb: rgba(108, 112, 134, 0.35);
     --scrollbar-thumb-hover: rgba(108, 112, 134, 0.55);
 
+    /* Icons */
+    --icon-invert: 1; /* Invert black SVGs to white in dark theme */
+
     /* Syntax Highlighting — Catppuccin Mocha */
     --syn-keyword: #cba6f7;
     --syn-string: #a6e3a1;

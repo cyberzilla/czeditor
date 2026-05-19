@@ -1427,7 +1427,10 @@ const CZUI = (() => {
             activeFileId = files[0].id;
         }
         saveData();
-        // Reset sidebar
+        // Reset sidebar — rescue sidebar-actions before clearing tree
+        if (sidebarActions && sidebarActions.parentNode) {
+            sidebarActions.parentNode.removeChild(sidebarActions);
+        }
         sidebarTree.innerHTML = '';
         sidebarEmpty.style.display = 'flex';
         sidebarTree.appendChild(sidebarEmpty);
@@ -1435,8 +1438,13 @@ const CZUI = (() => {
         CZFS.clearFolder();
         localStorage.removeItem('cz_expanded_folders');
         localStorage.removeItem('cz_tree_html');
-        // Hide sidebar action buttons
-        if (sidebarActions) sidebarActions.classList.add('hidden');
+        localStorage.removeItem('cz_root_collapsed');
+        // Hide sidebar action buttons and return to sidebar-tree-area
+        if (sidebarActions) {
+            sidebarActions.classList.add('hidden');
+            const treeArea = sidebarTree.parentElement;
+            if (treeArea) treeArea.appendChild(sidebarActions);
+        }
         // Re-render recent folders
         renderRecentFolders();
         // Re-render
@@ -1516,9 +1524,6 @@ const CZUI = (() => {
             const colors = { dark: '#1e1e2e', light: '#eff1f5' };
             meta.content = colors[name] || colors.dark;
         }
-        // Sync the dropdown if called programmatically
-        const sel = document.getElementById('theme-selector');
-        if (sel && sel.value !== name) sel.value = name;
     }
 
     // ===== DYNAMIC LANGUAGE PICKER =====
@@ -1655,16 +1660,37 @@ const CZUI = (() => {
 
 
 
+    // Cache tree HTML excluding sidebar-actions to avoid duplicate on preload
+    function cacheTreeHTML() {
+        try {
+            // Temporarily detach sidebar-actions so it's not serialized
+            const parent = sidebarActions?.parentNode;
+            const next = sidebarActions?.nextSibling;
+            if (sidebarActions && parent) parent.removeChild(sidebarActions);
+            localStorage.setItem('cz_tree_html', sidebarTree.innerHTML);
+            // Re-attach
+            if (sidebarActions && parent) parent.insertBefore(sidebarActions, next);
+        } catch (e) { /* quota */ }
+    }
+
     function renderSidebar(tree, folderName) {
         sidebarEmpty.style.display = 'none';
 
         if (!tree || tree.length === 0) {
             delete sidebarTree.dataset.preloaded;
+            // Rescue sidebar-actions before clearing
+            if (sidebarActions && sidebarActions.parentNode) {
+                sidebarActions.parentNode.removeChild(sidebarActions);
+            }
             sidebarTree.innerHTML = '';
             if (!CZFS.getDirectoryHandle()) {
                 sidebarEmpty.style.display = 'flex';
                 sidebarTree.appendChild(sidebarEmpty);
-                if (sidebarActions) sidebarActions.classList.add('hidden');
+                if (sidebarActions) {
+                    sidebarActions.classList.add('hidden');
+                    const treeArea = sidebarTree.parentElement;
+                    if (treeArea) treeArea.appendChild(sidebarActions);
+                }
                 renderRecentFolders();
             }
             return;
@@ -1682,12 +1708,13 @@ const CZUI = (() => {
             attachTreeHandlers(tree, sidebarTree, 1, CZFS.getDirectoryHandle(), folderName);
             highlightActiveInTree();
             // Update cached tree HTML with current expand state
-            try { localStorage.setItem('cz_tree_html', sidebarTree.innerHTML); } catch (e) { /* quota */ }
+            cacheTreeHTML();
             return;
         }
 
         // Build new tree in a fragment to avoid flash
         const frag = document.createDocumentFragment();
+        const rootExpanded = localStorage.getItem('cz_root_collapsed') !== 'true';
 
         // Render folder name header
         if (folderName) {
@@ -1695,24 +1722,46 @@ const CZUI = (() => {
             header.className = 'tree-item tree-root-folder';
             header.style.fontWeight = '600';
             header.style.paddingLeft = '8px';
-            header.innerHTML = `${folderIconHTML(true, folderName)}<span class="tree-name">${CZEngine.escapeHTML(folderName)}</span>`;
+            const arrowClass = rootExpanded ? 'tree-icon folder-arrow expanded' : 'tree-icon folder-arrow';
+            header.innerHTML = `<span class="${arrowClass}"></span>${folderIconHTML(rootExpanded, folderName)}<span class="tree-name">${CZEngine.escapeHTML(folderName)}</span>`;
             header.oncontextmenu = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 sidebarContextTarget = { handle: CZFS.getDirectoryHandle(), parentHandle: null, name: folderName, kind: 'root' };
                 showSidebarContextMenu(e.pageX, e.pageY);
             };
+            // Click to collapse/expand root
+            header.onclick = (e) => {
+                e.stopPropagation();
+                const childrenDiv = sidebarTree.querySelector('.tree-root-children');
+                if (!childrenDiv) return;
+                const isExpanded = !childrenDiv.classList.contains('collapsed');
+                childrenDiv.classList.toggle('collapsed', isExpanded);
+                const arrowEl = header.querySelector('.folder-arrow');
+                if (arrowEl) arrowEl.classList.toggle('expanded', !isExpanded);
+                // Swap folder icon
+                const iconEl = header.querySelector('.fi');
+                if (iconEl) iconEl.className = getFolderIconClass(folderName, !isExpanded);
+                localStorage.setItem('cz_root_collapsed', isExpanded ? 'true' : 'false');
+                cacheTreeHTML();
+            };
+            // Append sidebar-actions inside root folder for inline VS Code-style layout
+            if (sidebarActions) header.appendChild(sidebarActions);
             frag.appendChild(header);
         }
 
-        renderTreeNodes(tree, frag, 1, CZFS.getDirectoryHandle());
+        // Wrap tree nodes in a collapsible container
+        const rootChildrenDiv = document.createElement('div');
+        rootChildrenDiv.className = 'tree-folder-children tree-root-children' + (rootExpanded ? '' : ' collapsed');
+        renderTreeNodes(tree, rootChildrenDiv, 1, CZFS.getDirectoryHandle());
+        frag.appendChild(rootChildrenDiv);
 
         // Atomic replace — no empty-frame flash between clear and insert
         sidebarTree.replaceChildren(frag);
 
         highlightActiveInTree();
         // Cache tree HTML for instant pre-render on next page load
-        try { localStorage.setItem('cz_tree_html', sidebarTree.innerHTML); } catch (e) { /* quota */ }
+        cacheTreeHTML();
     }
 
     // Walk preloaded DOM tree and attach live event handlers without rebuilding DOM
@@ -1726,9 +1775,24 @@ const CZUI = (() => {
                 sidebarContextTarget = { handle: CZFS.getDirectoryHandle(), parentHandle: null, name: folderName, kind: 'root' };
                 showSidebarContextMenu(e.pageX, e.pageY);
             };
+            // Click to collapse/expand root
+            rootHeader.onclick = (e) => {
+                e.stopPropagation();
+                const childrenDiv = sidebarTree.querySelector('.tree-root-children');
+                if (!childrenDiv) return;
+                const isExpanded = !childrenDiv.classList.contains('collapsed');
+                childrenDiv.classList.toggle('collapsed', isExpanded);
+                const arrowEl = rootHeader.querySelector('.folder-arrow');
+                if (arrowEl) arrowEl.classList.toggle('expanded', !isExpanded);
+                const iconEl = rootHeader.querySelector('.fi');
+                if (iconEl) iconEl.className = getFolderIconClass(folderName, !isExpanded);
+                localStorage.setItem('cz_root_collapsed', isExpanded ? 'true' : 'false');
+                cacheTreeHTML();
+            };
         }
-        // Walk tree data and match to DOM nodes
-        attachNodeHandlers(treeData, container, 1, parentHandle);
+        // Walk tree data from tree-root-children container
+        const rootChildren = container.querySelector('.tree-root-children') || container;
+        attachNodeHandlers(treeData, rootChildren, 1, parentHandle);
     }
 
     function attachNodeHandlers(nodes, container, depth, parentHandle) {
@@ -1762,7 +1826,7 @@ const CZUI = (() => {
                         const tree = CZFS.getCurrentTree();
                         if (tree) saveExpandedPaths(tree, CZFS.getDirectoryHandle()?.name || '');
                         // Update cached tree HTML
-                        try { localStorage.setItem('cz_tree_html', sidebarTree.innerHTML); } catch (e) { /* quota */ }
+                        cacheTreeHTML();
                     };
                     item.oncontextmenu = (e) => {
                         e.preventDefault();
@@ -1825,7 +1889,7 @@ const CZUI = (() => {
                     const tree = CZFS.getCurrentTree();
                     if (tree) saveExpandedPaths(tree, CZFS.getDirectoryHandle()?.name || '');
                     // Update cached tree HTML
-                    try { localStorage.setItem('cz_tree_html', sidebarTree.innerHTML); } catch (e) { /* quota */ }
+                    cacheTreeHTML();
                 };
 
                 item.oncontextmenu = (e) => {
@@ -2060,6 +2124,8 @@ const CZUI = (() => {
         collapseRecursive(tree);
         // Save empty state so all folders stay collapsed after refresh
         localStorage.setItem('cz_expanded_folders', '[]');
+        // Keep root expanded
+        localStorage.removeItem('cz_root_collapsed');
         renderSidebar(tree, CZFS.getDirectoryHandle()?.name);
     }
 

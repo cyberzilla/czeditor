@@ -141,6 +141,7 @@
 
 .fi-readme {
     background-image: url('icons/files/readme.svg');
+    filter: invert(var(--icon-invert, 0));
 }
 
 .fi-changelog {

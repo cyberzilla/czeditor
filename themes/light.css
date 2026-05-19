@@ -47,6 +47,9 @@
     --scrollbar-thumb: rgba(108, 112, 134, 0.3);
     --scrollbar-thumb-hover: rgba(108, 112, 134, 0.5);
 
+    /* Icons */
+    --icon-invert: 0; /* Keep black SVGs as-is in light theme */
+
     /* Syntax Highlighting — Catppuccin Latte */
     --syn-keyword: #8839ef;
     --syn-string: #40a02b;
