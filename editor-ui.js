@@ -1862,51 +1862,64 @@ const CZUI = (() => {
     function renderTreeNodes(nodes, container, depth, parentHandle) {
         nodes.forEach(node => {
             if (node.kind === 'directory') {
+                // Compact folders: merge single-child folder chains (VS Code style)
+                let displayName = node.name;
+                let currentNode = node;
+                const compactChain = [node]; // track all nodes in the chain
+                while (
+                    currentNode.children &&
+                    currentNode.children.length === 1 &&
+                    currentNode.children[0].kind === 'directory'
+                ) {
+                    currentNode = currentNode.children[0];
+                    compactChain.push(currentNode);
+                    displayName += '/' + currentNode.name;
+                }
+                // currentNode is the final folder in the chain
+                const effectiveNode = currentNode;
+
                 const folderDiv = document.createElement('div');
                 folderDiv.className = 'tree-folder';
 
                 const item = document.createElement('div');
                 item.className = 'tree-item';
                 item.style.paddingLeft = (8 + depth * 16) + 'px';
-                item.dataset.name = node.name;
+                item.dataset.name = effectiveNode.name;
                 item.dataset.kind = 'directory';
 
-                const arrow = '';
-                const arrowClass = node.expanded ? 'tree-icon folder-arrow expanded' : 'tree-icon folder-arrow';
-                item.innerHTML = `<span class="${arrowClass}">${arrow}</span>${folderIconHTML(node.expanded, node.name)}<span class="tree-name">${CZEngine.escapeHTML(node.name)}</span>`;
+                const arrowClass = effectiveNode.expanded ? 'tree-icon folder-arrow expanded' : 'tree-icon folder-arrow';
+                item.innerHTML = `<span class="${arrowClass}"></span>${folderIconHTML(effectiveNode.expanded, node.name)}<span class="tree-name">${CZEngine.escapeHTML(displayName)}</span>`;
 
                 item.onclick = (e) => {
                     e.stopPropagation();
-                    node.expanded = !node.expanded;
+                    // Toggle all nodes in compact chain together
+                    const newState = !effectiveNode.expanded;
+                    compactChain.forEach(n => n.expanded = newState);
                     const arrowEl = item.querySelector('.folder-arrow');
-                    arrowEl.classList.toggle('expanded', node.expanded);
-                    childrenDiv.classList.toggle('collapsed', !node.expanded);
-                    // Swap folder icon: replace with correct class
+                    arrowEl.classList.toggle('expanded', newState);
+                    childrenDiv.classList.toggle('collapsed', !newState);
                     const oldIcon = item.querySelector('.fi');
                     if (oldIcon) {
-                        const newCls = getFolderIconClass(node.name, node.expanded);
-                        oldIcon.className = newCls;
+                        oldIcon.className = getFolderIconClass(node.name, newState);
                     }
-                    // Persist folder state
                     const tree = CZFS.getCurrentTree();
                     if (tree) saveExpandedPaths(tree, CZFS.getDirectoryHandle()?.name || '');
-                    // Update cached tree HTML
                     cacheTreeHTML();
                 };
 
                 item.oncontextmenu = (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    sidebarContextTarget = { handle: node.handle, parentHandle, name: node.name, kind: 'directory' };
+                    sidebarContextTarget = { handle: effectiveNode.handle, parentHandle, name: effectiveNode.name, kind: 'directory' };
                     showSidebarContextMenu(e.pageX, e.pageY);
                 };
 
                 folderDiv.appendChild(item);
 
                 const childrenDiv = document.createElement('div');
-                childrenDiv.className = 'tree-folder-children' + (node.expanded ? '' : ' collapsed');
-                if (node.children && node.children.length > 0) {
-                    renderTreeNodes(node.children, childrenDiv, depth + 1, node.handle);
+                childrenDiv.className = 'tree-folder-children' + (effectiveNode.expanded ? '' : ' collapsed');
+                if (effectiveNode.children && effectiveNode.children.length > 0) {
+                    renderTreeNodes(effectiveNode.children, childrenDiv, depth + 1, effectiveNode.handle);
                 }
                 folderDiv.appendChild(childrenDiv);
                 container.appendChild(folderDiv);
