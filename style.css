@@ -697,7 +697,7 @@ body.sidebar-resizing {
     flex-grow: 1;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 4px 0;
+    padding: 0;
 }
 
 .sidebar-empty {
@@ -814,6 +814,11 @@ body.sidebar-resizing {
 
 .tree-item:hover {
     background: rgba(var(--surface-rgb), 0.04);
+}
+
+/* Root folder sticky — opaque hover to prevent items bleeding through */
+.tree-root-folder:hover {
+    background: var(--bg-main);
 }
 
 .tree-item.active {
@@ -1475,7 +1480,16 @@ body.sidebar-resizing {
     display: flex;
     align-items: center;
     overflow: hidden;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: var(--bg-main);
+    /* border-bottom: 1px solid var(--border-color); */
 }
+
+/* .tree-root-children { */
+    /* padding-top: 4px; */
+/* } */
 
 .tree-root-folder .tree-name {
     flex: 1;

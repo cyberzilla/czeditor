@@ -1733,8 +1733,9 @@ const CZUI = (() => {
             // Click to collapse/expand root
             header.onclick = (e) => {
                 e.stopPropagation();
+                // Don't toggle when clicking sidebar action buttons
+                if (e.target.closest('.sidebar-actions')) return;
                 const childrenDiv = sidebarTree.querySelector('.tree-root-children');
-                if (!childrenDiv) return;
                 const isExpanded = !childrenDiv.classList.contains('collapsed');
                 childrenDiv.classList.toggle('collapsed', isExpanded);
                 const arrowEl = header.querySelector('.folder-arrow');
@@ -1778,8 +1779,9 @@ const CZUI = (() => {
             // Click to collapse/expand root
             rootHeader.onclick = (e) => {
                 e.stopPropagation();
+                // Don't toggle when clicking sidebar action buttons
+                if (e.target.closest('.sidebar-actions')) return;
                 const childrenDiv = sidebarTree.querySelector('.tree-root-children');
-                if (!childrenDiv) return;
                 const isExpanded = !childrenDiv.classList.contains('collapsed');
                 childrenDiv.classList.toggle('collapsed', isExpanded);
                 const arrowEl = rootHeader.querySelector('.folder-arrow');
