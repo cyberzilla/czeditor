@@ -219,7 +219,7 @@
                 // Update pin/unpin label
                 const pinItem = document.getElementById('ctx-pin-item');
                 if (pinItem && f) {
-                    pinItem.textContent = f.isPinned
+                    pinItem.innerHTML = f.isPinned
                         ? CZi18n.t('ctx_unpin')
                         : CZi18n.t('ctx_pin');
                 }
@@ -227,7 +227,7 @@
                 const reloadItem = document.getElementById('ctx-reload-item');
                 if (reloadItem) {
                     reloadItem.style.display = (f && f.fileHandle) ? '' : 'none';
-                    reloadItem.textContent = CZi18n.t('ctx_reload');
+                    reloadItem.innerHTML = CZi18n.t('ctx_reload');
                 }
                 CZUI.tabContextMenu.style.left = e.pageX + 'px';
                 CZUI.tabContextMenu.style.top = e.pageY + 'px';

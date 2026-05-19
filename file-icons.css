@@ -1,0 +1,1362 @@
+/* ==========================================
+   CZEditor File Icons — Atom Material Icons
+   Based on https://github.com/AtomMaterialUI/a-file-icon-idea
+   CSS class-based SVG icon system
+   ========================================== */
+
+/* ===== BASE ICON ===== */
+.fi {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    vertical-align: middle;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    pointer-events: none;
+}
+
+/* Tab icon sizing */
+.tab>.fi {
+    width: 14px;
+    height: 14px;
+    margin-right: 6px;
+}
+
+/* Sidebar tree icon spacing */
+.tree-item>.fi {
+    margin-right: 5px;
+}
+
+/* Pin icon in tab */
+.tab-pin-icon.fi {
+    width: 12px;
+    height: 12px;
+    margin-right: 4px;
+}
+
+
+/* ==========================================================================
+   FILE TYPE ICONS — background-image (preserves original SVG colors)
+   ========================================================================== */
+
+/* JavaScript */
+.fi-js {
+    background-image: url('icons/files/js.svg');
+}
+
+.fi-jsx {
+    background-image: url('icons/files/jsx.svg');
+}
+
+.fi-react {
+    background-image: url('icons/files/react.svg');
+}
+
+/* TypeScript */
+.fi-ts {
+    background-image: url('icons/files/typeScript.svg');
+}
+
+.fi-tsconfig {
+    background-image: url('icons/files/tsconfig.svg');
+}
+
+/* Markup */
+.fi-html {
+    background-image: url('icons/files/html.svg');
+}
+
+.fi-xml {
+    background-image: url('icons/files/xml.svg');
+}
+
+.fi-svg {
+    background-image: url('icons/files/svg.svg');
+}
+
+.fi-vue {
+    background-image: url('icons/files/vue.svg');
+}
+
+/* Styles */
+.fi-css {
+    background-image: url('icons/files/css.svg');
+}
+
+.fi-sass {
+    background-image: url('icons/files/sass.svg');
+}
+
+.fi-less {
+    background-image: url('icons/files/less.svg');
+}
+
+.fi-stylus {
+    background-image: url('icons/files/stylus.svg');
+}
+
+/* Data */
+.fi-json {
+    background-image: url('icons/files/json.svg');
+}
+
+.fi-json5 {
+    background-image: url('icons/files/json5.svg');
+}
+
+.fi-yaml {
+    background-image: url('icons/files/yaml.svg');
+}
+
+.fi-toml {
+    background-image: url('icons/files/toml.svg');
+}
+
+.fi-csv {
+    background-image: url('icons/files/csv.svg');
+}
+
+.fi-configs {
+    background-image: url('icons/files/configs.svg');
+}
+
+/* Documentation */
+.fi-markdown {
+    background-image: url('icons/files/markdown.svg');
+}
+
+.fi-text {
+    background-image: url('icons/files/text.svg');
+}
+
+.fi-log {
+    background-image: url('icons/files/log.svg');
+}
+
+.fi-license {
+    background-image: url('icons/files/license.svg');
+}
+
+.fi-readme {
+    background-image: url('icons/files/readme.svg');
+}
+
+.fi-changelog {
+    background-image: url('icons/files/changelog.svg');
+}
+
+/* Languages */
+.fi-python {
+    background-image: url('icons/files/python.svg');
+}
+
+.fi-ruby {
+    background-image: url('icons/files/ruby.svg');
+}
+
+.fi-php {
+    background-image: url('icons/files/php.svg');
+}
+
+.fi-java {
+    background-image: url('icons/files/java.svg');
+}
+
+.fi-kotlin {
+    background-image: url('icons/files/kotlin.svg');
+}
+
+.fi-kotlinscript {
+    background-image: url('icons/files/kotlinscript.svg');
+}
+
+.fi-swift {
+    background-image: url('icons/files/swift.svg');
+}
+
+.fi-c {
+    background-image: url('icons/files/c.svg');
+}
+
+.fi-cpp {
+    background-image: url('icons/files/cpp.svg');
+}
+
+.fi-csharp {
+    background-image: url('icons/files/csharp.svg');
+}
+
+.fi-rust {
+    background-image: url('icons/files/rust.svg');
+}
+
+.fi-go {
+    background-image: url('icons/files/go.svg');
+}
+
+.fi-lua {
+    background-image: url('icons/files/lua.svg');
+}
+
+.fi-r {
+    background-image: url('icons/files/r.svg');
+}
+
+.fi-sql {
+    background-image: url('icons/files/sql.svg');
+}
+
+.fi-dart {
+    background-image: url('icons/files/dart.svg');
+}
+
+.fi-scala {
+    background-image: url('icons/files/scala.svg');
+}
+
+.fi-perl {
+    background-image: url('icons/files/perl.svg');
+}
+
+/* Shell */
+.fi-shell {
+    background-image: url('icons/files/shell.svg');
+}
+
+.fi-powershell {
+    background-image: url('icons/files/powershell.svg');
+}
+
+.fi-windows {
+    background-image: url('icons/files/windows.svg');
+}
+
+/* Media */
+.fi-image {
+    background-image: url('icons/files/image.svg');
+}
+
+.fi-audio {
+    background-image: url('icons/files/audio.svg');
+}
+
+.fi-video {
+    background-image: url('icons/files/video.svg');
+}
+
+.fi-psd {
+    background-image: url('icons/files/psd.svg');
+}
+
+.fi-font {
+    background-image: url('icons/files/font.svg');
+}
+
+/* Archives */
+.fi-archive {
+    background-image: url('icons/files/archive.svg');
+}
+
+/* Config / Env */
+.fi-envs {
+    background-image: url('icons/files/envs.svg');
+}
+
+.fi-editorconfig {
+    background-image: url('icons/files/editorconfig.svg');
+}
+
+.fi-lock {
+    background-image: url('icons/files/lock.svg');
+}
+
+.fi-settings {
+    background-image: url('icons/files/settings.svg');
+}
+
+/* Git */
+.fi-git {
+    background-image: url('icons/files/git.svg');
+}
+
+.fi-gitignore {
+    background-image: url('icons/files/gitignore.svg');
+}
+
+/* Docker */
+.fi-docker {
+    background-image: url('icons/files/docker.svg');
+}
+
+.fi-dockercompose {
+    background-image: url('icons/files/dockercompose.svg');
+}
+
+.fi-dockerignore {
+    background-image: url('icons/files/dockerignore.svg');
+}
+
+/* Package / DevOps */
+.fi-npm {
+    background-image: url('icons/files/npm.svg');
+}
+
+.fi-npmlock {
+    background-image: url('icons/files/npmlock.svg');
+}
+
+.fi-npmignore {
+    background-image: url('icons/files/npmignore.svg');
+}
+
+.fi-yarn {
+    background-image: url('icons/files/yarn.svg');
+}
+
+.fi-yarnlock {
+    background-image: url('icons/files/yarnlock.svg');
+}
+
+.fi-eslint {
+    background-image: url('icons/files/eslint.svg');
+}
+
+.fi-eslintconfig {
+    background-image: url('icons/files/eslintconfig.svg');
+}
+
+.fi-eslintignore {
+    background-image: url('icons/files/eslintignore.svg');
+}
+
+.fi-prettier {
+    background-image: url('icons/files/prettier.svg');
+}
+
+.fi-prettierconfig {
+    background-image: url('icons/files/prettierconfig.svg');
+}
+
+.fi-prettierignore {
+    background-image: url('icons/files/prettierignore.svg');
+}
+
+.fi-webpack {
+    background-image: url('icons/files/webpack.svg');
+}
+
+.fi-babel {
+    background-image: url('icons/files/babel.svg');
+}
+
+.fi-vite {
+    background-image: url('icons/files/vite.svg');
+}
+
+.fi-gruntfile {
+    background-image: url('icons/files/gruntfile.svg');
+}
+
+.fi-gulpfile {
+    background-image: url('icons/files/gulpfile.svg');
+}
+
+.fi-rollup {
+    background-image: url('icons/files/rollup.svg');
+}
+
+.fi-postcss {
+    background-image: url('icons/files/postcss.svg');
+}
+
+/* Frameworks */
+.fi-nextjs {
+    background-image: url('icons/files/nextjs.svg');
+}
+
+.fi-nuxt {
+    background-image: url('icons/files/nuxt.svg');
+}
+
+.fi-tailwindcss {
+    background-image: url('icons/files/tailwindcss.svg');
+}
+
+.fi-nodejs {
+    background-image: url('icons/files/nodejs.svg');
+}
+
+/* Build / Project */
+.fi-gradle {
+    background-image: url('icons/files/gradle.svg');
+}
+
+.fi-maven {
+    background-image: url('icons/files/maven.svg');
+}
+
+.fi-composer {
+    background-image: url('icons/files/composer.svg');
+}
+
+.fi-cargo {
+    background-image: url('icons/files/cargo.svg');
+}
+
+.fi-makefile {
+    background-image: url('icons/files/makefile.svg');
+}
+
+.fi-goconfig {
+    background-image: url('icons/files/goconfig.svg');
+}
+
+.fi-pythonconfigs {
+    background-image: url('icons/files/pythonconfigs.svg');
+}
+
+.fi-rubyrc {
+    background-image: url('icons/files/rubyrc.svg');
+}
+
+/* Test */
+.fi-jest {
+    background-image: url('icons/files/jest.svg');
+}
+
+.fi-vitest {
+    background-image: url('icons/files/vitest.svg');
+}
+
+/* Misc */
+.fi-graphql {
+    background-image: url('icons/files/graphql.svg');
+}
+
+.fi-protobuf {
+    background-image: url('icons/files/protobuf.svg');
+}
+
+.fi-tex {
+    background-image: url('icons/files/tex.svg');
+}
+
+.fi-pdf {
+    background-image: url('icons/files/pdf.svg');
+}
+
+.fi-pipfile {
+    background-image: url('icons/files/pipfile.svg');
+}
+
+/* Default */
+.fi-default {
+    background-image: url('icons/files/default.svg');
+}
+
+
+/* ==========================================================================
+   FOLDER ICONS — background-image (closed & open states)
+   ========================================================================== */
+
+/* Default folder */
+.fi-folder {
+    background-image: url('icons/folders/folder.svg');
+}
+
+.fi-folder-open {
+    background-image: url('icons/foldersOpen/folder.svg');
+}
+
+/* Named folder icons (94 types × 2 states) */
+.fi-fo-git {
+    background-image: url('icons/folders/git.svg');
+}
+
+.fi-fo-git-open {
+    background-image: url('icons/foldersOpen/git.svg');
+}
+
+.fi-fo-github {
+    background-image: url('icons/folders/github.svg');
+}
+
+.fi-fo-github-open {
+    background-image: url('icons/foldersOpen/github.svg');
+}
+
+.fi-fo-gitlab {
+    background-image: url('icons/folders/gitlab.svg');
+}
+
+.fi-fo-gitlab-open {
+    background-image: url('icons/foldersOpen/gitlab.svg');
+}
+
+.fi-fo-gitea {
+    background-image: url('icons/folders/gitea.svg');
+}
+
+.fi-fo-gitea-open {
+    background-image: url('icons/foldersOpen/gitea.svg');
+}
+
+.fi-fo-svn {
+    background-image: url('icons/folders/svn.svg');
+}
+
+.fi-fo-svn-open {
+    background-image: url('icons/foldersOpen/svn.svg');
+}
+
+.fi-fo-mercurial {
+    background-image: url('icons/folders/mercurial.svg');
+}
+
+.fi-fo-mercurial-open {
+    background-image: url('icons/foldersOpen/mercurial.svg');
+}
+
+.fi-fo-src {
+    background-image: url('icons/folders/src.svg');
+}
+
+.fi-fo-src-open {
+    background-image: url('icons/foldersOpen/src.svg');
+}
+
+.fi-fo-lib {
+    background-image: url('icons/folders/lib.svg');
+}
+
+.fi-fo-lib-open {
+    background-image: url('icons/foldersOpen/lib.svg');
+}
+
+.fi-fo-dist {
+    background-image: url('icons/folders/dist.svg');
+}
+
+.fi-fo-dist-open {
+    background-image: url('icons/foldersOpen/dist.svg');
+}
+
+.fi-fo-target {
+    background-image: url('icons/folders/target.svg');
+}
+
+.fi-fo-target-open {
+    background-image: url('icons/foldersOpen/target.svg');
+}
+
+.fi-fo-global {
+    background-image: url('icons/folders/global.svg');
+}
+
+.fi-fo-global-open {
+    background-image: url('icons/foldersOpen/global.svg');
+}
+
+.fi-fo-resource {
+    background-image: url('icons/folders/resource.svg');
+}
+
+.fi-fo-resource-open {
+    background-image: url('icons/foldersOpen/resource.svg');
+}
+
+.fi-fo-images {
+    background-image: url('icons/folders/images.svg');
+}
+
+.fi-fo-images-open {
+    background-image: url('icons/foldersOpen/images.svg');
+}
+
+.fi-fo-icons {
+    background-image: url('icons/folders/icons.svg');
+}
+
+.fi-fo-icons-open {
+    background-image: url('icons/foldersOpen/icons.svg');
+}
+
+.fi-fo-fonts {
+    background-image: url('icons/folders/fonts.svg');
+}
+
+.fi-fo-fonts-open {
+    background-image: url('icons/foldersOpen/fonts.svg');
+}
+
+.fi-fo-styles {
+    background-image: url('icons/folders/styles.svg');
+}
+
+.fi-fo-styles-open {
+    background-image: url('icons/foldersOpen/styles.svg');
+}
+
+.fi-fo-sass {
+    background-image: url('icons/folders/sass.svg');
+}
+
+.fi-fo-sass-open {
+    background-image: url('icons/foldersOpen/sass.svg');
+}
+
+.fi-fo-less {
+    background-image: url('icons/folders/less.svg');
+}
+
+.fi-fo-less-open {
+    background-image: url('icons/foldersOpen/less.svg');
+}
+
+.fi-fo-stylus {
+    background-image: url('icons/folders/stylus.svg');
+}
+
+.fi-fo-stylus-open {
+    background-image: url('icons/foldersOpen/stylus.svg');
+}
+
+.fi-fo-node {
+    background-image: url('icons/folders/node.svg');
+}
+
+.fi-fo-node-open {
+    background-image: url('icons/foldersOpen/node.svg');
+}
+
+.fi-fo-bower {
+    background-image: url('icons/folders/bower.svg');
+}
+
+.fi-fo-bower-open {
+    background-image: url('icons/foldersOpen/bower.svg');
+}
+
+.fi-fo-packages {
+    background-image: url('icons/folders/packages.svg');
+}
+
+.fi-fo-packages-open {
+    background-image: url('icons/foldersOpen/packages.svg');
+}
+
+.fi-fo-yarn {
+    background-image: url('icons/folders/yarn.svg');
+}
+
+.fi-fo-yarn-open {
+    background-image: url('icons/foldersOpen/yarn.svg');
+}
+
+.fi-fo-components {
+    background-image: url('icons/folders/components.svg');
+}
+
+.fi-fo-components-open {
+    background-image: url('icons/foldersOpen/components.svg');
+}
+
+.fi-fo-views {
+    background-image: url('icons/folders/views.svg');
+}
+
+.fi-fo-views-open {
+    background-image: url('icons/foldersOpen/views.svg');
+}
+
+.fi-fo-layouts {
+    background-image: url('icons/folders/layouts.svg');
+}
+
+.fi-fo-layouts-open {
+    background-image: url('icons/foldersOpen/layouts.svg');
+}
+
+.fi-fo-routes {
+    background-image: url('icons/folders/routes.svg');
+}
+
+.fi-fo-routes-open {
+    background-image: url('icons/foldersOpen/routes.svg');
+}
+
+.fi-fo-middleware {
+    background-image: url('icons/folders/middleware.svg');
+}
+
+.fi-fo-middleware-open {
+    background-image: url('icons/foldersOpen/middleware.svg');
+}
+
+.fi-fo-plugin {
+    background-image: url('icons/folders/plugin.svg');
+}
+
+.fi-fo-plugin-open {
+    background-image: url('icons/foldersOpen/plugin.svg');
+}
+
+.fi-fo-redux-stores {
+    background-image: url('icons/folders/redux-stores.svg');
+}
+
+.fi-fo-redux-stores-open {
+    background-image: url('icons/foldersOpen/redux-stores.svg');
+}
+
+.fi-fo-redux-actions {
+    background-image: url('icons/folders/redux-actions.svg');
+}
+
+.fi-fo-redux-actions-open {
+    background-image: url('icons/foldersOpen/redux-actions.svg');
+}
+
+.fi-fo-redux-reducers {
+    background-image: url('icons/folders/redux-reducers.svg');
+}
+
+.fi-fo-redux-reducers-open {
+    background-image: url('icons/foldersOpen/redux-reducers.svg');
+}
+
+.fi-fo-api {
+    background-image: url('icons/folders/api.svg');
+}
+
+.fi-fo-api-open {
+    background-image: url('icons/foldersOpen/api.svg');
+}
+
+.fi-fo-server {
+    background-image: url('icons/folders/server.svg');
+}
+
+.fi-fo-server-open {
+    background-image: url('icons/foldersOpen/server.svg');
+}
+
+.fi-fo-controllers {
+    background-image: url('icons/folders/controllers.svg');
+}
+
+.fi-fo-controllers-open {
+    background-image: url('icons/foldersOpen/controllers.svg');
+}
+
+.fi-fo-models {
+    background-image: url('icons/folders/models.svg');
+}
+
+.fi-fo-models-open {
+    background-image: url('icons/foldersOpen/models.svg');
+}
+
+.fi-fo-helper {
+    background-image: url('icons/folders/helper.svg');
+}
+
+.fi-fo-helper-open {
+    background-image: url('icons/foldersOpen/helper.svg');
+}
+
+.fi-fo-tools {
+    background-image: url('icons/folders/tools.svg');
+}
+
+.fi-fo-tools-open {
+    background-image: url('icons/foldersOpen/tools.svg');
+}
+
+.fi-fo-scripts {
+    background-image: url('icons/folders/scripts.svg');
+}
+
+.fi-fo-scripts-open {
+    background-image: url('icons/foldersOpen/scripts.svg');
+}
+
+.fi-fo-config {
+    background-image: url('icons/folders/config.svg');
+}
+
+.fi-fo-config-open {
+    background-image: url('icons/foldersOpen/config.svg');
+}
+
+.fi-fo-vscode {
+    background-image: url('icons/folders/vscode.svg');
+}
+
+.fi-fo-vscode-open {
+    background-image: url('icons/foldersOpen/vscode.svg');
+}
+
+.fi-fo-idea {
+    background-image: url('icons/folders/idea.svg');
+}
+
+.fi-fo-idea-open {
+    background-image: url('icons/foldersOpen/idea.svg');
+}
+
+.fi-fo-vs {
+    background-image: url('icons/folders/vs.svg');
+}
+
+.fi-fo-vs-open {
+    background-image: url('icons/foldersOpen/vs.svg');
+}
+
+.fi-fo-env {
+    background-image: url('icons/folders/env.svg');
+}
+
+.fi-fo-env-open {
+    background-image: url('icons/foldersOpen/env.svg');
+}
+
+.fi-fo-tests {
+    background-image: url('icons/folders/tests.svg');
+}
+
+.fi-fo-tests-open {
+    background-image: url('icons/foldersOpen/tests.svg');
+}
+
+.fi-fo-e2e {
+    background-image: url('icons/folders/e2e.svg');
+}
+
+.fi-fo-e2e-open {
+    background-image: url('icons/foldersOpen/e2e.svg');
+}
+
+.fi-fo-cypress {
+    background-image: url('icons/folders/cypress.svg');
+}
+
+.fi-fo-cypress-open {
+    background-image: url('icons/foldersOpen/cypress.svg');
+}
+
+.fi-fo-mocks {
+    background-image: url('icons/folders/mocks.svg');
+}
+
+.fi-fo-mocks-open {
+    background-image: url('icons/foldersOpen/mocks.svg');
+}
+
+.fi-fo-fixtures {
+    background-image: url('icons/folders/fixtures.svg');
+}
+
+.fi-fo-fixtures-open {
+    background-image: url('icons/foldersOpen/fixtures.svg');
+}
+
+.fi-fo-coverage {
+    background-image: url('icons/folders/coverage.svg');
+}
+
+.fi-fo-coverage-open {
+    background-image: url('icons/foldersOpen/coverage.svg');
+}
+
+.fi-fo-docs {
+    background-image: url('icons/folders/docs.svg');
+}
+
+.fi-fo-docs-open {
+    background-image: url('icons/foldersOpen/docs.svg');
+}
+
+.fi-fo-i18n {
+    background-image: url('icons/folders/i18n.svg');
+}
+
+.fi-fo-i18n-open {
+    background-image: url('icons/foldersOpen/i18n.svg');
+}
+
+.fi-fo-db {
+    background-image: url('icons/folders/db.svg');
+}
+
+.fi-fo-db-open {
+    background-image: url('icons/foldersOpen/db.svg');
+}
+
+.fi-fo-sql {
+    background-image: url('icons/folders/sql.svg');
+}
+
+.fi-fo-sql-open {
+    background-image: url('icons/foldersOpen/sql.svg');
+}
+
+.fi-fo-seed {
+    background-image: url('icons/folders/seed.svg');
+}
+
+.fi-fo-seed-open {
+    background-image: url('icons/foldersOpen/seed.svg');
+}
+
+.fi-fo-docker {
+    background-image: url('icons/folders/docker.svg');
+}
+
+.fi-fo-docker-open {
+    background-image: url('icons/foldersOpen/docker.svg');
+}
+
+.fi-fo-kubernetes {
+    background-image: url('icons/folders/kubernetes.svg');
+}
+
+.fi-fo-kubernetes-open {
+    background-image: url('icons/foldersOpen/kubernetes.svg');
+}
+
+.fi-fo-circleci {
+    background-image: url('icons/folders/circleci.svg');
+}
+
+.fi-fo-circleci-open {
+    background-image: url('icons/foldersOpen/circleci.svg');
+}
+
+.fi-fo-ci {
+    background-image: url('icons/folders/ci.svg');
+}
+
+.fi-fo-ci-open {
+    background-image: url('icons/foldersOpen/ci.svg');
+}
+
+.fi-fo-deploy {
+    background-image: url('icons/folders/deploy.svg');
+}
+
+.fi-fo-deploy-open {
+    background-image: url('icons/foldersOpen/deploy.svg');
+}
+
+.fi-fo-terraform {
+    background-image: url('icons/folders/terraform.svg');
+}
+
+.fi-fo-terraform-open {
+    background-image: url('icons/foldersOpen/terraform.svg');
+}
+
+.fi-fo-next {
+    background-image: url('icons/folders/next.svg');
+}
+
+.fi-fo-next-open {
+    background-image: url('icons/foldersOpen/next.svg');
+}
+
+.fi-fo-nuxt {
+    background-image: url('icons/folders/nuxt.svg');
+}
+
+.fi-fo-nuxt-open {
+    background-image: url('icons/foldersOpen/nuxt.svg');
+}
+
+.fi-fo-svelte {
+    background-image: url('icons/folders/svelte.svg');
+}
+
+.fi-fo-svelte-open {
+    background-image: url('icons/foldersOpen/svelte.svg');
+}
+
+.fi-fo-angular {
+    background-image: url('icons/folders/angular.svg');
+}
+
+.fi-fo-angular-open {
+    background-image: url('icons/foldersOpen/angular.svg');
+}
+
+.fi-fo-expo {
+    background-image: url('icons/folders/expo.svg');
+}
+
+.fi-fo-expo-open {
+    background-image: url('icons/foldersOpen/expo.svg');
+}
+
+.fi-fo-android {
+    background-image: url('icons/folders/android.svg');
+}
+
+.fi-fo-android-open {
+    background-image: url('icons/foldersOpen/android.svg');
+}
+
+.fi-fo-ios {
+    background-image: url('icons/folders/ios.svg');
+}
+
+.fi-fo-ios-open {
+    background-image: url('icons/foldersOpen/ios.svg');
+}
+
+.fi-fo-logs {
+    background-image: url('icons/folders/logs.svg');
+}
+
+.fi-fo-logs-open {
+    background-image: url('icons/foldersOpen/logs.svg');
+}
+
+.fi-fo-temp {
+    background-image: url('icons/folders/temp.svg');
+}
+
+.fi-fo-temp-open {
+    background-image: url('icons/foldersOpen/temp.svg');
+}
+
+.fi-fo-archive {
+    background-image: url('icons/folders/archive.svg');
+}
+
+.fi-fo-archive-open {
+    background-image: url('icons/foldersOpen/archive.svg');
+}
+
+.fi-fo-download {
+    background-image: url('icons/folders/download.svg');
+}
+
+.fi-fo-download-open {
+    background-image: url('icons/foldersOpen/download.svg');
+}
+
+.fi-fo-upload {
+    background-image: url('icons/folders/upload.svg');
+}
+
+.fi-fo-upload-open {
+    background-image: url('icons/foldersOpen/upload.svg');
+}
+
+.fi-fo-shared {
+    background-image: url('icons/folders/shared.svg');
+}
+
+.fi-fo-shared-open {
+    background-image: url('icons/foldersOpen/shared.svg');
+}
+
+.fi-fo-hook {
+    background-image: url('icons/folders/hook.svg');
+}
+
+.fi-fo-hook-open {
+    background-image: url('icons/foldersOpen/hook.svg');
+}
+
+.fi-fo-decorators {
+    background-image: url('icons/folders/decorators.svg');
+}
+
+.fi-fo-decorators-open {
+    background-image: url('icons/foldersOpen/decorators.svg');
+}
+
+.fi-fo-providers {
+    background-image: url('icons/folders/providers.svg');
+}
+
+.fi-fo-providers-open {
+    background-image: url('icons/foldersOpen/providers.svg');
+}
+
+.fi-fo-guard {
+    background-image: url('icons/folders/guard.svg');
+}
+
+.fi-fo-guard-open {
+    background-image: url('icons/foldersOpen/guard.svg');
+}
+
+.fi-fo-resolver {
+    background-image: url('icons/folders/resolver.svg');
+}
+
+.fi-fo-resolver-open {
+    background-image: url('icons/foldersOpen/resolver.svg');
+}
+
+.fi-fo-interceptor {
+    background-image: url('icons/folders/interceptor.svg');
+}
+
+.fi-fo-interceptor-open {
+    background-image: url('icons/foldersOpen/interceptor.svg');
+}
+
+.fi-fo-events {
+    background-image: url('icons/folders/events.svg');
+}
+
+.fi-fo-events-open {
+    background-image: url('icons/foldersOpen/events.svg');
+}
+
+.fi-fo-job {
+    background-image: url('icons/folders/job.svg');
+}
+
+.fi-fo-job-open {
+    background-image: url('icons/foldersOpen/job.svg');
+}
+
+.fi-fo-queue {
+    background-image: url('icons/folders/queue.svg');
+}
+
+.fi-fo-queue-open {
+    background-image: url('icons/foldersOpen/queue.svg');
+}
+
+.fi-fo-notification {
+    background-image: url('icons/folders/notification.svg');
+}
+
+.fi-fo-notification-open {
+    background-image: url('icons/foldersOpen/notification.svg');
+}
+
+.fi-fo-mailers {
+    background-image: url('icons/folders/mailers.svg');
+}
+
+.fi-fo-mailers-open {
+    background-image: url('icons/foldersOpen/mailers.svg');
+}
+
+.fi-fo-tasks {
+    background-image: url('icons/folders/tasks.svg');
+}
+
+.fi-fo-tasks-open {
+    background-image: url('icons/foldersOpen/tasks.svg');
+}
+
+.fi-fo-ui {
+    background-image: url('icons/folders/ui.svg');
+}
+
+.fi-fo-ui-open {
+    background-image: url('icons/foldersOpen/ui.svg');
+}
+
+.fi-fo-storybook {
+    background-image: url('icons/folders/storybook.svg');
+}
+
+.fi-fo-storybook-open {
+    background-image: url('icons/foldersOpen/storybook.svg');
+}
+
+.fi-fo-graphql {
+    background-image: url('icons/folders/graphql.svg');
+}
+
+.fi-fo-graphql-open {
+    background-image: url('icons/foldersOpen/graphql.svg');
+}
+
+.fi-fo-prisma {
+    background-image: url('icons/folders/prisma.svg');
+}
+
+.fi-fo-prisma-open {
+    background-image: url('icons/foldersOpen/prisma.svg');
+}
+
+.fi-fo-audio {
+    background-image: url('icons/folders/audio.svg');
+}
+
+.fi-fo-audio-open {
+    background-image: url('icons/foldersOpen/audio.svg');
+}
+
+.fi-fo-video {
+    background-image: url('icons/folders/video.svg');
+}
+
+.fi-fo-video-open {
+    background-image: url('icons/foldersOpen/video.svg');
+}
+
+.fi-fo-svg {
+    background-image: url('icons/folders/svg.svg');
+}
+
+.fi-fo-svg-open {
+    background-image: url('icons/foldersOpen/svg.svg');
+}
+
+.fi-fo-animations {
+    background-image: url('icons/folders/animations.svg');
+}
+
+.fi-fo-animations-open {
+    background-image: url('icons/foldersOpen/animations.svg');
+}
+
+.fi-fo-themes {
+    background-image: url('icons/folders/themes.svg');
+}
+
+.fi-fo-themes-open {
+    background-image: url('icons/foldersOpen/themes.svg');
+}
+
+
+/* ==========================================================================
+   UI ICONS — mask-image (color controlled via CSS / currentColor)
+   ========================================================================== */
+.fi-ui {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    vertical-align: middle;
+    pointer-events: none;
+    /* Override .fi base background-image */
+    background-image: none;
+    background-color: var(--text-muted, #999);
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+}
+
+/* Hover color for interactive buttons */
+.sidebar-btn:hover .fi-ui,
+.action-btn:hover .fi-ui,
+.settings-btn:hover .fi-ui,
+.sidebar-toggle-btn:hover .fi-ui,
+.sidebar-reopen-btn:hover .fi-ui,
+.sidebar-open-btn:hover .fi-ui,
+.pwa-install-btn:hover .fi-ui,
+.preview-toggle-btn:hover .fi-ui {
+    background-color: var(--text-color, #e0e0e0);
+}
+
+/* Context menu icons */
+.context-menu-item>.fi-ui {
+    margin-right: 6px;
+}
+
+/* Settings menu icons */
+.settings-item>.fi-ui {
+    margin-right: 6px;
+}
+
+/* UI icon definitions */
+.fi-ui-bars {
+    -webkit-mask-image: url('icons/ui/three-bars.svg');
+    mask-image: url('icons/ui/three-bars.svg');
+}
+
+.fi-ui-new-file {
+    -webkit-mask-image: url('icons/ui/new-file.svg');
+    mask-image: url('icons/ui/new-file.svg');
+}
+
+.fi-ui-new-folder {
+    -webkit-mask-image: url('icons/ui/new-folder.svg');
+    mask-image: url('icons/ui/new-folder.svg');
+}
+
+.fi-ui-refresh {
+    -webkit-mask-image: url('icons/ui/refresh.svg');
+    mask-image: url('icons/ui/refresh.svg');
+}
+
+.fi-ui-collapse {
+    -webkit-mask-image: url('icons/ui/collapse-all.svg');
+    mask-image: url('icons/ui/collapse-all.svg');
+}
+
+.fi-ui-folder-open {
+    -webkit-mask-image: url('icons/ui/folder-opened.svg');
+    mask-image: url('icons/ui/folder-opened.svg');
+}
+
+.fi-ui-settings {
+    -webkit-mask-image: url('icons/ui/settings-gear.svg');
+    mask-image: url('icons/ui/settings-gear.svg');
+}
+
+.fi-ui-text-size {
+    -webkit-mask-image: url('icons/ui/text-size.svg');
+    mask-image: url('icons/ui/text-size.svg');
+}
+
+.fi-ui-keyboard {
+    -webkit-mask-image: url('icons/ui/keyboard.svg');
+    mask-image: url('icons/ui/keyboard.svg');
+}
+
+.fi-ui-globe {
+    -webkit-mask-image: url('icons/ui/globe.svg');
+    mask-image: url('icons/ui/globe.svg');
+}
+
+.fi-ui-color-mode {
+    -webkit-mask-image: url('icons/ui/color-mode.svg');
+    mask-image: url('icons/ui/color-mode.svg');
+}
+
+.fi-ui-download {
+    -webkit-mask-image: url('icons/ui/desktop-download.svg');
+    mask-image: url('icons/ui/desktop-download.svg');
+}
+
+.fi-ui-preview {
+    -webkit-mask-image: url('icons/ui/open-preview.svg');
+    mask-image: url('icons/ui/open-preview.svg');
+}
+
+.fi-ui-edit {
+    -webkit-mask-image: url('icons/ui/edit.svg');
+    mask-image: url('icons/ui/edit.svg');
+}
+
+.fi-ui-trash {
+    -webkit-mask-image: url('icons/ui/trash.svg');
+    mask-image: url('icons/ui/trash.svg');
+}
+
+.fi-ui-close {
+    -webkit-mask-image: url('icons/ui/close.svg');
+    mask-image: url('icons/ui/close.svg');
+}
+
+.fi-ui-pin {
+    -webkit-mask-image: url('icons/ui/pin.svg');
+    mask-image: url('icons/ui/pin.svg');
+}

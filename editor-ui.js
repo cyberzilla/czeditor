@@ -73,53 +73,299 @@ const CZUI = (() => {
     let currentLineCount = 0, lastBracketKey = '';
     let sidebarContextTarget = null; // {handle, parentHandle, name, kind}
 
-    // ===== CUSTOMIZABLE FILE ICONS =====
-    const ICON_STORAGE_KEY = 'cz_file_icons';
-    const DEFAULT_FILE_ICONS = {
-        // Code
-        js: '📜', mjs: '📜', cjs: '📜', jsx: '📜',
-        ts: '🔷', tsx: '🔷',
-        html: '🌐', htm: '🌐',
-        css: '🎨', scss: '🎨', less: '🎨',
-        json: '📋', xml: '📋', yaml: '📋', yml: '📋', toml: '📋',
-        md: '📝', txt: '📝', log: '📝',
-        py: '🐍', rb: '💎', php: '🐘',
-        java: '☕', kt: '🟣', swift: '🍎',
-        c: '⚙️', cpp: '⚙️', h: '⚙️', rs: '🦀', go: '🔵',
+    // ===== FILE ICON SYSTEM (Atom Material Icons — CSS class) =====
+    // Based on https://github.com/AtomMaterialUI/a-file-icon-idea
+    // All SVG paths are in file-icons.css — JS only returns class names.
+
+    // Extension → CSS class suffix mapping
+    const FILE_ICON_MAP = {
+        // JavaScript
+        js: 'js', mjs: 'js', cjs: 'js',
+        jsx: 'jsx', tsx: 'react',
+        // TypeScript
+        ts: 'ts', mts: 'ts', cts: 'ts',
+        // Markup
+        html: 'html', htm: 'html',
+        xml: 'xml', xsl: 'xml',
+        svg: 'svg',
+        vue: 'vue',
+        // Styles
+        css: 'css', scss: 'sass', sass: 'sass', less: 'less',
+        styl: 'stylus',
+        // Data
+        json: 'json', json5: 'json5',
+        yaml: 'yaml', yml: 'yaml',
+        toml: 'toml', ini: 'configs',
+        csv: 'csv',
+        // Documentation
+        md: 'markdown', mdx: 'markdown',
+        txt: 'text', log: 'log',
+        // Languages
+        py: 'python', pyw: 'python',
+        rb: 'ruby', erb: 'ruby',
+        php: 'php',
+        java: 'java', class: 'java',
+        kt: 'kotlin', kts: 'kotlinscript',
+        swift: 'swift',
+        c: 'c', h: 'c',
+        cpp: 'cpp', cc: 'cpp', cxx: 'cpp', hpp: 'cpp',
+        cs: 'csharp',
+        rs: 'rust',
+        go: 'go',
+        lua: 'lua',
+        r: 'r', R: 'r',
+        sql: 'sql',
+        dart: 'dart',
+        scala: 'scala',
+        perl: 'perl', pl: 'perl',
         // Media
-        png: '🖼️', jpg: '🖼️', jpeg: '🖼️', gif: '🖼️', svg: '🖼️', ico: '🖼️', webp: '🖼️', bmp: '🖼️', avif: '🖼️',
-        mp3: '🎵', wav: '🎵', ogg: '🎵', flac: '🎵',
-        mp4: '🎬', avi: '🎬', mkv: '🎬', webm: '🎬',
+        png: 'image', jpg: 'image', jpeg: 'image', gif: 'image',
+        ico: 'image', webp: 'image', bmp: 'image', avif: 'image',
+        psd: 'psd',
+        mp3: 'audio', wav: 'audio', ogg: 'audio', flac: 'audio', aac: 'audio',
+        mp4: 'video', avi: 'video', mkv: 'video', webm: 'video', mov: 'video',
         // Archives
-        zip: '📦', tar: '📦', gz: '📦', rar: '📦', '7z': '📦',
+        zip: 'archive', tar: 'archive', gz: 'archive', rar: 'archive',
+        '7z': 'archive', bz2: 'archive',
         // Shell
-        sh: '💻', bat: '💻', ps1: '💻', cmd: '💻',
-        // Config
-        env: '🔒', gitignore: '🚫', dockerignore: '🚫',
-        lock: '🔒',
+        sh: 'shell', bash: 'shell', zsh: 'shell',
+        bat: 'windows', cmd: 'windows',
+        ps1: 'powershell',
+        // Config / Env
+        env: 'envs',
+        gitignore: 'gitignore', gitattributes: 'git',
+        dockerignore: 'dockerignore',
+        lock: 'lock',
+        editorconfig: 'editorconfig',
         // Fonts
-        woff2: '🔤', woff: '🔤', ttf: '🔤', otf: '🔤',
-        // Default
-        _default: '📄',
-        _folder: '📁',
-        _folder_open: '📂'
+        woff2: 'font', woff: 'font', ttf: 'font', otf: 'font', eot: 'font',
+        // DevOps / Tools
+        dockerfile: 'docker',
+        eslintrc: 'eslint', eslintignore: 'eslintignore',
+        prettierrc: 'prettierconfig', prettierignore: 'prettierignore',
+        npmrc: 'npm', npmignore: 'npmignore',
+        // Misc
+        graphql: 'graphql', gql: 'graphql',
+        proto: 'protobuf',
+        tex: 'tex', latex: 'tex',
+        pdf: 'pdf',
+        gradle: 'gradle',
+        makefile: 'makefile',
     };
 
-    let fileIcons = { ...DEFAULT_FILE_ICONS };
+    // Full-filename matches (case-insensitive)
+    const FILE_NAME_MAP = {
+        'dockerfile': 'docker',
+        'docker-compose.yml': 'dockercompose',
+        'docker-compose.yaml': 'dockercompose',
+        '.gitignore': 'gitignore',
+        '.gitattributes': 'git',
+        '.editorconfig': 'editorconfig',
+        '.eslintrc': 'eslint',
+        '.eslintrc.js': 'eslint',
+        '.eslintrc.json': 'eslint',
+        '.eslintrc.yml': 'eslint',
+        'eslint.config.js': 'eslintconfig',
+        'eslint.config.mjs': 'eslintconfig',
+        '.prettierrc': 'prettierconfig',
+        '.prettierrc.js': 'prettierconfig',
+        '.prettierrc.json': 'prettierconfig',
+        '.prettierignore': 'prettierignore',
+        'package.json': 'npm',
+        'package-lock.json': 'npmlock',
+        '.npmrc': 'npm',
+        '.npmignore': 'npmignore',
+        'tsconfig.json': 'tsconfig',
+        'webpack.config.js': 'webpack',
+        'webpack.config.ts': 'webpack',
+        'babel.config.js': 'babel',
+        '.babelrc': 'babel',
+        'vite.config.js': 'vite',
+        'vite.config.ts': 'vite',
+        'makefile': 'makefile',
+        'gruntfile.js': 'gruntfile',
+        'gulpfile.js': 'gulpfile',
+        'license': 'license',
+        'license.md': 'license',
+        'readme.md': 'readme',
+        'readme': 'readme',
+        'changelog.md': 'changelog',
+        'changelog': 'changelog',
+        '.env': 'envs',
+        '.env.local': 'envs',
+        '.env.production': 'envs',
+        '.env.development': 'envs',
+        '.dockerignore': 'dockerignore',
+        'yarn.lock': 'yarnlock',
+        '.yarnrc': 'yarn',
+        'nuxt.config.js': 'nuxt',
+        'nuxt.config.ts': 'nuxt',
+        'next.config.js': 'nextjs',
+        'next.config.mjs': 'nextjs',
+        'tailwind.config.js': 'tailwindcss',
+        'tailwind.config.ts': 'tailwindcss',
+        'postcss.config.js': 'postcss',
+        'rollup.config.js': 'rollup',
+        'jest.config.js': 'jest',
+        'jest.config.ts': 'jest',
+        'vitest.config.ts': 'vitest',
+        '.gitmodules': 'git',
+        'pom.xml': 'maven',
+        'build.gradle': 'gradle',
+        'settings.gradle': 'gradle',
+        'composer.json': 'composer',
+        'cargo.toml': 'cargo',
+        'cargo.lock': 'cargo',
+        'go.mod': 'goconfig',
+        'go.sum': 'goconfig',
+        'requirements.txt': 'pythonconfigs',
+        'pipfile': 'pipfile',
+        'gemfile': 'ruby',
+        'rakefile': 'ruby',
+        '.rubocop.yml': 'rubyrc',
+        'manifest.json': 'json',
+        'sw.js': 'nodejs',
+    };
+
+    /**
+     * Get CSS icon class for a filename
+     * @param {string} name — filename (e.g. "index.js")
+     * @returns {string} — CSS class (e.g. "fi fi-js")
+     */
+    function getFileIconClass(name) {
+        const lower = name.toLowerCase();
+        // 1. Exact full-name match
+        if (FILE_NAME_MAP[lower]) return 'fi fi-' + FILE_NAME_MAP[lower];
+        // 2. Extension match
+        const ext = lower.split('.').pop();
+        if (FILE_ICON_MAP[ext]) return 'fi fi-' + FILE_ICON_MAP[ext];
+        // 3. Dotfile (e.g. ".eslintrc.json" → check "eslintrc")
+        const parts = lower.split('.');
+        if (parts.length > 1) {
+            const withoutDot = parts.slice(0, -1).join('').replace(/^\./, '');
+            if (FILE_ICON_MAP[withoutDot]) return 'fi fi-' + FILE_ICON_MAP[withoutDot];
+        }
+        // 4. Default
+        return 'fi fi-default';
+    }
+
+    /** Return HTML string for a file icon <span> */
+    function fileIconHTML(name) {
+        return `<span class="${getFileIconClass(name)}"></span>`;
+    }
+
+    // Folder name → CSS class suffix mapping
+    const FOLDER_NAME_MAP = {
+        // Version control
+        '.git': 'git', '.github': 'github', '.gitlab': 'gitlab', '.gitea': 'gitea',
+        '.svn': 'svn', '.hg': 'mercurial',
+        // Source
+        'src': 'src', 'source': 'src', 'lib': 'lib', 'libs': 'lib',
+        'dist': 'dist', 'build': 'dist', 'out': 'dist', 'output': 'dist',
+        'bin': 'dist', 'target': 'target',
+        // Web
+        'public': 'global', 'static': 'global', 'assets': 'resource',
+        'images': 'images', 'img': 'images', 'icons': 'icons',
+        'fonts': 'fonts', 'font': 'fonts',
+        'styles': 'styles', 'css': 'styles', 'scss': 'sass', 'sass': 'sass',
+        'less': 'less', 'stylus': 'stylus',
+        // JS ecosystem
+        'node_modules': 'node', 'bower_components': 'bower',
+        'vendor': 'lib', 'packages': 'packages',
+        '.npm': 'node', '.yarn': 'yarn',
+        // Frameworks
+        'components': 'components', 'pages': 'views', 'views': 'views',
+        'layouts': 'layouts', 'templates': 'views',
+        'routes': 'routes', 'router': 'routes',
+        'middleware': 'middleware', 'plugins': 'plugin',
+        'modules': 'components', 'store': 'redux-stores',
+        'stores': 'redux-stores', 'state': 'redux-stores',
+        'actions': 'redux-actions', 'reducers': 'redux-reducers',
+        // Backend
+        'api': 'api', 'server': 'server', 'controllers': 'controllers',
+        'models': 'models', 'services': 'server', 'helpers': 'helper',
+        'utils': 'tools', 'tools': 'tools', 'scripts': 'scripts',
+        // Config
+        'config': 'config', 'configs': 'config', 'configuration': 'config',
+        '.vscode': 'vscode', '.idea': 'idea', '.vs': 'vs',
+        'env': 'env', '.env': 'env',
+        // Testing
+        'test': 'tests', 'tests': 'tests', '__tests__': 'tests',
+        'spec': 'tests', 'specs': 'tests',
+        'e2e': 'e2e', 'cypress': 'cypress',
+        '__mocks__': 'mocks', 'mocks': 'mocks', 'mock': 'mocks',
+        'fixtures': 'fixtures', '__fixtures__': 'fixtures',
+        'coverage': 'coverage',
+        // Docs
+        'docs': 'docs', 'doc': 'docs', 'documentation': 'docs',
+        // i18n
+        'lang': 'i18n', 'langs': 'i18n', 'language': 'i18n', 'languages': 'i18n',
+        'i18n': 'i18n', 'locale': 'i18n', 'locales': 'i18n',
+        'translations': 'i18n', 'translate': 'i18n',
+        // Database
+        'db': 'db', 'database': 'db', 'sql': 'sql',
+        'migrations': 'db', 'seeds': 'seed', 'seeders': 'seed',
+        // DevOps
+        'docker': 'docker', '.docker': 'docker',
+        'kubernetes': 'kubernetes', 'k8s': 'kubernetes',
+        '.circleci': 'circleci', '.github/workflows': 'ci',
+        'deploy': 'deploy', 'terraform': 'terraform',
+        // Specific frameworks
+        '.next': 'next', '.nuxt': 'nuxt', '.svelte-kit': 'svelte',
+        '.angular': 'angular', '.expo': 'expo',
+        'android': 'android', 'ios': 'ios',
+        // Content
+        'logs': 'logs', 'log': 'logs',
+        'temp': 'temp', 'tmp': 'temp', 'cache': 'temp',
+        'backup': 'archive', 'backups': 'archive',
+        'download': 'download', 'downloads': 'download',
+        'upload': 'upload', 'uploads': 'upload',
+        // Other
+        'shared': 'shared', 'common': 'shared',
+        'hooks': 'hook', 'decorators': 'decorators',
+        'providers': 'providers', 'guards': 'guard',
+        'resolvers': 'resolver', 'interceptors': 'interceptor',
+        'events': 'events', 'listeners': 'events',
+        'jobs': 'job', 'queues': 'queue',
+        'notifications': 'notification', 'mailers': 'mailers',
+        'tasks': 'tasks',
+        'ui': 'ui', 'widgets': 'ui',
+        'storybook': 'storybook', '.storybook': 'storybook',
+        'graphql': 'graphql', 'prisma': 'prisma',
+        'audio': 'audio', 'video': 'video', 'media': 'images',
+        'svg': 'svg', 'animations': 'animations',
+        'themes': 'themes', 'theme': 'themes',
+    };
+
+    /**
+     * Get folder icon CSS class
+     * @param {string} name — folder name (e.g. "src")
+     * @param {boolean} open — is folder expanded
+     * @returns {string} — CSS classes
+     */
+    function getFolderIconClass(name, open) {
+        const lower = name.toLowerCase();
+        const suffix = FOLDER_NAME_MAP[lower];
+        if (suffix) {
+            return 'fi ' + (open ? 'fi-fo-' + suffix + '-open' : 'fi-fo-' + suffix);
+        }
+        return 'fi ' + (open ? 'fi-folder-open' : 'fi-folder');
+    }
+
+    /** Return HTML string for a folder icon <span> */
+    function folderIconHTML(open, name) {
+        return `<span class="${getFolderIconClass(name || '', open)}"></span>`;
+    }
+
+    // Legacy compat stubs
+    const ICON_STORAGE_KEY = 'cz_file_icons';
+    let fileIcons = {};
     function loadFileIcons() {
-        try {
-            const saved = localStorage.getItem(ICON_STORAGE_KEY);
-            if (saved) fileIcons = { ...DEFAULT_FILE_ICONS, ...JSON.parse(saved) };
-        } catch (e) { /* ignore */ }
+        try { localStorage.removeItem(ICON_STORAGE_KEY); } catch (e) { /* ignore */ }
     }
-    function saveFileIcons() {
-        localStorage.setItem(ICON_STORAGE_KEY, JSON.stringify(fileIcons));
-    }
-    function getFileIcons() { return { ...fileIcons }; }
-    function setFileIcons(icons) {
-        fileIcons = { ...DEFAULT_FILE_ICONS, ...icons };
-        saveFileIcons();
-    }
+    function saveFileIcons() { }
+    function getFileIcons() { return {}; }
+    function setFileIcons() { }
     loadFileIcons();
 
     const IMAGE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'gif', 'ico', 'webp', 'bmp', 'avif']);
@@ -198,26 +444,7 @@ const CZUI = (() => {
         return (bytes / 1048576).toFixed(1) + ' MB';
     }
     function getBinaryIcon(name) {
-        const ext = name.split('.').pop().toLowerCase();
-        const iconMap = {
-            // Fonts
-            woff2: '🔤', woff: '🔤', ttf: '🔤', otf: '🔤', eot: '🔤',
-            // Archives
-            zip: '📦', tar: '📦', gz: '📦', rar: '📦', '7z': '📦', bz2: '📦', xz: '📦', jar: '📦',
-            // Audio
-            mp3: '🎵', wav: '🎵', ogg: '🎵', flac: '🎵', aac: '🎵', wma: '🎵', m4a: '🎵',
-            // Video
-            mp4: '🎬', avi: '🎬', mkv: '🎬', webm: '🎬', mov: '🎬', wmv: '🎬', flv: '🎬',
-            // Documents
-            pdf: '📕', doc: '📘', docx: '📘', xls: '📗', xlsx: '📗', ppt: '📙', pptx: '📙',
-            // Executables
-            exe: '⚙️', dll: '⚙️', so: '⚙️', msi: '⚙️',
-            // Database
-            db: '🗄️', sqlite: '🗄️', sqlite3: '🗄️',
-            // Images
-            png: '🖼️', jpg: '🖼️', jpeg: '🖼️', gif: '🖼️', ico: '🖼️', webp: '🖼️', bmp: '🖼️', avif: '🖼️',
-        };
-        return iconMap[ext] || '📄';
+        return `<span class="${getFileIconClass(name)}" style="width:48px;height:48px"></span>`;
     }
 
     function getFiles() { return files; }
@@ -408,9 +635,10 @@ const CZUI = (() => {
             tab.dataset.id = file.id;
             tab.onclick = e => { if (!isDraggingTab && e.button !== 2) switchFile(file.id); };
             tab.ondblclick = () => { if (!isDraggingTab) renameFile(file.id); };
-            const pin = file.isPinned ? '<span class="tab-pin-icon">📌</span>' : '';
+            const icon = fileIconHTML(file.name);
+            const pin = file.isPinned ? '<span class="tab-pin-icon fi fi-ui fi-ui-pin"></span>' : '';
             const dot = file.dirty ? '<span class="tab-dot">●</span>' : '';
-            tab.innerHTML = `<span class="tab-name">${pin}${dot}${CZEngine.escapeHTML(file.name)}</span>
+            tab.innerHTML = `${icon}<span class="tab-name">${pin}${dot}${CZEngine.escapeHTML(file.name)}</span>
             <span class="tab-close" data-close="${file.id}">&times;</span>`;
             tabsContainer.appendChild(tab);
         });
@@ -672,7 +900,7 @@ const CZUI = (() => {
         if (!panel) return;
         panel.classList.remove('hidden');
 
-        $('binary-file-icon').textContent = getBinaryIcon(f.name);
+        $('binary-file-icon').innerHTML = getBinaryIcon(f.name);
         $('binary-file-name').textContent = f.name;
 
         // Get file size
@@ -760,7 +988,7 @@ const CZUI = (() => {
         if (previewOpen) {
             pane.classList.remove('hidden');
             handle.classList.remove('hidden');
-            if (btn) { btn.textContent = '👁 Preview ✓'; btn.classList.add('active'); }
+            if (btn) { btn.innerHTML = '<span class="fi fi-ui fi-ui-preview" style="margin-right:3px"></span> Preview ✓'; btn.classList.add('active'); }
             // Calculate editor width from saved preview width or default 50%
             const savedW = localStorage.getItem('cz_preview_width');
             const handleW = handle.offsetWidth;
@@ -786,7 +1014,7 @@ const CZUI = (() => {
         } else {
             pane.classList.add('hidden');
             handle.classList.add('hidden');
-            if (btn) { btn.textContent = '👁 Preview'; btn.classList.remove('active'); }
+            if (btn) { btn.innerHTML = '<span class="fi fi-ui fi-ui-preview" style="margin-right:3px"></span> Preview'; btn.classList.remove('active'); }
             // Reset editor pane to default flex
             editorPane.style.width = '';
             editorPane.style.flexGrow = '';
@@ -1232,7 +1460,7 @@ const CZUI = (() => {
         recents.forEach(item => {
             const row = document.createElement('div');
             row.className = 'recent-folder-item';
-            row.innerHTML = `<span class="recent-icon">📁</span><span class="recent-name">${CZEngine.escapeHTML(item.name)}</span><span class="recent-remove" title="Remove">✕</span>`;
+            row.innerHTML = `<span class="recent-icon"><span class="fi fi-folder"></span></span><span class="recent-name">${CZEngine.escapeHTML(item.name)}</span><span class="recent-remove" title="Remove">✕</span>`;
 
             // Click to re-open folder
             row.onclick = async (e) => {
@@ -1425,10 +1653,7 @@ const CZUI = (() => {
         apply(tree, parentPath || '');
     }
 
-    function getFileIcon(name) {
-        const ext = name.split('.').pop().toLowerCase();
-        return fileIcons[ext] || fileIcons._default || '📄';
-    }
+
 
     function renderSidebar(tree, folderName) {
         sidebarEmpty.style.display = 'none';
@@ -1470,7 +1695,7 @@ const CZUI = (() => {
             header.className = 'tree-item tree-root-folder';
             header.style.fontWeight = '600';
             header.style.paddingLeft = '8px';
-            header.innerHTML = `<span class="tree-icon">${fileIcons._folder_open || '📂'}</span><span class="tree-name">${CZEngine.escapeHTML(folderName)}</span>`;
+            header.innerHTML = `${folderIconHTML(true, folderName)}<span class="tree-name">${CZEngine.escapeHTML(folderName)}</span>`;
             header.oncontextmenu = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -1580,9 +1805,9 @@ const CZUI = (() => {
                 item.dataset.name = node.name;
                 item.dataset.kind = 'directory';
 
-                const arrow = node.expanded ? '▶' : '▶';
+                const arrow = '';
                 const arrowClass = node.expanded ? 'tree-icon folder-arrow expanded' : 'tree-icon folder-arrow';
-                item.innerHTML = `<span class="${arrowClass}">${arrow}</span><span class="tree-icon">📁</span><span class="tree-name">${CZEngine.escapeHTML(node.name)}</span>`;
+                item.innerHTML = `<span class="${arrowClass}">${arrow}</span>${folderIconHTML(node.expanded, node.name)}<span class="tree-name">${CZEngine.escapeHTML(node.name)}</span>`;
 
                 item.onclick = (e) => {
                     e.stopPropagation();
@@ -1590,6 +1815,12 @@ const CZUI = (() => {
                     const arrowEl = item.querySelector('.folder-arrow');
                     arrowEl.classList.toggle('expanded', node.expanded);
                     childrenDiv.classList.toggle('collapsed', !node.expanded);
+                    // Swap folder icon: replace with correct class
+                    const oldIcon = item.querySelector('.fi');
+                    if (oldIcon) {
+                        const newCls = getFolderIconClass(node.name, node.expanded);
+                        oldIcon.className = newCls;
+                    }
                     // Persist folder state
                     const tree = CZFS.getCurrentTree();
                     if (tree) saveExpandedPaths(tree, CZFS.getDirectoryHandle()?.name || '');
@@ -1620,8 +1851,7 @@ const CZUI = (() => {
                 item.dataset.name = node.name;
                 item.dataset.kind = 'file';
 
-                const icon = getFileIcon(node.name);
-                item.innerHTML = `<span class="tree-icon">${icon}</span><span class="tree-name">${CZEngine.escapeHTML(node.name)}</span>`;
+                item.innerHTML = `${fileIconHTML(node.name)}<span class="tree-name">${CZEngine.escapeHTML(node.name)}</span>`;
 
                 item.onclick = async (e) => {
                     e.stopPropagation();
@@ -2262,7 +2492,7 @@ const CZUI = (() => {
         isPreviewableFile, togglePreview, updatePreview, closePreview, setupPreviewResize, setPreviewZoom,
         openBinaryAsCode, openBinaryExternal,
         // Icons
-        getFileIcons, setFileIcons, getFileIcon,
+        getFileIcons, setFileIcons, getFileIconClass, fileIconHTML, folderIconHTML, getFolderIconClass,
         get targetContextTabId() { return targetContextTabId; },
         set targetContextTabId(v) { targetContextTabId = v; },
         get lastBracketKey() { return lastBracketKey; },

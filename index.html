@@ -24,6 +24,7 @@
     </script>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="editor-view.css">
+    <link rel="stylesheet" href="file-icons.css">
     <script>
         // Apply saved sidebar state BEFORE first paint to prevent visual flash
         (function () {
@@ -94,19 +95,19 @@
             <div class="sidebar-header">
                 <span class="sidebar-title" data-i18n="sidebar_explorer">Explorer</span>
                 <button class="sidebar-toggle-btn" id="btn-toggle-sidebar" data-i18n="btn_toggle_sidebar_title"
-                    data-i18n-attr="title" title="Toggle Sidebar (Ctrl+B)">☰</button>
+                    data-i18n-attr="title" title="Toggle Sidebar (Ctrl+B)"><span class="fi fi-ui fi-ui-bars"></span></button>
             </div>
             <div class="sidebar-tree-area">
                 <div class="sidebar-actions hidden" id="sidebar-actions">
-                    <button class="sidebar-btn" id="btn-new-fs-file" title="New File">📄</button>
-                    <button class="sidebar-btn" id="btn-new-fs-folder" title="New Folder">📁+</button>
-                    <button class="sidebar-btn" id="btn-refresh-tree" title="Refresh">🔄</button>
-                    <button class="sidebar-btn" id="btn-collapse-all" title="Collapse All">⊟</button>
+                    <button class="sidebar-btn" id="btn-new-fs-file" title="New File"><span class="fi fi-ui fi-ui-new-file"></span></button>
+                    <button class="sidebar-btn" id="btn-new-fs-folder" title="New Folder"><span class="fi fi-ui fi-ui-new-folder"></span></button>
+                    <button class="sidebar-btn" id="btn-refresh-tree" title="Refresh"><span class="fi fi-ui fi-ui-refresh"></span></button>
+                    <button class="sidebar-btn" id="btn-collapse-all" title="Collapse All"><span class="fi fi-ui fi-ui-collapse"></span></button>
                 </div>
                 <div class="sidebar-tree" id="sidebar-tree">
                     <div class="sidebar-empty" id="sidebar-empty">
                         <p data-i18n="sidebar_no_folder">Belum ada folder dibuka</p>
-                        <button class="sidebar-open-btn" id="btn-open-folder" data-i18n="btn_open_folder_title">📂 Open
+                        <button class="sidebar-open-btn" id="btn-open-folder" data-i18n="btn_open_folder_title" data-i18n-html><span class="fi fi-folder-open" style="margin-right:4px"></span> Open
                             Folder</button>
                         <div class="recent-folders" id="recent-folders"></div>
                     </div>
@@ -118,31 +119,31 @@
         <div class="editor-column">
             <header class="editor-header">
                 <button class="sidebar-reopen-btn" id="btn-sidebar-reopen" data-i18n="btn_toggle_sidebar_title"
-                    data-i18n-attr="title" title="Toggle Sidebar (Ctrl+B)">☰</button>
+                    data-i18n-attr="title" title="Toggle Sidebar (Ctrl+B)"><span class="fi fi-ui fi-ui-bars"></span></button>
                 <div class="tabs-container" id="tabs-container"></div>
 
                 <div class="action-btns">
                     <button class="action-btn" id="btn-new-file" data-i18n="btn_new_file_title" data-i18n-attr="title"
-                        title="File Baru (Ctrl+N)">+</button>
+                        title="File Baru (Ctrl+N)"><span class="fi fi-ui fi-ui-new-file"></span></button>
                     <button class="action-btn" id="btn-open-file" data-i18n="btn_open_file_title" data-i18n-attr="title"
-                        title="Buka File">&#128194;</button>
+                        title="Buka File"><span class="fi fi-folder-open"></span></button>
                     <input type="file" id="file-input" style="display: none;" multiple>
                 </div>
 
                 <div class="toolbar hidden" id="toolbar-right">
                     <div class="settings-wrapper">
                         <button class="settings-btn" id="btn-settings" data-i18n="btn_settings_title"
-                            data-i18n-attr="title" title="Pengaturan">⚙️</button>
+                            data-i18n-attr="title" title="Pengaturan"><span class="fi fi-ui fi-ui-settings"></span></button>
                         <div class="settings-popup hidden" id="settings-popup">
-                            <div class="settings-item" id="menu-font-config" data-i18n="menu_font_config">🔡 Konfigurasi
+                            <div class="settings-item" id="menu-font-config" data-i18n="menu_font_config" data-i18n-html><span class="fi fi-ui fi-ui-text-size"></span> Konfigurasi
                                 Font
                             </div>
-                            <div class="settings-item" id="menu-shortcuts" data-i18n="menu_shortcuts">⌨️ Keyboard
+                            <div class="settings-item" id="menu-shortcuts" data-i18n="menu_shortcuts" data-i18n-html><span class="fi fi-ui fi-ui-keyboard"></span> Keyboard
                                 Shortcuts
                             </div>
-                            <div class="settings-item" id="menu-language">🌐 <span data-i18n="menu_language"
+                            <div class="settings-item" id="menu-language"><span class="fi fi-ui fi-ui-globe"></span> <span data-i18n="menu_language"
                                     id="menu-language-text">Bahasa</span></div>
-                            <div class="settings-item" id="menu-theme">🎨 <span data-i18n="menu_theme"
+                            <div class="settings-item" id="menu-theme"><span class="fi fi-ui fi-ui-color-mode"></span> <span data-i18n="menu_theme"
                                     id="menu-theme-text">Tema</span>
                                 <select id="theme-selector" class="settings-select">
                                     <option value="dark" data-i18n="theme_dark">Dark</option>
@@ -175,8 +176,8 @@
                             </div>
                         </div>
                         <button class="pwa-install-btn anim-fade-up hidden" id="pwa-install-btn"
-                            style="animation-delay: 0.7s" data-i18n="pwa_install">
-                            📥 Install sebagai Aplikasi
+                            style="animation-delay: 0.7s" data-i18n="pwa_install" data-i18n-html>
+                            <span class="fi fi-ui fi-ui-download" style="margin-right:4px"></span> Install sebagai Aplikasi
                         </button>
                     </div>
 
@@ -206,7 +207,7 @@
                             <div class="editor-pane">
                                 <!-- Preview toggle stays at editor-pane corner -->
                                 <button id="btn-preview-toggle" class="preview-toggle-btn hidden"
-                                    title="Toggle Preview (Ctrl+Shift+V)">👁 Preview</button>
+                                    title="Toggle Preview (Ctrl+Shift+V)"><span class="fi fi-ui fi-ui-preview" style="margin-right:3px"></span> Preview</button>
                                 <!-- Virtual editor container (replaces textarea+pre overlay) -->
                                 <div id="virtual-editor" class="code-wrapper"></div>
                             </div>
@@ -244,7 +245,7 @@
                     <!-- Binary File Info Panel (for non-text, non-image files) -->
                     <div id="binary-file-panel" class="binary-file-panel hidden">
                         <div class="binary-file-card">
-                            <div class="binary-file-icon" id="binary-file-icon">📄</div>
+                            <div class="binary-file-icon" id="binary-file-icon"><span class="fi fi-default" style="width:48px;height:48px"></span></div>
                             <div class="binary-file-name" id="binary-file-name"></div>
                             <div class="binary-file-size" id="binary-file-size"></div>
                             <p class="binary-file-msg" data-i18n="binary_file_msg">This file is in binary format and
@@ -287,7 +288,7 @@
     <div id="shortcuts-modal" class="modal hidden">
         <div class="modal-content" style="width: 480px;">
             <div class="modal-header">
-                <h3 data-i18n="shortcuts_title">⌨️ Keyboard Shortcuts</h3>
+                <h3 data-i18n="shortcuts_title" data-i18n-html><span class="fi fi-ui fi-ui-keyboard"></span> Keyboard Shortcuts</h3>
                 <span class="close-modal" id="close-shortcuts">&times;</span>
             </div>
             <div class="modal-body shortcuts-body">
@@ -355,7 +356,7 @@
     <div id="language-modal" class="modal hidden">
         <div class="modal-content" style="width: 300px;">
             <div class="modal-header">
-                <h3>🌐 Language</h3>
+                <h3><span class="fi fi-ui fi-ui-globe" style="margin-right:4px"></span> Language</h3>
                 <span class="close-modal" id="close-language">&times;</span>
             </div>
             <div class="modal-body" id="language-list"></div>
@@ -366,7 +367,7 @@
     <div id="explorer-settings-modal" class="modal hidden">
         <div class="modal-content" style="width: 400px;">
             <div class="modal-header">
-                <h3 data-i18n="explorer_settings_title">⚙️ Explorer Settings</h3>
+                <h3 data-i18n="explorer_settings_title" data-i18n-html><span class="fi fi-ui fi-ui-settings"></span> Explorer Settings</h3>
                 <span class="close-modal" id="close-explorer-settings">&times;</span>
             </div>
             <div class="modal-body">
@@ -477,27 +478,27 @@
 
     <!-- Sidebar Context Menu -->
     <div id="sidebar-context-menu" class="context-menu hidden">
-        <div class="context-menu-item" data-action="new-file" data-i18n="ctx_new_file">📄 File Baru</div>
-        <div class="context-menu-item" data-action="new-folder" data-i18n="ctx_new_folder">📁 Folder Baru</div>
+        <div class="context-menu-item" data-action="new-file" data-i18n="ctx_new_file" data-i18n-html><span class="fi fi-ui fi-ui-new-file"></span> File Baru</div>
+        <div class="context-menu-item" data-action="new-folder" data-i18n="ctx_new_folder" data-i18n-html><span class="fi fi-ui fi-ui-new-folder"></span> Folder Baru</div>
         <div class="context-menu-divider"></div>
-        <div class="context-menu-item" data-action="rename" data-i18n="ctx_rename_entry">✏️ Rename</div>
-        <div class="context-menu-item" data-action="delete" data-i18n="ctx_delete_entry">🗑️ Hapus</div>
+        <div class="context-menu-item" data-action="rename" data-i18n="ctx_rename_entry" data-i18n-html><span class="fi fi-ui fi-ui-edit"></span> Rename</div>
+        <div class="context-menu-item" data-action="delete" data-i18n="ctx_delete_entry" data-i18n-html><span class="fi fi-ui fi-ui-trash"></span> Hapus</div>
         <div class="context-menu-divider"></div>
-        <div class="context-menu-item" data-action="close-folder" data-i18n="ctx_close_folder">❌ Tutup Folder</div>
+        <div class="context-menu-item" data-action="close-folder" data-i18n="ctx_close_folder" data-i18n-html><span class="fi fi-ui fi-ui-close"></span> Tutup Folder</div>
         <div class="context-menu-divider"></div>
-        <div class="context-menu-item" data-action="explorer-settings" data-i18n="ctx_explorer_settings">⚙️ Explorer
+        <div class="context-menu-item" data-action="explorer-settings" data-i18n="ctx_explorer_settings" data-i18n-html><span class="fi fi-ui fi-ui-settings"></span> Explorer
             Settings</div>
     </div>
 
     <div id="tab-context-menu" class="context-menu hidden">
-        <div class="context-menu-item" data-action="close" data-i18n="ctx_close">Tutup</div>
-        <div class="context-menu-item" data-action="close-other" data-i18n="ctx_close_other">Tutup Lainnya</div>
-        <div class="context-menu-item" data-action="close-all" data-i18n="ctx_close_all">Tutup Semua</div>
+        <div class="context-menu-item" data-action="close" data-i18n="ctx_close" data-i18n-html><span class="fi fi-ui fi-ui-close"></span> Tutup</div>
+        <div class="context-menu-item" data-action="close-other" data-i18n="ctx_close_other" data-i18n-html><span class="fi fi-ui fi-ui-close"></span> Tutup Lainnya</div>
+        <div class="context-menu-item" data-action="close-all" data-i18n="ctx_close_all" data-i18n-html><span class="fi fi-ui fi-ui-close"></span> Tutup Semua</div>
         <div class="context-menu-divider"></div>
-        <div class="context-menu-item" data-action="pin" id="ctx-pin-item">📌 Pin File</div>
-        <div class="context-menu-item" data-action="reload" id="ctx-reload-item" style="display:none">🔄 Reload File</div>
+        <div class="context-menu-item" data-action="pin" id="ctx-pin-item"><span class="fi fi-ui fi-ui-pin"></span> Pin File</div>
+        <div class="context-menu-item" data-action="reload" id="ctx-reload-item" style="display:none"><span class="fi fi-ui fi-ui-refresh"></span> Reload File</div>
         <div class="context-menu-divider"></div>
-        <div class="context-menu-item" data-action="rename" data-i18n="ctx_rename">Ganti Nama File</div>
+        <div class="context-menu-item" data-action="rename" data-i18n="ctx_rename" data-i18n-html><span class="fi fi-ui fi-ui-edit"></span> Ganti Nama File</div>
     </div>
 
     <select class="hidden" id="lang-selector">
@@ -517,6 +518,13 @@
                 try {
                 var activeId = localStorage.getItem('cz_active_id') || files[0].id;
 
+                // Minimal icon class resolver for preload
+                var _iconMap = {js:'js',mjs:'js',cjs:'js',jsx:'jsx',tsx:'react',ts:'ts',html:'html',htm:'html',css:'css',scss:'sass',less:'less',json:'json',yaml:'yaml',yml:'yaml',md:'markdown',txt:'text',log:'log',py:'python',rb:'ruby',php:'php',java:'java',kt:'kotlin',swift:'swift',c:'c',cpp:'cpp',cs:'csharp',rs:'rust',go:'go',lua:'lua',sql:'sql',xml:'xml',svg:'svg',vue:'vue',sh:'shell',bat:'windows',ps1:'powershell',toml:'toml',ini:'configs',png:'image',jpg:'image',jpeg:'image',gif:'image',ico:'image',webp:'image',mp3:'audio',wav:'audio',mp4:'video',zip:'archive',tar:'archive',env:'envs',gitignore:'gitignore',lock:'lock',woff2:'font',ttf:'font'};
+                function _iconClass(name) {
+                    var ext = name.split('.').pop().toLowerCase();
+                    return 'fi fi-' + (_iconMap[ext] || 'default');
+                }
+
                 // Pre-render tabs
                 var tc = document.getElementById('tabs-container');
                 if (tc) {
@@ -525,11 +533,13 @@
                     for (var i = 0; i < files.length; i++) {
                         var f = files[i];
                         var cls = 'tab' + (f.id === activeId ? ' active' : '');
-                        var pin = f.isPinned ? '<span class="tab-pin-icon">📌</span>' : '';
+                        var pin = f.isPinned ? '<span class="tab-pin-icon fi fi-ui fi-ui-pin"></span>' : '';
                         var dot = f.dirty ? '<span class="tab-dot">●</span>' : '';
                         // Escape HTML in file name
                         var name = f.name.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+                        var iconCls = _iconClass(f.name);
                         html += '<div class="' + cls + '" data-id="' + f.id + '">';
+                        html += '<span class="' + iconCls + '"></span>';
                         html += '<span class="tab-name">' + pin + dot + name + '</span>';
                         html += '<span class="tab-close" data-close="' + f.id + '">&times;</span></div>';
                     }

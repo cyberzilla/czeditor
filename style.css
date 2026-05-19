@@ -292,6 +292,7 @@ body {
     margin-right: 5px;
 }
 
+
 .tab-dot {
     color: var(--accent-color);
     margin-right: 5px;
@@ -769,18 +770,33 @@ body.sidebar-resizing {
     flex-shrink: 0;
     width: 18px;
     text-align: center;
-    margin-right: 5px;
-    font-size: 14px;
+    margin-right: 0;
+    font-size: 15px;
 }
 
 .tree-icon.folder-arrow {
-    font-size: 8px;
-    color: var(--text-muted);
+    width: 16px;
+    height: 16px;
+    font-size: 0;
+    color: transparent;
+    background-color: var(--text-muted);
+    -webkit-mask-image: url('icons/ui/chevron-right.svg');
+    mask-image: url('icons/ui/chevron-right.svg');
+    -webkit-mask-size: 16px 16px;
+    mask-size: 16px 16px;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
     transition: transform 0.15s;
 }
 
 .tree-icon.folder-arrow.expanded {
     transform: rotate(90deg);
+}
+
+.tree-item:hover>.tree-icon.folder-arrow {
+    background-color: var(--text-color, #e0e0e0);
 }
 
 .tree-name {

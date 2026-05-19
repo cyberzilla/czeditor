@@ -1,5 +1,5 @@
 // CZEditor Service Worker — Enables PWA install + offline caching
-const CACHE_NAME = 'czeditor-v2.6.6';
+const CACHE_NAME = 'czeditor-v2.6.22';
 const ASSETS = [
     './',
     './index.html',
@@ -11,6 +11,7 @@ const ASSETS = [
     './editor-ui.js',
     './editor-view.js',
     './editor-view.css',
+    './file-icons.css',
     './editor-model.js',
     './editor-features.js',
     './filesystem.js',
@@ -82,8 +83,8 @@ self.addEventListener('fetch', e => {
         return;
     }
 
-    // Lang configs and fonts: cache-first
-    if (url.pathname.includes('/lang/') || url.pathname.includes('/font/')) {
+    // Lang configs, fonts, and icons: cache-first
+    if (url.pathname.includes('/lang/') || url.pathname.includes('/font/') || url.pathname.includes('/icons/')) {
         e.respondWith(
             caches.match(e.request).then(cached =>
                 cached || fetch(e.request).then(resp => {
