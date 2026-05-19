@@ -184,7 +184,14 @@ class View {
         for (const ln of toRemove) {
             const div = this._visLines.get(ln);
             div.remove();
-            div._gutterEl?.remove();
+            if (div._gutterEl) {
+                div._gutterEl.classList.remove('active');
+                div._gutterEl.remove();
+                // Invalidate cached reference if this was the active line
+                if (div._gutterEl === this._activeGutterEl) {
+                    this._activeGutterEl = null;
+                }
+            }
             this._pool.push(div);
             this._visLines.delete(ln);
         }
