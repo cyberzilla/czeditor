@@ -335,6 +335,8 @@ const CZUI = (() => {
 
     // ===== SAVE =====
     function saveData() {
+        // Snapshot cursor position of currently active file before saving
+        _saveCursorState();
         // Save all files — strip non-serializable and runtime-only properties
         const saveable = files.map(f => {
             const { fileHandle, dirty, ...rest } = f;
@@ -347,6 +349,19 @@ const CZUI = (() => {
         localStorage.setItem('cz_files', JSON.stringify(saveable));
         if (activeFileId) localStorage.setItem('cz_active_id', activeFileId);
         else localStorage.removeItem('cz_active_id');
+    }
+
+    /** Save cursor position & scroll of the currently active file */
+    function _saveCursorState() {
+        if (!editorView || !activeFileId) return;
+        // Don't overwrite saved state if editor has no content yet (initial load)
+        if (editorView.model.getLineCount() <= 1 && !editorView.model.getLine(0)) return;
+        const f = files.find(x => x.id === activeFileId);
+        if (!f || f.isImage || f.isBinary) return;
+        const info = editorView.getCursorInfo();
+        f.cursorLine = info.line - 1;  // store 0-indexed
+        f.cursorCol = info.col - 1;
+        f.scrollTop = editorView.getScrollTop();
     }
     function triggerAutosave() {
         saveStatus.textContent = CZi18n.t('status_saving');
@@ -519,6 +534,9 @@ const CZUI = (() => {
     }
 
     function switchFile(id, opts) {
+        // Save cursor state of the file we're leaving
+        _saveCursorState();
+
         const f = files.find(x => x.id === id);
         if (!f) return;
         activeFileId = id;
@@ -549,10 +567,49 @@ const CZUI = (() => {
             editingArea.value = f.content;
             langSelector.value = f.language;
             lastBracketKey = '';
-            updateEditorVisuals(); updateFootbar();
-            // Focus the virtual editor so user can type immediately
-            if (editorView) requestAnimationFrame(() => editorView.focus());
-            CZEngine.loadLanguage(f.language).then(() => updateEditorVisuals());
+            // Restore cursor position BEFORE rendering
+            if (editorView) {
+                const line = f.cursorLine || 0;
+                const col = f.cursorCol || 0;
+                editorView.cursor = { line, col };
+                editorView.anchor = null;
+            }
+            // If preload is covering the editor, skip immediate render (user sees preload)
+            // and defer everything to the scroll-restore rAF for a single flicker-free paint
+            const hasPreload = editorView && editorView._preloadEl;
+            if (!hasPreload) {
+                updateEditorVisuals(); updateFootbar();
+            }
+            // Load language config first, then restore scroll + render with syntax colors
+            if (editorView) {
+                const savedScroll = f.scrollTop;
+                const cursorLine = f.cursorLine || 0;
+                CZEngine.loadLanguage(f.language).then(() => {
+                    requestAnimationFrame(() => {
+                        // Set sizer height first so scrollTop can be applied
+                        const totalLines = editorView.model.getLineCount();
+                        const viewH = editorView.scrollEl.clientHeight || 400;
+                        editorView.sizer.style.height = ((totalLines - 1) * editorView.lh + viewH) + 'px';
+                        // Now restore scroll position
+                        if (savedScroll > 0) {
+                            editorView.setScrollTop(savedScroll);
+                        } else if (cursorLine > 0) {
+                            const vh = editorView.scrollEl.clientHeight || 400;
+                            editorView.setScrollTop(Math.max(0, cursorLine * editorView.lh - vh / 2));
+                        }
+                        // Single render at correct scroll position WITH syntax colors
+                        editorView._render(true);
+                        updateFootbar();
+                        // Remove preload — content is now correct
+                        editorView.removePreload();
+                        // Focus editor so user can type immediately
+                        editorView.focus();
+                    });
+                });
+            } else {
+                const ve = document.getElementById('virtual-editor');
+                if (ve && ve.firstElementChild) ve.firstElementChild.remove();
+            }
             // Update preview if open
             if (previewOpen) {
                 if (isPreviewableFile(f)) {
@@ -2015,6 +2072,10 @@ const CZUI = (() => {
             $('stat-length').textContent = CZi18n.t('stat_length', m.getTotalLength());
             $('stat-lines').textContent = CZi18n.t('stat_lines', m.getLineCount());
             $('stat-cursor').textContent = `Ln ${info.line}, Col ${info.col}`;
+            // Keep cursor position on file object always up-to-date
+            f.cursorLine = info.line - 1;
+            f.cursorCol = info.col - 1;
+            f.scrollTop = editorView.getScrollTop();
         }
         langSelector.value = f.language;
         $('stat-lang').textContent = langSelector.options[langSelector.selectedIndex]?.text || f.language;
@@ -2047,9 +2108,17 @@ const CZUI = (() => {
     }
 
     // Initialize virtual editor (called once from script.js)
+    let _cursorSaveTimer = 0;
     function initVirtualEditor() {
         if (!editorContainer) return;
         editorView = new EditorView.View(editorContainer);
+        // Update footer on every cursor move + debounce-save to localStorage
+        editorView.onCursorChange(() => {
+            updateFootbar();
+            // Debounce: persist cursor state every 500ms of cursor activity
+            clearTimeout(_cursorSaveTimer);
+            _cursorSaveTimer = setTimeout(() => saveData(), 500);
+        });
     }
 
     function applySearchHighlights(text, tokens, matches, currentIdx, brackets) {

@@ -15,7 +15,7 @@ const LANG_DIR = path.join(__dirname, 'lang');
 const REGISTRY_FILE = path.join(LANG_DIR, 'registry.json');
 const SW_FILE = path.join(__dirname, 'sw.js');
 
-// 1. Scan lang/ and build registry
+// 1. Scan lang and build registry
 const registry = [];
 const files = fs.readdirSync(LANG_DIR).filter(f => f.endsWith('.json') && f !== 'registry.json');
 

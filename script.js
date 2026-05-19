@@ -83,6 +83,12 @@
     }
 
     function bindEvents() {
+        // Save state when leaving/refreshing the page
+        window.addEventListener('beforeunload', () => CZUI.saveData());
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') CZUI.saveData();
+        });
+
         // EditorView handles input, keydown, scroll internally.
         // No need to bind to the old textarea shim.
 

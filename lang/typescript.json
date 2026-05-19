@@ -1,36 +1,253 @@
 {
   "id": "typescript",
   "name": "TypeScript",
-  "extensions": ["ts","mts","cts"],
-  "comment": {"line":"//","blockStart":"/*","blockEnd":"*/"},
-  "autoClosePairs": [["{","}"],["[","]"],["(",")"],["<",">"],["\"","\""],["'","'"],["`","`"]],
-  "brackets": [["{","}"],["[","]"],["(",")"]],
+  "extensions": [
+    "ts",
+    "mts",
+    "cts"
+  ],
+  "comment": {
+    "line": "//",
+    "blockStart": "/*",
+    "blockEnd": "*/"
+  },
+  "autoClosePairs": [
+    [
+      "{",
+      "}"
+    ],
+    [
+      "[",
+      "]"
+    ],
+    [
+      "(",
+      ")"
+    ],
+    [
+      "<",
+      ">"
+    ],
+    [
+      "\"",
+      "\""
+    ],
+    [
+      "'",
+      "'"
+    ],
+    [
+      "`",
+      "`"
+    ]
+  ],
+  "brackets": [
+    [
+      "{",
+      "}"
+    ],
+    [
+      "[",
+      "]"
+    ],
+    [
+      "(",
+      ")"
+    ]
+  ],
   "syntax": [
-    {"match":"`(?:[^`\\\\]|\\\\.)*`","scope":"string"},
-    {"match":"\"(?:[^\"\\\\\\n]|\\\\.)*\"","scope":"string"},
-    {"match":"'(?:[^'\\\\\\n]|\\\\.)*'","scope":"string"},
-    {"match":"\\/\\/[^\\n]*","scope":"comment"},
-    {"match":"\\/\\*[\\s\\S]*?\\*\\/","scope":"comment"},
-    {"match":"\\b(?:abstract|as|async|await|break|case|catch|class|const|continue|debugger|declare|default|delete|do|else|enum|export|extends|finally|for|from|function|get|if|implements|import|in|instanceof|interface|is|keyof|let|module|namespace|new|of|package|private|protected|public|readonly|return|require|set|static|super|switch|this|throw|try|type|typeof|undefined|unique|unknown|var|void|while|with|yield|true|false|null|never|any|boolean|number|string|symbol|object|bigint|infer|asserts|satisfies)\\b","scope":"keyword"},
-    {"match":"\\b[A-Z][a-zA-Z0-9_]*\\b","scope":"class"},
-    {"match":"\\b[a-zA-Z_$][a-zA-Z0-9_$]*(?=\\s*[<(])","scope":"function"},
-    {"match":"\\b(?:0x[0-9a-fA-F]+|\\d+\\.?\\d*(?:e[+-]?\\d+)?)\\b","scope":"number"},
-    {"match":"(?:=>|\\.\\.\\.|===|!==|==|!=|<=|>=|&&|\\|\\||\\?\\?|\\?\\.|\\+\\+|--)","scope":"operator"}
+    {
+      "match": "`(?:[^`\\\\]|\\\\.)*`",
+      "scope": "string"
+    },
+    {
+      "match": "\"(?:[^\"\\\\\\n]|\\\\.)*\"",
+      "scope": "string"
+    },
+    {
+      "match": "'(?:[^'\\\\\\n]|\\\\.)*'",
+      "scope": "string"
+    },
+    {
+      "match": "\\/\\/[^\\n]*",
+      "scope": "comment"
+    },
+    {
+      "match": "\\/\\*\\*[\\\\s\\\\S]*?\\*\\/",
+      "scope": "doccomment"
+    },
+    {
+      "match": "\\/\\*[\\s\\S]*?\\*\\/",
+      "scope": "comment"
+    },
+    {
+      "match": "\\b(?:abstract|as|async|await|break|case|catch|class|const|continue|debugger|declare|default|delete|do|else|enum|export|extends|finally|for|from|function|get|if|implements|import|in|instanceof|interface|is|keyof|let|module|namespace|new|of|package|private|protected|public|readonly|return|require|set|static|super|switch|this|throw|try|type|typeof|undefined|unique|unknown|var|void|while|with|yield|true|false|null|never|any|boolean|number|string|symbol|object|bigint|infer|asserts|satisfies)\\b",
+      "scope": "keyword"
+    },
+    {
+      "match": "\\b[A-Z][a-zA-Z0-9_]*\\b",
+      "scope": "class"
+    },
+    {
+      "match": "\\b[a-zA-Z_$][a-zA-Z0-9_$]*(?=\\s*[<(])",
+      "scope": "function"
+    },
+    {
+      "match": "\\b(?:0x[0-9a-fA-F]+|\\d+\\.?\\d*(?:e[+-]?\\d+)?)\\b",
+      "scope": "number"
+    },
+    {
+      "match": "(?:=>|\\.\\.\\.|===|!==|==|!=|<=|>=|&&|\\|\\||\\?\\?|\\?\\.|\\+\\+|--)",
+      "scope": "operator"
+    }
   ],
   "autocomplete": {
-    "keywords": ["abstract","as","async","await","break","case","catch","class","const","continue","declare","default","delete","do","else","enum","export","extends","finally","for","from","function","if","implements","import","in","instanceof","interface","is","keyof","let","module","namespace","new","of","package","private","protected","public","readonly","return","set","static","super","switch","this","throw","try","type","typeof","undefined","var","void","while","yield","true","false","null","never","any","boolean","number","string","symbol","object","unknown","bigint","infer","satisfies"],
-    "builtins": ["console","document","window","Promise","JSON","Math","Date","Array","Object","Map","Set","RegExp","Error","Record","Partial","Required","Readonly","Pick","Omit","Exclude","Extract","NonNullable","ReturnType","InstanceType","Parameters","ConstructorParameters","Awaited","parseInt","parseFloat","fetch","setTimeout","setInterval"]
+    "keywords": [
+      "abstract",
+      "as",
+      "async",
+      "await",
+      "break",
+      "case",
+      "catch",
+      "class",
+      "const",
+      "continue",
+      "declare",
+      "default",
+      "delete",
+      "do",
+      "else",
+      "enum",
+      "export",
+      "extends",
+      "finally",
+      "for",
+      "from",
+      "function",
+      "if",
+      "implements",
+      "import",
+      "in",
+      "instanceof",
+      "interface",
+      "is",
+      "keyof",
+      "let",
+      "module",
+      "namespace",
+      "new",
+      "of",
+      "package",
+      "private",
+      "protected",
+      "public",
+      "readonly",
+      "return",
+      "set",
+      "static",
+      "super",
+      "switch",
+      "this",
+      "throw",
+      "try",
+      "type",
+      "typeof",
+      "undefined",
+      "var",
+      "void",
+      "while",
+      "yield",
+      "true",
+      "false",
+      "null",
+      "never",
+      "any",
+      "boolean",
+      "number",
+      "string",
+      "symbol",
+      "object",
+      "unknown",
+      "bigint",
+      "infer",
+      "satisfies"
+    ],
+    "builtins": [
+      "console",
+      "document",
+      "window",
+      "Promise",
+      "JSON",
+      "Math",
+      "Date",
+      "Array",
+      "Object",
+      "Map",
+      "Set",
+      "RegExp",
+      "Error",
+      "Record",
+      "Partial",
+      "Required",
+      "Readonly",
+      "Pick",
+      "Omit",
+      "Exclude",
+      "Extract",
+      "NonNullable",
+      "ReturnType",
+      "InstanceType",
+      "Parameters",
+      "ConstructorParameters",
+      "Awaited",
+      "parseInt",
+      "parseFloat",
+      "fetch",
+      "setTimeout",
+      "setInterval"
+    ]
   },
   "snippets": {
-    "int": {"body":"interface $1 {\n\t$2\n}","description":"Interface"},
-    "type": {"body":"type $1 = $2;","description":"Type Alias"},
-    "enum": {"body":"enum $1 {\n\t$2\n}","description":"Enum"},
-    "cls": {"body":"class $1 {\n\tconstructor($2) {\n\t\t$3\n\t}\n}","description":"Class"},
-    "fun": {"body":"function $1($2): $3 {\n\t$4\n}","description":"Function"},
-    "afn": {"body":"const $1 = ($2): $3 => {\n\t$4\n};","description":"Arrow Fn"},
-    "af": {"body":"async function $1($2): Promise<$3> {\n\t$4\n}","description":"Async Fn"},
-    "imp": {"body":"import $1 from '$2';","description":"Import"},
-    "impt": {"body":"import type { $1 } from '$2';","description":"Import Type"},
-    "clg": {"body":"console.log($1);","description":"Console Log"}
+    "int": {
+      "body": "interface $1 {\n\t$2\n}",
+      "description": "Interface"
+    },
+    "type": {
+      "body": "type $1 = $2;",
+      "description": "Type Alias"
+    },
+    "enum": {
+      "body": "enum $1 {\n\t$2\n}",
+      "description": "Enum"
+    },
+    "cls": {
+      "body": "class $1 {\n\tconstructor($2) {\n\t\t$3\n\t}\n}",
+      "description": "Class"
+    },
+    "fun": {
+      "body": "function $1($2): $3 {\n\t$4\n}",
+      "description": "Function"
+    },
+    "afn": {
+      "body": "const $1 = ($2): $3 => {\n\t$4\n};",
+      "description": "Arrow Fn"
+    },
+    "af": {
+      "body": "async function $1($2): Promise<$3> {\n\t$4\n}",
+      "description": "Async Fn"
+    },
+    "imp": {
+      "body": "import $1 from '$2';",
+      "description": "Import"
+    },
+    "impt": {
+      "body": "import type { $1 } from '$2';",
+      "description": "Import Type"
+    },
+    "clg": {
+      "body": "console.log($1);",
+      "description": "Console Log"
+    }
   }
 }

@@ -1,55 +1,336 @@
 {
   "id": "css",
   "name": "CSS",
-  "extensions": ["css","scss","less"],
-  "comment": {"line":null,"blockStart":"/*","blockEnd":"*/"},
-  "autoClosePairs": [["{","}"],["[","]"],["(",")"],["\"","\""],["'","'"]],
-  "brackets": [["{","}"],["[","]"],["(",")"]],
+  "extensions": [
+    "css",
+    "scss",
+    "less"
+  ],
+  "comment": {
+    "line": null,
+    "blockStart": "/*",
+    "blockEnd": "*/"
+  },
+  "autoClosePairs": [
+    [
+      "{",
+      "}"
+    ],
+    [
+      "[",
+      "]"
+    ],
+    [
+      "(",
+      ")"
+    ],
+    [
+      "\"",
+      "\""
+    ],
+    [
+      "'",
+      "'"
+    ]
+  ],
+  "brackets": [
+    [
+      "{",
+      "}"
+    ],
+    [
+      "[",
+      "]"
+    ],
+    [
+      "(",
+      ")"
+    ]
+  ],
   "syntax": [
-    {"match":"\"(?:[^\"\\\\]|\\\\.)*\"","scope":"string"},
-    {"match":"'(?:[^'\\\\]|\\\\.)*'","scope":"string"},
-    {"match":"\\/\\*[\\s\\S]*?\\*\\/","scope":"comment"},
-    {"match":"@[a-zA-Z-]+","scope":"keyword"},
-    {"match":"!important","scope":"keyword"},
-    {"match":":[a-zA-Z-]+(?:\\([^)]*\\))?","scope":"pseudo"},
-    {"match":"[.#][a-zA-Z_-][a-zA-Z0-9_-]*","scope":"selector"},
-    {"match":"\\b[a-zA-Z-]+(?=\\s*:)","scope":"property"},
-    {"match":"#[0-9a-fA-F]{3,8}\\b","scope":"color"},
-    {"match":"\\b\\d+\\.?\\d*(?:px|em|rem|vh|vw|%|pt|fr|deg|s|ms)\\b","scope":"number"},
-    {"match":"\\b\\d+\\.?\\d*\\b","scope":"number"}
+    {
+      "match": "\"(?:[^\"\\\\]|\\\\.)*\"",
+      "scope": "string"
+    },
+    {
+      "match": "'(?:[^'\\\\]|\\\\.)*'",
+      "scope": "string"
+    },
+    {
+      "match": "\\/\\*\\*[\\\\s\\\\S]*?\\*\\/",
+      "scope": "doccomment"
+    },
+    {
+      "match": "\\/\\*[\\s\\S]*?\\*\\/",
+      "scope": "comment"
+    },
+    {
+      "match": "@[a-zA-Z-]+",
+      "scope": "keyword"
+    },
+    {
+      "match": "!important",
+      "scope": "keyword"
+    },
+    {
+      "match": ":[a-zA-Z-]+(?:\\([^)]*\\))?",
+      "scope": "pseudo"
+    },
+    {
+      "match": "[.#][a-zA-Z_-][a-zA-Z0-9_-]*",
+      "scope": "selector"
+    },
+    {
+      "match": "\\b[a-zA-Z-]+(?=\\s*:)",
+      "scope": "property"
+    },
+    {
+      "match": "#[0-9a-fA-F]{3,8}\\b",
+      "scope": "color"
+    },
+    {
+      "match": "\\b\\d+\\.?\\d*(?:px|em|rem|vh|vw|%|pt|fr|deg|s|ms)\\b",
+      "scope": "number"
+    },
+    {
+      "match": "\\b\\d+\\.?\\d*\\b",
+      "scope": "number"
+    }
   ],
   "autocomplete": {
-    "keywords": ["@media","@keyframes","@import","@font-face","@charset","@supports","!important","inherit","initial","unset","revert","none","auto","normal","bold","italic","block","inline","flex","grid","inline-flex","inline-grid","absolute","relative","fixed","sticky","static","center","left","right","top","bottom","solid","dashed","dotted","ease","ease-in","ease-out","linear","row","column","wrap","nowrap","space-between","space-around","space-evenly","stretch","cover","contain","repeat","no-repeat","transparent","pointer"],
-    "builtins": ["display","position","top","right","bottom","left","z-index","width","height","min-width","max-width","min-height","max-height","margin","padding","border","border-radius","background","background-color","background-image","background-size","color","font-family","font-size","font-weight","text-align","text-decoration","text-transform","line-height","flex","flex-direction","flex-wrap","flex-grow","flex-shrink","justify-content","align-items","align-self","align-content","grid-template-columns","grid-template-rows","gap","overflow","opacity","transform","transition","animation","box-shadow","text-shadow","outline","cursor","box-sizing","object-fit","aspect-ratio","filter","backdrop-filter","var()","calc()","min()","max()","clamp()","rgb()","hsl()","url()"]
+    "keywords": [
+      "@media",
+      "@keyframes",
+      "@import",
+      "@font-face",
+      "@charset",
+      "@supports",
+      "!important",
+      "inherit",
+      "initial",
+      "unset",
+      "revert",
+      "none",
+      "auto",
+      "normal",
+      "bold",
+      "italic",
+      "block",
+      "inline",
+      "flex",
+      "grid",
+      "inline-flex",
+      "inline-grid",
+      "absolute",
+      "relative",
+      "fixed",
+      "sticky",
+      "static",
+      "center",
+      "left",
+      "right",
+      "top",
+      "bottom",
+      "solid",
+      "dashed",
+      "dotted",
+      "ease",
+      "ease-in",
+      "ease-out",
+      "linear",
+      "row",
+      "column",
+      "wrap",
+      "nowrap",
+      "space-between",
+      "space-around",
+      "space-evenly",
+      "stretch",
+      "cover",
+      "contain",
+      "repeat",
+      "no-repeat",
+      "transparent",
+      "pointer"
+    ],
+    "builtins": [
+      "display",
+      "position",
+      "top",
+      "right",
+      "bottom",
+      "left",
+      "z-index",
+      "width",
+      "height",
+      "min-width",
+      "max-width",
+      "min-height",
+      "max-height",
+      "margin",
+      "padding",
+      "border",
+      "border-radius",
+      "background",
+      "background-color",
+      "background-image",
+      "background-size",
+      "color",
+      "font-family",
+      "font-size",
+      "font-weight",
+      "text-align",
+      "text-decoration",
+      "text-transform",
+      "line-height",
+      "flex",
+      "flex-direction",
+      "flex-wrap",
+      "flex-grow",
+      "flex-shrink",
+      "justify-content",
+      "align-items",
+      "align-self",
+      "align-content",
+      "grid-template-columns",
+      "grid-template-rows",
+      "gap",
+      "overflow",
+      "opacity",
+      "transform",
+      "transition",
+      "animation",
+      "box-shadow",
+      "text-shadow",
+      "outline",
+      "cursor",
+      "box-sizing",
+      "object-fit",
+      "aspect-ratio",
+      "filter",
+      "backdrop-filter",
+      "var()",
+      "calc()",
+      "min()",
+      "max()",
+      "clamp()",
+      "rgb()",
+      "hsl()",
+      "url()"
+    ]
   },
   "snippets": {
-    "df": {"body":"display: flex;","description":"Display Flex"},
-    "dg": {"body":"display: grid;","description":"Display Grid"},
-    "db": {"body":"display: block;","description":"Display Block"},
-    "dn": {"body":"display: none;","description":"Display None"},
-    "jcc": {"body":"justify-content: center;","description":"Justify Center"},
-    "jcsb": {"body":"justify-content: space-between;","description":"Justify Space-Between"},
-    "aic": {"body":"align-items: center;","description":"Align Items Center"},
-    "fdc": {"body":"flex-direction: column;","description":"Flex Column"},
-    "fdr": {"body":"flex-direction: row;","description":"Flex Row"},
-    "fww": {"body":"flex-wrap: wrap;","description":"Flex Wrap"},
-    "m0": {"body":"margin: 0;","description":"Margin 0"},
-    "m0a": {"body":"margin: 0 auto;","description":"Margin 0 Auto"},
-    "p0": {"body":"padding: 0;","description":"Padding 0"},
-    "w100": {"body":"width: 100%;","description":"Width 100%"},
-    "h100": {"body":"height: 100%;","description":"Height 100%"},
-    "por": {"body":"position: relative;","description":"Pos Relative"},
-    "poa": {"body":"position: absolute;","description":"Pos Absolute"},
-    "pof": {"body":"position: fixed;","description":"Pos Fixed"},
-    "tac": {"body":"text-align: center;","description":"Text Center"},
-    "tdn": {"body":"text-decoration: none;","description":"No Decoration"},
-    "bsbb": {"body":"box-sizing: border-box;","description":"Border-Box"},
-    "oh": {"body":"overflow: hidden;","description":"Overflow Hidden"},
-    "cp": {"body":"cursor: pointer;","description":"Cursor Pointer"},
-    "bdr": {"body":"border-radius: $1px;","description":"Border Radius"},
-    "trs": {"body":"transition: all $1s ease;","description":"Transition"},
-    "center": {"body":"display: flex;\njustify-content: center;\nalign-items: center;","description":"Flex Center"},
-    "abs-center": {"body":"position: absolute;\ntop: 50%;\nleft: 50%;\ntransform: translate(-50%, -50%);","description":"Absolute Center"},
-    "truncate": {"body":"overflow: hidden;\ntext-overflow: ellipsis;\nwhite-space: nowrap;","description":"Text Truncate"}
+    "df": {
+      "body": "display: flex;",
+      "description": "Display Flex"
+    },
+    "dg": {
+      "body": "display: grid;",
+      "description": "Display Grid"
+    },
+    "db": {
+      "body": "display: block;",
+      "description": "Display Block"
+    },
+    "dn": {
+      "body": "display: none;",
+      "description": "Display None"
+    },
+    "jcc": {
+      "body": "justify-content: center;",
+      "description": "Justify Center"
+    },
+    "jcsb": {
+      "body": "justify-content: space-between;",
+      "description": "Justify Space-Between"
+    },
+    "aic": {
+      "body": "align-items: center;",
+      "description": "Align Items Center"
+    },
+    "fdc": {
+      "body": "flex-direction: column;",
+      "description": "Flex Column"
+    },
+    "fdr": {
+      "body": "flex-direction: row;",
+      "description": "Flex Row"
+    },
+    "fww": {
+      "body": "flex-wrap: wrap;",
+      "description": "Flex Wrap"
+    },
+    "m0": {
+      "body": "margin: 0;",
+      "description": "Margin 0"
+    },
+    "m0a": {
+      "body": "margin: 0 auto;",
+      "description": "Margin 0 Auto"
+    },
+    "p0": {
+      "body": "padding: 0;",
+      "description": "Padding 0"
+    },
+    "w100": {
+      "body": "width: 100%;",
+      "description": "Width 100%"
+    },
+    "h100": {
+      "body": "height: 100%;",
+      "description": "Height 100%"
+    },
+    "por": {
+      "body": "position: relative;",
+      "description": "Pos Relative"
+    },
+    "poa": {
+      "body": "position: absolute;",
+      "description": "Pos Absolute"
+    },
+    "pof": {
+      "body": "position: fixed;",
+      "description": "Pos Fixed"
+    },
+    "tac": {
+      "body": "text-align: center;",
+      "description": "Text Center"
+    },
+    "tdn": {
+      "body": "text-decoration: none;",
+      "description": "No Decoration"
+    },
+    "bsbb": {
+      "body": "box-sizing: border-box;",
+      "description": "Border-Box"
+    },
+    "oh": {
+      "body": "overflow: hidden;",
+      "description": "Overflow Hidden"
+    },
+    "cp": {
+      "body": "cursor: pointer;",
+      "description": "Cursor Pointer"
+    },
+    "bdr": {
+      "body": "border-radius: $1px;",
+      "description": "Border Radius"
+    },
+    "trs": {
+      "body": "transition: all $1s ease;",
+      "description": "Transition"
+    },
+    "center": {
+      "body": "display: flex;\njustify-content: center;\nalign-items: center;",
+      "description": "Flex Center"
+    },
+    "abs-center": {
+      "body": "position: absolute;\ntop: 50%;\nleft: 50%;\ntransform: translate(-50%, -50%);",
+      "description": "Absolute Center"
+    },
+    "truncate": {
+      "body": "overflow: hidden;\ntext-overflow: ellipsis;\nwhite-space: nowrap;",
+      "description": "Text Truncate"
+    }
   }
 }

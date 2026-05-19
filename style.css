@@ -2329,6 +2329,11 @@ body.sidebar-resizing {
     font-style: italic;
 }
 
+.syn-doccomment {
+    color: var(--syn-doccomment, var(--syn-comment));
+    font-style: italic;
+}
+
 .syn-function {
     color: var(--syn-function);
 }

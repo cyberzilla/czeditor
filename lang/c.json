@@ -1,32 +1,219 @@
 {
   "id": "c",
   "name": "C/C++",
-  "extensions": ["c","h","cpp","hpp","cc","cxx","hh","hxx","ino"],
-  "comment": {"line":"//","blockStart":"/*","blockEnd":"*/"},
-  "autoClosePairs": [["{","}"],["[","]"],["(",")"],["\"","\""],["'","'"]],
-  "brackets": [["{","}"],["[","]"],["(",")"]],
+  "extensions": [
+    "c",
+    "h",
+    "cpp",
+    "hpp",
+    "cc",
+    "cxx",
+    "hh",
+    "hxx",
+    "ino"
+  ],
+  "comment": {
+    "line": "//",
+    "blockStart": "/*",
+    "blockEnd": "*/"
+  },
+  "autoClosePairs": [
+    [
+      "{",
+      "}"
+    ],
+    [
+      "[",
+      "]"
+    ],
+    [
+      "(",
+      ")"
+    ],
+    [
+      "\"",
+      "\""
+    ],
+    [
+      "'",
+      "'"
+    ]
+  ],
+  "brackets": [
+    [
+      "{",
+      "}"
+    ],
+    [
+      "[",
+      "]"
+    ],
+    [
+      "(",
+      ")"
+    ]
+  ],
   "syntax": [
-    {"match":"\"(?:[^\"\\\\]|\\\\.)*\"","scope":"string"},
-    {"match":"'(?:[^'\\\\]|\\\\.)*'","scope":"string"},
-    {"match":"//.*$","scope":"comment","flags":"m"},
-    {"match":"/\\*[\\s\\S]*?\\*/","scope":"comment"},
-    {"match":"#\\s*(?:include|define|undef|ifdef|ifndef|if|elif|else|endif|pragma|error|warning|line)\\b.*$","scope":"decorator","flags":"m"},
-    {"match":"\\b(?:auto|break|case|char|const|continue|default|do|double|else|enum|extern|float|for|goto|if|inline|int|long|register|restrict|return|short|signed|sizeof|static|struct|switch|typedef|union|unsigned|void|volatile|while|_Alignas|_Alignof|_Atomic|_Bool|_Complex|_Generic|_Imaginary|_Noreturn|_Static_assert|_Thread_local|class|namespace|template|typename|using|public|private|protected|virtual|override|final|new|delete|throw|try|catch|noexcept|nullptr|constexpr|decltype|static_assert|thread_local|consteval|constinit|concept|requires|co_await|co_return|co_yield|export|module|import)\\b","scope":"keyword"},
-    {"match":"\\b(?:true|false|NULL|nullptr|EOF|stdin|stdout|stderr)\\b","scope":"constant"},
-    {"match":"\\b(?:size_t|ptrdiff_t|int8_t|int16_t|int32_t|int64_t|uint8_t|uint16_t|uint32_t|uint64_t|bool|string|vector|map|set|list|deque|queue|stack|array|pair|tuple|optional|variant|shared_ptr|unique_ptr|weak_ptr|FILE|wchar_t|char16_t|char32_t)\\b","scope":"type"},
-    {"match":"\\b[a-zA-Z_][a-zA-Z0-9_]*(?=\\s*[(<])","scope":"function"},
-    {"match":"\\b0[xX][0-9a-fA-F]+[uUlL]*\\b|\\b0[bB][01]+[uUlL]*\\b|\\b\\d+\\.?\\d*(?:[eE][+-]?\\d+)?[fFlLuU]*\\b","scope":"number"},
-    {"match":"->|::|\\+\\+|--|&&|\\|\\||!=|==|<=|>=|<<=|>>=|<=>","scope":"operator"}
+    {
+      "match": "\"(?:[^\"\\\\]|\\\\.)*\"",
+      "scope": "string"
+    },
+    {
+      "match": "'(?:[^'\\\\]|\\\\.)*'",
+      "scope": "string"
+    },
+    {
+      "match": "//.*$",
+      "scope": "comment",
+      "flags": "m"
+    },
+    {
+      "match": "/\\*\\*[\\s\\S]*?\\*/",
+      "scope": "doccomment"
+    },
+    {
+      "match": "/\\*[\\s\\S]*?\\*/",
+      "scope": "comment"
+    },
+    {
+      "match": "#\\s*(?:include|define|undef|ifdef|ifndef|if|elif|else|endif|pragma|error|warning|line)\\b.*$",
+      "scope": "decorator",
+      "flags": "m"
+    },
+    {
+      "match": "\\b(?:auto|break|case|char|const|continue|default|do|double|else|enum|extern|float|for|goto|if|inline|int|long|register|restrict|return|short|signed|sizeof|static|struct|switch|typedef|union|unsigned|void|volatile|while|_Alignas|_Alignof|_Atomic|_Bool|_Complex|_Generic|_Imaginary|_Noreturn|_Static_assert|_Thread_local|class|namespace|template|typename|using|public|private|protected|virtual|override|final|new|delete|throw|try|catch|noexcept|nullptr|constexpr|decltype|static_assert|thread_local|consteval|constinit|concept|requires|co_await|co_return|co_yield|export|module|import)\\b",
+      "scope": "keyword"
+    },
+    {
+      "match": "\\b(?:true|false|NULL|nullptr|EOF|stdin|stdout|stderr)\\b",
+      "scope": "constant"
+    },
+    {
+      "match": "\\b(?:size_t|ptrdiff_t|int8_t|int16_t|int32_t|int64_t|uint8_t|uint16_t|uint32_t|uint64_t|bool|string|vector|map|set|list|deque|queue|stack|array|pair|tuple|optional|variant|shared_ptr|unique_ptr|weak_ptr|FILE|wchar_t|char16_t|char32_t)\\b",
+      "scope": "type"
+    },
+    {
+      "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*(?=\\s*[(<])",
+      "scope": "function"
+    },
+    {
+      "match": "\\b0[xX][0-9a-fA-F]+[uUlL]*\\b|\\b0[bB][01]+[uUlL]*\\b|\\b\\d+\\.?\\d*(?:[eE][+-]?\\d+)?[fFlLuU]*\\b",
+      "scope": "number"
+    },
+    {
+      "match": "->|::|\\+\\+|--|&&|\\|\\||!=|==|<=|>=|<<=|>>=|<=>",
+      "scope": "operator"
+    }
   ],
   "autocomplete": {
-    "keywords": ["auto","break","case","char","class","const","continue","default","do","double","else","enum","extern","float","for","goto","if","inline","int","long","namespace","new","nullptr","private","protected","public","register","return","short","signed","sizeof","static","struct","switch","template","throw","try","typedef","typename","union","unsigned","using","virtual","void","volatile","while"],
-    "builtins": ["printf","scanf","fprintf","sprintf","malloc","calloc","realloc","free","memcpy","memset","strlen","strcmp","strcpy","strcat","fopen","fclose","fread","fwrite","cout","cin","endl","cerr","getline","push_back","emplace_back","begin","end","size","empty","find","insert","erase","sort","reverse","make_pair","make_shared","make_unique"]
+    "keywords": [
+      "auto",
+      "break",
+      "case",
+      "char",
+      "class",
+      "const",
+      "continue",
+      "default",
+      "do",
+      "double",
+      "else",
+      "enum",
+      "extern",
+      "float",
+      "for",
+      "goto",
+      "if",
+      "inline",
+      "int",
+      "long",
+      "namespace",
+      "new",
+      "nullptr",
+      "private",
+      "protected",
+      "public",
+      "register",
+      "return",
+      "short",
+      "signed",
+      "sizeof",
+      "static",
+      "struct",
+      "switch",
+      "template",
+      "throw",
+      "try",
+      "typedef",
+      "typename",
+      "union",
+      "unsigned",
+      "using",
+      "virtual",
+      "void",
+      "volatile",
+      "while"
+    ],
+    "builtins": [
+      "printf",
+      "scanf",
+      "fprintf",
+      "sprintf",
+      "malloc",
+      "calloc",
+      "realloc",
+      "free",
+      "memcpy",
+      "memset",
+      "strlen",
+      "strcmp",
+      "strcpy",
+      "strcat",
+      "fopen",
+      "fclose",
+      "fread",
+      "fwrite",
+      "cout",
+      "cin",
+      "endl",
+      "cerr",
+      "getline",
+      "push_back",
+      "emplace_back",
+      "begin",
+      "end",
+      "size",
+      "empty",
+      "find",
+      "insert",
+      "erase",
+      "sort",
+      "reverse",
+      "make_pair",
+      "make_shared",
+      "make_unique"
+    ]
   },
   "snippets": {
-    "inc": {"body":"#include <$1>","description":"Include header"},
-    "main": {"body":"int main(int argc, char *argv[]) {\n\t$1\n\treturn 0;\n}","description":"Main function"},
-    "for": {"body":"for (int i = 0; i < $1; i++) {\n\t$2\n}","description":"For loop"},
-    "class": {"body":"class $1 {\npublic:\n\t$1();\n\t~$1();\nprivate:\n\t$2\n};","description":"Class"},
-    "struct": {"body":"struct $1 {\n\t$2\n};","description":"Struct"}
+    "inc": {
+      "body": "#include <$1>",
+      "description": "Include header"
+    },
+    "main": {
+      "body": "int main(int argc, char *argv[]) {\n\t$1\n\treturn 0;\n}",
+      "description": "Main function"
+    },
+    "for": {
+      "body": "for (int i = 0; i < $1; i++) {\n\t$2\n}",
+      "description": "For loop"
+    },
+    "class": {
+      "body": "class $1 {\npublic:\n\t$1();\n\t~$1();\nprivate:\n\t$2\n};",
+      "description": "Class"
+    },
+    "struct": {
+      "body": "struct $1 {\n\t$2\n};",
+      "description": "Struct"
+    }
   }
 }

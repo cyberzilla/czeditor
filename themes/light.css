@@ -22,6 +22,7 @@
     --border-color: rgba(0, 0, 0, 0.1);
     --selection-bg: rgba(30, 102, 245, 0.18);
     --active-line-bg: rgba(0, 0, 0, 0.04);
+    --cursor-color: #4c4f69;
 
     /* Surface channel — used for rgba(var(--surface-rgb), alpha) compositing
        Light theme: dark highlights on light background */
@@ -37,6 +38,8 @@
     --bg-line-numbers: rgba(0, 0, 0, 0.04);
     --line-num-color: #9ca0b0;
     --line-num-active: #4c4f69;
+    --indent-guide-color: rgba(0, 0, 0, 0.06);
+    --indent-guide-active: rgba(0, 0, 0, 0.15);
     --bg-overlay: rgba(0, 0, 0, 0.45);
     --bg-checkerboard: rgba(0, 0, 0, 0.06);
 
@@ -48,6 +51,7 @@
     --syn-keyword: #8839ef;
     --syn-string: #40a02b;
     --syn-comment: #9ca0b0;
+    --syn-doccomment: #7c7f93;
     --syn-function: #1e66f5;
     --syn-tag: #d20f39;
     --syn-attr: #df8e1d;

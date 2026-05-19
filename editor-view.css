@@ -58,6 +58,27 @@
     color: var(--line-num-active, #cdd6f4);
 }
 
+/* Indent guides */
+.virt-indent-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.virt-indent-guide {
+    position: absolute;
+    width: 1px;
+    background: var(--indent-guide-color, rgba(255, 255, 255, 0.06));
+}
+
+.virt-indent-guide.active {
+    background: var(--indent-guide-active, rgba(255, 255, 255, 0.15));
+}
+
 /* Lines container */
 .virt-lines {
     position: absolute;

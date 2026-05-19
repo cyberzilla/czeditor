@@ -1,35 +1,201 @@
 {
   "id": "java",
   "name": "Java",
-  "extensions": ["java"],
-  "comment": {"line":"//","blockStart":"/*","blockEnd":"*/"},
-  "autoClosePairs": [["{","}"],["[","]"],["(",")"],["\"","\""],["'","'"]],
-  "brackets": [["{","}"],["[","]"],["(",")"]],
+  "extensions": [
+    "java"
+  ],
+  "comment": {
+    "line": "//",
+    "blockStart": "/*",
+    "blockEnd": "*/"
+  },
+  "autoClosePairs": [
+    [
+      "{",
+      "}"
+    ],
+    [
+      "[",
+      "]"
+    ],
+    [
+      "(",
+      ")"
+    ],
+    [
+      "\"",
+      "\""
+    ],
+    [
+      "'",
+      "'"
+    ]
+  ],
+  "brackets": [
+    [
+      "{",
+      "}"
+    ],
+    [
+      "[",
+      "]"
+    ],
+    [
+      "(",
+      ")"
+    ]
+  ],
   "syntax": [
-    {"match":"\"(?:[^\"\\\\]|\\\\.)*\"","scope":"string"},
-    {"match":"'(?:[^'\\\\]|\\\\.)*'","scope":"string"},
-    {"match":"//.*$","scope":"comment","flags":"m"},
-    {"match":"/\\*[\\s\\S]*?\\*/","scope":"comment"},
-    {"match":"@[A-Za-z_][A-Za-z0-9_.]*","scope":"decorator"},
-    {"match":"\\b(?:abstract|assert|boolean|break|byte|case|catch|char|class|const|continue|default|do|double|else|enum|extends|final|finally|float|for|goto|if|implements|import|instanceof|int|interface|long|native|new|package|private|protected|public|return|short|static|strictfp|super|switch|synchronized|this|throw|throws|transient|try|var|void|volatile|while|yield|record|sealed|permits|non-sealed)\\b","scope":"keyword"},
-    {"match":"\\b(?:true|false|null)\\b","scope":"constant"},
-    {"match":"\\b(?:String|Integer|Boolean|Long|Double|Float|Byte|Short|Character|Object|List|Map|Set|ArrayList|HashMap|HashSet|Optional|Stream|System|Math|Arrays|Collections|Thread|Runnable|Exception|RuntimeException|IOException|StringBuilder|StringBuffer|Comparable|Iterable|Iterator|Enum|Override|Deprecated|SuppressWarnings|FunctionalInterface)\\b","scope":"type"},
-    {"match":"\\b[A-Z][a-zA-Z0-9_]*\\b","scope":"type"},
-    {"match":"\\b[a-zA-Z_][a-zA-Z0-9_]*(?=\\s*\\()","scope":"function"},
-    {"match":"\\b0[xX][0-9a-fA-F_]+[lL]?\\b|\\b0[bB][01_]+[lL]?\\b|\\b\\d[\\d_]*\\.?[\\d_]*(?:[eE][+-]?\\d+)?[fFdDlL]?\\b","scope":"number"},
-    {"match":"->|::|\\+\\+|--|&&|\\|\\||!=|==|<=|>=|<<|>>|>>>","scope":"operator"}
+    {
+      "match": "\"(?:[^\"\\\\]|\\\\.)*\"",
+      "scope": "string"
+    },
+    {
+      "match": "'(?:[^'\\\\]|\\\\.)*'",
+      "scope": "string"
+    },
+    {
+      "match": "//.*$",
+      "scope": "comment",
+      "flags": "m"
+    },
+    {
+      "match": "/\\*\\*[\\s\\S]*?\\*/",
+      "scope": "doccomment"
+    },
+    {
+      "match": "/\\*[\\s\\S]*?\\*/",
+      "scope": "comment"
+    },
+    {
+      "match": "@[A-Za-z_][A-Za-z0-9_.]*",
+      "scope": "decorator"
+    },
+    {
+      "match": "\\b(?:abstract|assert|boolean|break|byte|case|catch|char|class|const|continue|default|do|double|else|enum|extends|final|finally|float|for|goto|if|implements|import|instanceof|int|interface|long|native|new|package|private|protected|public|return|short|static|strictfp|super|switch|synchronized|this|throw|throws|transient|try|var|void|volatile|while|yield|record|sealed|permits|non-sealed)\\b",
+      "scope": "keyword"
+    },
+    {
+      "match": "\\b(?:true|false|null)\\b",
+      "scope": "constant"
+    },
+    {
+      "match": "\\b(?:String|Integer|Boolean|Long|Double|Float|Byte|Short|Character|Object|List|Map|Set|ArrayList|HashMap|HashSet|Optional|Stream|System|Math|Arrays|Collections|Thread|Runnable|Exception|RuntimeException|IOException|StringBuilder|StringBuffer|Comparable|Iterable|Iterator|Enum|Override|Deprecated|SuppressWarnings|FunctionalInterface)\\b",
+      "scope": "type"
+    },
+    {
+      "match": "\\b[A-Z][a-zA-Z0-9_]*\\b",
+      "scope": "type"
+    },
+    {
+      "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*(?=\\s*\\()",
+      "scope": "function"
+    },
+    {
+      "match": "\\b0[xX][0-9a-fA-F_]+[lL]?\\b|\\b0[bB][01_]+[lL]?\\b|\\b\\d[\\d_]*\\.?[\\d_]*(?:[eE][+-]?\\d+)?[fFdDlL]?\\b",
+      "scope": "number"
+    },
+    {
+      "match": "->|::|\\+\\+|--|&&|\\|\\||!=|==|<=|>=|<<|>>|>>>",
+      "scope": "operator"
+    }
   ],
   "autocomplete": {
-    "keywords": ["abstract","assert","boolean","break","byte","case","catch","char","class","continue","default","do","double","else","enum","extends","final","finally","float","for","if","implements","import","instanceof","int","interface","long","new","package","private","protected","public","return","short","static","super","switch","synchronized","this","throw","throws","try","void","volatile","while"],
-    "builtins": ["System.out.println","System.out.print","System.err.println","String.valueOf","Integer.parseInt","Double.parseDouble","Arrays.asList","Collections.sort","Collections.unmodifiableList","Optional.of","Optional.empty","Optional.ofNullable","Stream.of","Math.max","Math.min","Math.abs","Math.sqrt"]
+    "keywords": [
+      "abstract",
+      "assert",
+      "boolean",
+      "break",
+      "byte",
+      "case",
+      "catch",
+      "char",
+      "class",
+      "continue",
+      "default",
+      "do",
+      "double",
+      "else",
+      "enum",
+      "extends",
+      "final",
+      "finally",
+      "float",
+      "for",
+      "if",
+      "implements",
+      "import",
+      "instanceof",
+      "int",
+      "interface",
+      "long",
+      "new",
+      "package",
+      "private",
+      "protected",
+      "public",
+      "return",
+      "short",
+      "static",
+      "super",
+      "switch",
+      "synchronized",
+      "this",
+      "throw",
+      "throws",
+      "try",
+      "void",
+      "volatile",
+      "while"
+    ],
+    "builtins": [
+      "System.out.println",
+      "System.out.print",
+      "System.err.println",
+      "String.valueOf",
+      "Integer.parseInt",
+      "Double.parseDouble",
+      "Arrays.asList",
+      "Collections.sort",
+      "Collections.unmodifiableList",
+      "Optional.of",
+      "Optional.empty",
+      "Optional.ofNullable",
+      "Stream.of",
+      "Math.max",
+      "Math.min",
+      "Math.abs",
+      "Math.sqrt"
+    ]
   },
   "snippets": {
-    "sout": {"body":"System.out.println($1);","description":"Print to stdout"},
-    "serr": {"body":"System.err.println($1);","description":"Print to stderr"},
-    "main": {"body":"public static void main(String[] args) {\n\t$1\n}","description":"Main method"},
-    "fori": {"body":"for (int i = 0; i < $1; i++) {\n\t$2\n}","description":"For loop with index"},
-    "foreach": {"body":"for ($1 item : $2) {\n\t$3\n}","description":"Enhanced for loop"},
-    "try": {"body":"try {\n\t$1\n} catch (Exception e) {\n\t$2\n}","description":"Try-catch block"},
-    "ctor": {"body":"public $1() {\n\t$2\n}","description":"Constructor"}
+    "sout": {
+      "body": "System.out.println($1);",
+      "description": "Print to stdout"
+    },
+    "serr": {
+      "body": "System.err.println($1);",
+      "description": "Print to stderr"
+    },
+    "main": {
+      "body": "public static void main(String[] args) {\n\t$1\n}",
+      "description": "Main method"
+    },
+    "fori": {
+      "body": "for (int i = 0; i < $1; i++) {\n\t$2\n}",
+      "description": "For loop with index"
+    },
+    "foreach": {
+      "body": "for ($1 item : $2) {\n\t$3\n}",
+      "description": "Enhanced for loop"
+    },
+    "try": {
+      "body": "try {\n\t$1\n} catch (Exception e) {\n\t$2\n}",
+      "description": "Try-catch block"
+    },
+    "ctor": {
+      "body": "public $1() {\n\t$2\n}",
+      "description": "Constructor"
+    }
   }
 }

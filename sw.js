@@ -1,5 +1,5 @@
 // CZEditor Service Worker — Enables PWA install + offline caching
-const CACHE_NAME = 'czeditor-v2.6.1';
+const CACHE_NAME = 'czeditor-v2.6.6';
 const ASSETS = [
     './',
     './index.html',

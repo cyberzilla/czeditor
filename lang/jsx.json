@@ -1,42 +1,270 @@
 {
   "id": "jsx",
   "name": "JSX (React)",
-  "extensions": ["jsx","tsx"],
-  "comment": {"line":"//","blockStart":"/*","blockEnd":"*/"},
-  "autoClosePairs": [["{","}"],["[","]"],["(",")"],["\"","\""],["'","'"],["`","`"],["<",">"]],
-  "brackets": [["{","}"],["[","]"],["(",")"],["<",">"]],
+  "extensions": [
+    "jsx",
+    "tsx"
+  ],
+  "comment": {
+    "line": "//",
+    "blockStart": "/*",
+    "blockEnd": "*/"
+  },
+  "autoClosePairs": [
+    [
+      "{",
+      "}"
+    ],
+    [
+      "[",
+      "]"
+    ],
+    [
+      "(",
+      ")"
+    ],
+    [
+      "\"",
+      "\""
+    ],
+    [
+      "'",
+      "'"
+    ],
+    [
+      "`",
+      "`"
+    ],
+    [
+      "<",
+      ">"
+    ]
+  ],
+  "brackets": [
+    [
+      "{",
+      "}"
+    ],
+    [
+      "[",
+      "]"
+    ],
+    [
+      "(",
+      ")"
+    ],
+    [
+      "<",
+      ">"
+    ]
+  ],
   "syntax": [
-    {"match":"`(?:[^`\\\\]|\\\\.)*`","scope":"string"},
-    {"match":"\"(?:[^\"\\\\\\n]|\\\\.)*\"","scope":"string"},
-    {"match":"'(?:[^'\\\\\\n]|\\\\.)*'","scope":"string"},
-    {"match":"\\/(?![\\/*])(?:[^\\/\\\\\\n]|\\\\.)+\\/[gimsuy]*","scope":"regex"},
-    {"match":"\\/\\/[^\\n]*","scope":"comment"},
-    {"match":"\\/\\*[\\s\\S]*?\\*\\/","scope":"comment"},
-    {"match":"\\b(?:const|let|var|function|return|if|else|for|while|do|switch|case|break|continue|class|extends|super|import|export|default|from|as|new|delete|typeof|instanceof|in|of|try|catch|finally|throw|async|await|yield|static|get|set|true|false|null|undefined|void|this|with|debugger|interface|type|enum|implements|declare|namespace|module|abstract|readonly)\\b","scope":"keyword"},
-    {"match":"(?<=<\\/?)([A-Z][a-zA-Z0-9.]*)","scope":"class"},
-    {"match":"(?<=<\\/?)([a-z][a-zA-Z0-9-]*)","scope":"tag"},
-    {"match":"\\b([a-zA-Z_$][a-zA-Z0-9_$]*)(?=\\s*=\\s*(?:\\(|<))","scope":"function"},
-    {"match":"\\b[a-zA-Z_$][a-zA-Z0-9_$]*(?=\\s*\\()","scope":"function"},
-    {"match":"\\b(?:0x[0-9a-fA-F]+|0b[01]+|0o[0-7]+|\\d+\\.?\\d*(?:e[+-]?\\d+)?)\\b","scope":"number"},
-    {"match":"(?:=>|\\.\\.\\.|\\.\\?|===|!==|==|!=|<=|>=|&&|\\|\\||\\?\\?|\\+\\+|--|\\+=|-=|\\*=|\\/=|%=|\\*\\*=|<<=|>>=|>>>=|&=|\\|=|\\^=)","scope":"operator"}
+    {
+      "match": "`(?:[^`\\\\]|\\\\.)*`",
+      "scope": "string"
+    },
+    {
+      "match": "\"(?:[^\"\\\\\\n]|\\\\.)*\"",
+      "scope": "string"
+    },
+    {
+      "match": "'(?:[^'\\\\\\n]|\\\\.)*'",
+      "scope": "string"
+    },
+    {
+      "match": "\\/\\/[^\\n]*",
+      "scope": "comment"
+    },
+    {
+      "match": "\\/\\*\\*[\\\\s\\\\S]*?\\*\\/",
+      "scope": "doccomment"
+    },
+    {
+      "match": "\\/\\*[\\s\\S]*?\\*\\/",
+      "scope": "comment"
+    },
+    {
+      "match": "\\/(?![\\/*])(?:[^\\/\\\\\\n]|\\\\.)+\\/[gimsuy]*",
+      "scope": "regex"
+    },
+    {
+      "match": "\\b(?:const|let|var|function|return|if|else|for|while|do|switch|case|break|continue|class|extends|super|import|export|default|from|as|new|delete|typeof|instanceof|in|of|try|catch|finally|throw|async|await|yield|static|get|set|true|false|null|undefined|void|this|with|debugger|interface|type|enum|implements|declare|namespace|module|abstract|readonly)\\b",
+      "scope": "keyword"
+    },
+    {
+      "match": "(?<=<\\/?)([A-Z][a-zA-Z0-9.]*)",
+      "scope": "class"
+    },
+    {
+      "match": "(?<=<\\/?)([a-z][a-zA-Z0-9-]*)",
+      "scope": "tag"
+    },
+    {
+      "match": "\\b([a-zA-Z_$][a-zA-Z0-9_$]*)(?=\\s*=\\s*(?:\\(|<))",
+      "scope": "function"
+    },
+    {
+      "match": "\\b[a-zA-Z_$][a-zA-Z0-9_$]*(?=\\s*\\()",
+      "scope": "function"
+    },
+    {
+      "match": "\\b(?:0x[0-9a-fA-F]+|0b[01]+|0o[0-7]+|\\d+\\.?\\d*(?:e[+-]?\\d+)?)\\b",
+      "scope": "number"
+    },
+    {
+      "match": "(?:=>|\\.\\.\\.|\\.\\?|===|!==|==|!=|<=|>=|&&|\\|\\||\\?\\?|\\+\\+|--|\\+=|-=|\\*=|\\/=|%=|\\*\\*=|<<=|>>=|>>>=|&=|\\|=|\\^=)",
+      "scope": "operator"
+    }
   ],
   "autocomplete": {
-    "keywords": ["async","await","break","case","catch","class","const","continue","debugger","default","delete","do","else","export","extends","false","finally","for","function","if","import","in","instanceof","interface","let","new","null","of","return","static","super","switch","this","throw","true","try","type","typeof","undefined","var","void","while","with","yield"],
-    "builtins": ["React","useState","useEffect","useContext","useReducer","useCallback","useMemo","useRef","useImperativeHandle","useLayoutEffect","useDebugValue","useTransition","useDeferredValue","useId","useSyncExternalStore","Fragment","Suspense","StrictMode","Profiler","lazy","memo","forwardRef","createContext","createRef","createElement","Component","PureComponent","console","document","window","fetch","Promise","JSON","Math","Date","RegExp","Error","Map","Set","Array","Object","String","Number","Boolean","setTimeout","setInterval","requestAnimationFrame"]
+    "keywords": [
+      "async",
+      "await",
+      "break",
+      "case",
+      "catch",
+      "class",
+      "const",
+      "continue",
+      "debugger",
+      "default",
+      "delete",
+      "do",
+      "else",
+      "export",
+      "extends",
+      "false",
+      "finally",
+      "for",
+      "function",
+      "if",
+      "import",
+      "in",
+      "instanceof",
+      "interface",
+      "let",
+      "new",
+      "null",
+      "of",
+      "return",
+      "static",
+      "super",
+      "switch",
+      "this",
+      "throw",
+      "true",
+      "try",
+      "type",
+      "typeof",
+      "undefined",
+      "var",
+      "void",
+      "while",
+      "with",
+      "yield"
+    ],
+    "builtins": [
+      "React",
+      "useState",
+      "useEffect",
+      "useContext",
+      "useReducer",
+      "useCallback",
+      "useMemo",
+      "useRef",
+      "useImperativeHandle",
+      "useLayoutEffect",
+      "useDebugValue",
+      "useTransition",
+      "useDeferredValue",
+      "useId",
+      "useSyncExternalStore",
+      "Fragment",
+      "Suspense",
+      "StrictMode",
+      "Profiler",
+      "lazy",
+      "memo",
+      "forwardRef",
+      "createContext",
+      "createRef",
+      "createElement",
+      "Component",
+      "PureComponent",
+      "console",
+      "document",
+      "window",
+      "fetch",
+      "Promise",
+      "JSON",
+      "Math",
+      "Date",
+      "RegExp",
+      "Error",
+      "Map",
+      "Set",
+      "Array",
+      "Object",
+      "String",
+      "Number",
+      "Boolean",
+      "setTimeout",
+      "setInterval",
+      "requestAnimationFrame"
+    ]
   },
   "snippets": {
-    "rfc": {"body":"import React from 'react';\n\nfunction $1() {\n\treturn (\n\t\t<div>\n\t\t\t$2\n\t\t</div>\n\t);\n}\n\nexport default $1;","description":"React Function Component"},
-    "rafce": {"body":"import React from 'react';\n\nconst $1 = () => {\n\treturn (\n\t\t<div>\n\t\t\t$2\n\t\t</div>\n\t);\n};\n\nexport default $1;","description":"React Arrow Component"},
-    "us": {"body":"const [$1, set$2] = useState($3);","description":"useState"},
-    "ue": {"body":"useEffect(() => {\n\t$1\n\treturn () => {\n\t\t$2\n\t};\n}, [$3]);","description":"useEffect"},
-    "uc": {"body":"const $1 = useCallback(($2) => {\n\t$3\n}, [$4]);","description":"useCallback"},
-    "um": {"body":"const $1 = useMemo(() => $2, [$3]);","description":"useMemo"},
-    "ur": {"body":"const $1 = useRef($2);","description":"useRef"},
-    "ctx": {"body":"const $1 = useContext($2);","description":"useContext"},
-    "imp": {"body":"import $1 from '$2';","description":"Import"},
-    "impa": {"body":"import { $1 } from '$2';","description":"Import Named"},
-    "clg": {"body":"console.log($1);","description":"Console Log"},
-    "map": {"body":"{$1.map(($2) => (\n\t<$3 key={$4}>\n\t\t$5\n\t</$3>\n))}","description":"JSX Map"},
-    "cn": {"body":"className=\"$1\"","description":"className"}
+    "rfc": {
+      "body": "import React from 'react';\n\nfunction $1() {\n\treturn (\n\t\t<div>\n\t\t\t$2\n\t\t</div>\n\t);\n}\n\nexport default $1;",
+      "description": "React Function Component"
+    },
+    "rafce": {
+      "body": "import React from 'react';\n\nconst $1 = () => {\n\treturn (\n\t\t<div>\n\t\t\t$2\n\t\t</div>\n\t);\n};\n\nexport default $1;",
+      "description": "React Arrow Component"
+    },
+    "us": {
+      "body": "const [$1, set$2] = useState($3);",
+      "description": "useState"
+    },
+    "ue": {
+      "body": "useEffect(() => {\n\t$1\n\treturn () => {\n\t\t$2\n\t};\n}, [$3]);",
+      "description": "useEffect"
+    },
+    "uc": {
+      "body": "const $1 = useCallback(($2) => {\n\t$3\n}, [$4]);",
+      "description": "useCallback"
+    },
+    "um": {
+      "body": "const $1 = useMemo(() => $2, [$3]);",
+      "description": "useMemo"
+    },
+    "ur": {
+      "body": "const $1 = useRef($2);",
+      "description": "useRef"
+    },
+    "ctx": {
+      "body": "const $1 = useContext($2);",
+      "description": "useContext"
+    },
+    "imp": {
+      "body": "import $1 from '$2';",
+      "description": "Import"
+    },
+    "impa": {
+      "body": "import { $1 } from '$2';",
+      "description": "Import Named"
+    },
+    "clg": {
+      "body": "console.log($1);",
+      "description": "Console Log"
+    },
+    "map": {
+      "body": "{$1.map(($2) => (\n\t<$3 key={$4}>\n\t\t$5\n\t</$3>\n))}",
+      "description": "JSX Map"
+    },
+    "cn": {
+      "body": "className=\"$1\"",
+      "description": "className"
+    }
   }
 }

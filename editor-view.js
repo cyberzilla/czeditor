@@ -22,6 +22,7 @@ class View {
         this._buildDOM();
         this._measureFont();
         this._bindEvents();
+        this._cursorChangeCallbacks = [];
         this.model.onChange(() => this._scheduleRender());
         // Remeasure once fonts are fully loaded (initial measure may use fallback)
         document.fonts.ready.then(() => {
@@ -38,6 +39,9 @@ class View {
     _buildDOM() {
         const c = this.container;
         c.classList.add('virt-editor');
+
+        // Capture preload placeholder (will be removed after first render)
+        this._preloadEl = c.firstElementChild || null;
 
         // Scroll container
         this.scrollEl = document.createElement('div');
@@ -77,18 +81,24 @@ class View {
         this.inputEl.setAttribute('spellcheck', 'false');
         this.inputEl.setAttribute('wrap', 'off');
 
+        // Indent guides layer
+        this.indentLayer = document.createElement('div');
+        this.indentLayer.className = 'virt-indent-layer';
+
         // Assemble off-screen — gutter is OUTSIDE scroll container
         this.sizer.appendChild(this.selLayer);
+        this.sizer.appendChild(this.indentLayer);
         this.sizer.appendChild(this.activeLineEl);
         this.sizer.appendChild(this.linesEl);
         this.sizer.appendChild(this.cursorEl);
         this.sizer.appendChild(this.inputEl);
         this.scrollEl.appendChild(this.sizer);
 
-        // Atomic swap: replace preloaded content in one operation
-        c.innerHTML = '';
-        c.appendChild(this.gutter);      // Gutter: absolute, left:0, never scrolls horizontally
-        c.appendChild(this.scrollEl);    // Scroll container: scrolls both axes
+        // Append virtual editor BEHIND the preload placeholder (both visible briefly)
+        // Preload sits on top (position:absolute;inset:0) hiding the virtual editor
+        // until first render removes it
+        c.appendChild(this.gutter);
+        c.appendChild(this.scrollEl);
     }
 
     // ===== FONT MEASUREMENT =====
@@ -162,6 +172,10 @@ class View {
             lineLangMap = this._buildHTMLLangMap(m, first, last);
         }
 
+        // Build multiline comment state map (only for languages with block comments)
+        const hasBlockComment = langCfg && langCfg.comment && langCfg.comment.blockStart;
+        const commentMap = hasBlockComment ? this._buildCommentStateMap(m, first, last) : {};
+
         // Remove lines out of range
         const toRemove = [];
         this._visLines.forEach((div, ln) => {
@@ -192,7 +206,7 @@ class View {
                 const lineLang = lineLangMap ? lineLangMap[ln] : null;
                 const effCfg = lineLang ? (CZEngine.getLangConfig(lineLang) || langCfg) : langCfg;
                 const effId = lineLang || langId;
-                div.innerHTML = this._renderLine(lineText, effCfg, effId);
+                div.innerHTML = this._renderLine(lineText, effCfg, effId, commentMap[ln]);
                 this.linesEl.appendChild(div);
 
                 // Gutter number
@@ -214,7 +228,7 @@ class View {
                 const lineLang2 = lineLangMap ? lineLangMap[ln] : null;
                 const effCfg2 = lineLang2 ? (CZEngine.getLangConfig(lineLang2) || langCfg) : langCfg;
                 const effId2 = lineLang2 || langId;
-                div.innerHTML = this._renderLine(m.getLine(ln), effCfg2, effId2);
+                div.innerHTML = this._renderLine(m.getLine(ln), effCfg2, effId2, commentMap[ln]);
                 div.style.top = top + 'px';
                 if (div._gutterEl) {
                     div._gutterEl.textContent = ln + 1;
@@ -234,6 +248,15 @@ class View {
         this._updateBracketMatch(gutterW);
         this._updateActiveLine(gutterW);
         this._updateGutterActive();
+        this._updateIndentGuides();
+    }
+
+    /** Remove preload placeholder — called externally after scroll is restored */
+    removePreload() {
+        if (this._preloadEl) {
+            this._preloadEl.remove();
+            this._preloadEl = null;
+        }
     }
 
     _buildHTMLLangMap(model, firstVisible, lastVisible) {
@@ -264,9 +287,63 @@ class View {
         return map;
     }
 
-    _renderLine(text, langCfg, langId) {
+    _commentStateCache = null;
+    _commentStateCacheVersion = -1;
+
+    _buildCommentStateMap(model, firstVisible, lastVisible) {
+        // Build/use cached per-line comment state, only re-scan when content changes
+        if (this._commentStateCacheVersion !== model.version) {
+            this._commentStateCache = this._scanCommentState(model);
+            this._commentStateCacheVersion = model.version;
+        }
+        // Extract visible portion from cache
+        const map = {};
+        const cache = this._commentStateCache;
+        if (cache) {
+            for (let i = firstVisible; i <= lastVisible; i++) {
+                if (cache[i]) map[i] = cache[i];
+            }
+        }
+        return map;
+    }
+
+    _scanCommentState(model) {
+        // Scan entire document once, return array of comment states per line
+        const lineCount = model.getLineCount();
+        const states = new Array(lineCount);
+        let insideComment = null; // null | 'comment' | 'doccomment'
+
+        for (let i = 0; i < lineCount; i++) {
+            const line = model.getLine(i);
+            if (insideComment) {
+                states[i] = insideComment;
+                if (line.indexOf('*/') >= 0) {
+                    insideComment = null;
+                }
+            } else {
+                const docIdx = line.indexOf('/**');
+                const blockIdx = line.indexOf('/*');
+                if (docIdx >= 0 && line.indexOf('*/', docIdx + 3) === -1) {
+                    insideComment = 'doccomment';
+                    states[i] = 'doccomment';
+                } else if (blockIdx >= 0 && line.indexOf('*/', blockIdx + 2) === -1) {
+                    insideComment = 'comment';
+                    states[i] = 'comment';
+                }
+                // Single-line block comments (/* ... */ on same line) → let tokenizer handle
+            }
+        }
+        return states;
+    }
+
+    _renderLine(text, langCfg, langId, commentScope) {
         if (!text && text !== '') return '&nbsp;';
         if (!langCfg) return CZEngine.escapeHTML(text) || '&nbsp;';
+        // If entire line is inside a multiline comment, render as single scope
+        if (commentScope) {
+            const escaped = CZEngine.escapeHTML(text);
+            return `<span class="syn-${commentScope}">${escaped}</span>` || '&nbsp;';
+        }
         const tokens = CZEngine.tokenize(text, langCfg, langId);
         const html = CZEngine.renderTokens(tokens);
         return html || '&nbsp;';
@@ -294,6 +371,8 @@ class View {
             this.cursorEl.classList.remove('blink');
             void this.cursorEl.offsetWidth; // force reflow
             this.cursorEl.classList.add('blink');
+            // Notify listeners
+            for (const cb of this._cursorChangeCallbacks) cb(this.cursor);
         }
     }
 
@@ -316,6 +395,201 @@ class View {
             this._activeGutterEl = div._gutterEl;
             this._activeGutterLine = curLine;
         }
+    }
+
+    // ===== INDENT GUIDES =====
+    _indentGuidePool = [];
+    _indentGuideUsed = 0;
+
+    _getIndentGuide() {
+        if (this._indentGuideUsed < this._indentGuidePool.length) {
+            const el = this._indentGuidePool[this._indentGuideUsed++];
+            el.style.display = '';
+            return el;
+        }
+        const el = document.createElement('div');
+        el.className = 'virt-indent-guide';
+        this.indentLayer.appendChild(el);
+        this._indentGuidePool.push(el);
+        this._indentGuideUsed++;
+        return el;
+    }
+
+    _updateIndentGuides() {
+        const m = this.model;
+        const lh = this.lh;
+        const cw = this.cw;
+        const tabSize = this._detectIndentSize(m);
+        const scrollTop = this.scrollEl.scrollTop;
+        const viewH = this.scrollEl.clientHeight;
+        const first = Math.floor(scrollTop / lh);
+        const last = Math.min(m.getLineCount() - 1, Math.ceil((scrollTop + viewH) / lh));
+
+        // Calculate active guide level for highlighting
+        const cursorLine = this.cursor.line;
+        const cursorLineText = m.getLine(cursorLine);
+        const cursorIndent = this._getIndentLevel(cursorLineText, tabSize);
+        // If cursor is on a block opener/closer, highlight the children's guide (indent+1)
+        const trimmed = cursorLineText.trimEnd();
+        const trimmedStart = cursorLineText.trimStart();
+        // Detect openers: { [ ( : or HTML opening tag
+        const isBlockOpener = /[\{\[\(:]$/.test(trimmed) ||
+            (trimmed.endsWith('>') && !trimmed.endsWith('/>') && /<[a-zA-Z]/.test(trimmed));
+        // Detect closers: } ] ) or HTML closing tag </...>
+        const isBlockCloser = /^[\}\]\)]/.test(trimmedStart) ||
+            /^<\/[a-zA-Z]/.test(trimmedStart);
+
+        // When BOTH opener+closer (e.g. "} catch {", "} else {"),
+        // use cursor column to decide: before closer → show block above, after opener → show block below
+        let effectiveOpener = isBlockOpener;
+        let effectiveCloser = isBlockCloser;
+        if (isBlockOpener && isBlockCloser) {
+            const leadingSpaces = cursorLineText.length - cursorLineText.trimStart().length;
+            const closerCol = leadingSpaces + 1; // } and one char after it
+            const openerCol = trimmed.length - 1; // { at end
+            const col = this.cursor.col;
+            if (col <= closerCol) {
+                // Cursor at/beside the closing bracket → show block above
+                effectiveOpener = false;
+                effectiveCloser = true;
+            } else if (col >= openerCol) {
+                // Cursor at/beside the opening bracket → show block below
+                effectiveOpener = true;
+                effectiveCloser = false;
+            } else {
+                // Cursor in middle → show parent scope
+                effectiveOpener = false;
+                effectiveCloser = false;
+            }
+        }
+        const activeLevel = (effectiveOpener || effectiveCloser) ? cursorIndent + 1 : cursorIndent;
+
+        // Find the block range for active guide (only highlight within this scope)
+        let activeStart = cursorLine, activeEnd = cursorLine;
+        if (activeLevel > 0) {
+            // Scan upward: find where this block starts
+            for (let i = cursorLine - 1; i >= 0; i--) {
+                const t = m.getLine(i);
+                const ind = this._getIndentLevel(t, tabSize);
+                if (t.trim() === '') continue;
+                if (ind < activeLevel) { activeStart = i + 1; break; }
+                if (i === 0) activeStart = 0;
+            }
+
+            // Scan downward: find where this block ends
+            for (let i = cursorLine + 1; i < m.getLineCount(); i++) {
+                const t = m.getLine(i);
+                const ind = this._getIndentLevel(t, tabSize);
+                if (t.trim() === '') continue;
+                if (ind < activeLevel) { activeEnd = i - 1; break; }
+                if (i === m.getLineCount() - 1) activeEnd = i;
+            }
+
+            // Opener: guide starts AFTER the opener line
+            if (effectiveOpener) activeStart = cursorLine + 1;
+            // Closer: guide ends BEFORE the closer line
+            if (effectiveCloser) activeEnd = cursorLine - 1;
+        }
+
+        // Reset pool
+        this._indentGuideUsed = 0;
+
+        for (let ln = first; ln <= last; ln++) {
+            const lineText = m.getLine(ln);
+            const indent = this._getIndentLevel(lineText, tabSize);
+            const isBlank = lineText.trim() === '';
+
+            // For blank lines, use the indent of surrounding non-blank lines
+            let effectiveIndent = indent;
+            if (isBlank) {
+                effectiveIndent = this._getBlankLineIndent(ln, m, tabSize);
+            }
+
+            for (let level = 1; level <= effectiveIndent; level++) {
+                const guide = this._getIndentGuide();
+                const x = LINE_PAD + (level - 1) * tabSize * cw;
+                guide.style.top = (ln * lh) + 'px';
+                guide.style.left = x + 'px';
+                guide.style.height = lh + 'px';
+                // Only highlight guide within the active block scope
+                const isActive = level === activeLevel && ln >= activeStart && ln <= activeEnd;
+                guide.classList.toggle('active', isActive);
+            }
+        }
+
+        // Hide unused pool elements
+        for (let i = this._indentGuideUsed; i < this._indentGuidePool.length; i++) {
+            this._indentGuidePool[i].style.display = 'none';
+        }
+    }
+
+    _cachedIndentSize = 0;
+    _cachedIndentVersion = -1;
+
+    _detectIndentSize(model) {
+        // Cache per model version to avoid re-scanning on every render
+        if (this._cachedIndentVersion === model.version && this._cachedIndentSize > 0) {
+            return this._cachedIndentSize;
+        }
+        const lineCount = Math.min(model.getLineCount(), 200);
+        // Collect indentation levels, then find smallest positive delta
+        const indents = [];
+        for (let i = 0; i < lineCount; i++) {
+            const line = model.getLine(i);
+            const trimmed = line.trimStart();
+            if (trimmed === '') continue;
+            // Check if file uses tabs
+            if (line[0] === '\t') {
+                this._cachedIndentSize = 4;
+                this._cachedIndentVersion = model.version;
+                return 4;
+            }
+            // Skip block comment continuation lines ( * ...)
+            if (trimmed[0] === '*') continue;
+            // Count leading spaces
+            let spaces = 0;
+            for (let j = 0; j < line.length; j++) {
+                if (line[j] === ' ') spaces++;
+                else break;
+            }
+            indents.push(spaces);
+        }
+        // Find smallest positive difference between consecutive indent levels
+        let minDelta = Infinity;
+        for (let i = 1; i < indents.length; i++) {
+            const delta = Math.abs(indents[i] - indents[i - 1]);
+            if (delta > 0 && delta < minDelta) {
+                minDelta = delta;
+            }
+        }
+        const result = (minDelta !== Infinity && minDelta >= 2 && minDelta <= 8) ? minDelta : 4;
+        this._cachedIndentSize = result;
+        this._cachedIndentVersion = model.version;
+        return result;
+    }
+
+    _getIndentLevel(line, tabSize) {
+        let spaces = 0;
+        for (let i = 0; i < line.length; i++) {
+            if (line[i] === ' ') spaces++;
+            else if (line[i] === '\t') spaces += tabSize;
+            else break;
+        }
+        return Math.floor(spaces / tabSize);
+    }
+
+    _getBlankLineIndent(ln, model, tabSize) {
+        // Look up and down for nearest non-blank lines, use minimum indent
+        let above = 0, below = 0;
+        for (let i = ln - 1; i >= 0; i--) {
+            const t = model.getLine(i);
+            if (t.trim() !== '') { above = this._getIndentLevel(t, tabSize); break; }
+        }
+        for (let i = ln + 1; i < model.getLineCount(); i++) {
+            const t = model.getLine(i);
+            if (t.trim() !== '') { below = this._getIndentLevel(t, tabSize); break; }
+        }
+        return Math.min(above, below);
     }
 
     // ===== SELECTION =====
@@ -838,13 +1112,19 @@ class View {
 
     // ===== PUBLIC API =====
     focus() { this.inputEl.focus({ preventScroll: true }); }
+    onCursorChange(cb) { this._cursorChangeCallbacks.push(cb); }
 
     setValue(text) {
         this.model.setValue(text);
-        this.cursor = { line: 0, col: 0 };
+        // Clamp cursor to valid range (don't reset to 0,0 — caller may restore position)
+        const maxLine = Math.max(0, this.model.getLineCount() - 1);
+        if (this.cursor.line > maxLine) {
+            this.cursor = { line: maxLine, col: 0 };
+        }
         this.anchor = null;
         this._visLines.forEach(d => { d.remove(); d._gutterEl?.remove(); });
         this._visLines.clear();
+        this._commentStateCacheVersion = -1; // invalidate comment cache
         this._scheduleRender();
     }
 
