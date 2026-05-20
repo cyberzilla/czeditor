@@ -878,6 +878,50 @@ body.sidebar-resizing {
     display: none;
 }
 
+/* ===== STICKY SCROLL (VS Code-style tree sticky headers) ===== */
+.sticky-scroll-container {
+    position: absolute;
+    left: 0;
+    right: 0;
+    z-index: 6;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.sticky-scroll-container:empty {
+    display: none;
+}
+
+.sticky-scroll-container:not(:empty) {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.sticky-scroll-item {
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    padding: 3px 8px;
+    padding-right: 10px;
+    font-size: 13px;
+    color: var(--text-main);
+    user-select: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-height: 26px;
+    background: var(--bg-tab);
+    cursor: pointer;
+}
+
+.sticky-scroll-item:hover {
+    background: var(--bg-tab-hover, var(--bg-main));
+}
+
+/* Icon spacing inside sticky items — match .tree-item > .fi */
+.sticky-scroll-item > .fi {
+    margin-right: 5px;
+}
+
 /* Tree inline rename input */
 .tree-rename-input {
     background: var(--bg-main);

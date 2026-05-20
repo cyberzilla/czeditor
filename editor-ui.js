@@ -1735,6 +1735,8 @@ const CZUI = (() => {
             activeFileId = files[0].id;
         }
         saveData();
+        // Clean up sticky scroll
+        if (stickyScrollCleanup) { stickyScrollCleanup(); stickyScrollCleanup = null; }
         // Reset sidebar — rescue sidebar-actions before clearing tree
         if (sidebarActions && sidebarActions.parentNode) {
             sidebarActions.parentNode.removeChild(sidebarActions);
@@ -1981,7 +1983,165 @@ const CZUI = (() => {
         } catch (e) { /* quota */ }
     }
 
+    // ===== STICKY SCROLL (VS Code-style tree sticky headers) =====
+    // Creates an overlay container that mirrors parent folder headers as the user
+    // scrolls through deeply nested tree content. CSS position:sticky can't be used
+    // because .tree-folder-children has overflow:hidden which breaks sticky context.
+    let stickyScrollCleanup = null; // dispose previous listener
+
+    function setupStickyScroll() {
+        // Clean up previous listeners
+        if (stickyScrollCleanup) { stickyScrollCleanup(); stickyScrollCleanup = null; }
+
+        const treeArea = sidebarTree.parentElement; // .sidebar-tree-area
+        if (!treeArea) return;
+
+        // Create or reuse the overlay container
+        let stickyContainer = treeArea.querySelector('.sticky-scroll-container');
+        if (!stickyContainer) {
+            stickyContainer = document.createElement('div');
+            stickyContainer.className = 'sticky-scroll-container';
+            treeArea.insertBefore(stickyContainer, sidebarTree);
+        }
+        stickyContainer.innerHTML = '';
+
+        let rafPending = false;
+        // Cache previous sticky path to avoid unnecessary DOM rebuilds
+        let prevStickyKey = '';
+
+        function updateStickyScroll() {
+            rafPending = false;
+
+            const rootHeader = sidebarTree.querySelector('.tree-root-folder');
+            const rootChildren = sidebarTree.querySelector('.tree-root-children');
+            if (!rootHeader || !rootChildren || rootChildren.classList.contains('collapsed')) {
+                if (stickyContainer.childElementCount > 0) stickyContainer.innerHTML = '';
+                prevStickyKey = '';
+                return;
+            }
+
+            const rootHeaderHeight = rootHeader.offsetHeight;
+            stickyContainer.style.top = rootHeaderHeight + 'px';
+
+            // Keep sticky container behind the scrollbar thumb
+            const scrollbarWidth = sidebarTree.offsetWidth - sidebarTree.clientWidth;
+            stickyContainer.style.right = scrollbarWidth + 'px';
+
+            const treeRect = sidebarTree.getBoundingClientRect();
+            // Effective top where sticky items begin (below root header)
+            let stickyZoneTop = treeRect.top + rootHeaderHeight;
+
+            const stickyItems = [];
+
+            // Walk tree to find ancestor folders that should be sticky
+            function findStickyFolders(container) {
+                for (const child of container.children) {
+                    if (!child.classList.contains('tree-folder')) continue;
+
+                    const folderItem = child.querySelector(':scope > .tree-item');
+                    const folderChildren = child.querySelector(':scope > .tree-folder-children');
+                    if (!folderItem || !folderChildren || folderChildren.classList.contains('collapsed')) continue;
+
+                    const itemRect = folderItem.getBoundingClientRect();
+                    // Use the CHILDREN container bottom — not the whole folder —
+                    // so the sticky stays until all child files have fully scrolled past
+                    const childrenRect = folderChildren.getBoundingClientRect();
+                    const itemHeight = itemRect.height;
+
+                    // Folder header has scrolled above sticky zone AND
+                    // children bottom is still below the sticky zone (any child still visible)
+                    if (itemRect.top < stickyZoneTop && childrenRect.bottom > stickyZoneTop) {
+                        stickyItems.push({
+                            element: folderItem,
+                            height: itemHeight
+                        });
+                        stickyZoneTop += itemHeight;
+                        // Recurse — only one folder per depth level can be sticky
+                        findStickyFolders(folderChildren);
+                        return;
+                    }
+                }
+            }
+
+            findStickyFolders(rootChildren);
+
+            // Build key from folder names + depth for uniqueness
+            const key = stickyItems.map((s, i) => i + ':' + (s.element.dataset.name || '')).join('/');
+
+            if (stickyItems.length === 0) {
+                if (prevStickyKey !== '') { stickyContainer.innerHTML = ''; prevStickyKey = ''; }
+                return;
+            }
+
+            // Rebuild DOM only when sticky path changes
+            if (key !== prevStickyKey) {
+                prevStickyKey = key;
+                const frag = document.createDocumentFragment();
+                stickyItems.forEach((item, idx) => {
+                    const div = document.createElement('div');
+                    div.className = 'sticky-scroll-item';
+                    div.style.paddingLeft = item.element.style.paddingLeft;
+                    div.innerHTML = item.element.innerHTML;
+
+                    // VS Code behavior:
+                    // 1st click → scroll folder header to top (below root header + parent stickies)
+                    // 2nd click (already at top) → collapse the folder
+                    const origEl = item.element;
+                    div.addEventListener('click', (e) => {
+                        e.stopPropagation();
+
+                        // Calculate where the header should sit: below root header + all parent sticky items above this one
+                        const rh = sidebarTree.querySelector('.tree-root-folder');
+                        let offset = rh ? rh.offsetHeight : 0;
+                        for (let p = 0; p < idx; p++) offset += stickyItems[p].height;
+
+                        // Where the header currently is relative to scroll content
+                        const tRect = sidebarTree.getBoundingClientRect();
+                        const headerPos = origEl.getBoundingClientRect().top - tRect.top + sidebarTree.scrollTop;
+                        const targetScroll = headerPos - offset;
+
+                        // If already scrolled to show this folder at top (within 2px tolerance) → collapse it
+                        if (Math.abs(sidebarTree.scrollTop - targetScroll) < 2) {
+                            origEl.click(); // triggers the folder toggle handler
+                        } else {
+                            // Scroll so folder header sits right below root header + parent stickies
+                            sidebarTree.scrollTop = targetScroll;
+                        }
+                    });
+                    frag.appendChild(div);
+                });
+                stickyContainer.replaceChildren(frag);
+            }
+        }
+
+        function scheduleUpdate() {
+            if (!rafPending) {
+                rafPending = true;
+                requestAnimationFrame(updateStickyScroll);
+            }
+        }
+
+        // Listen for scroll
+        sidebarTree.addEventListener('scroll', scheduleUpdate, { passive: true });
+
+        // Watch for folder expand/collapse class changes
+        const observer = new MutationObserver(scheduleUpdate);
+        observer.observe(sidebarTree, { subtree: true, attributes: true, attributeFilter: ['class'], childList: true });
+
+        // Initial update
+        scheduleUpdate();
+
+        // Store cleanup function
+        stickyScrollCleanup = () => {
+            sidebarTree.removeEventListener('scroll', scheduleUpdate);
+            observer.disconnect();
+            stickyContainer.innerHTML = '';
+            prevStickyKey = '';
+        };
+    }
+
     function renderSidebar(tree, folderName) {
+
         sidebarEmpty.style.display = 'none';
 
         if (!tree || tree.length === 0) {
@@ -2017,6 +2177,7 @@ const CZUI = (() => {
             highlightActiveInTree();
             // Update cached tree HTML with current expand state
             cacheTreeHTML();
+            setupStickyScroll();
             return;
         }
 
@@ -2071,6 +2232,7 @@ const CZUI = (() => {
         highlightActiveInTree();
         // Cache tree HTML for instant pre-render on next page load
         cacheTreeHTML();
+        setupStickyScroll();
     }
 
     // Walk preloaded DOM tree and attach live event handlers without rebuilding DOM
