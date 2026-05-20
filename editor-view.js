@@ -316,6 +316,16 @@ class View {
 
     _scanCommentState(model) {
         // Scan entire document once, return array of comment states per line
+        // Reads block comment delimiters from the active language config
+        const f = typeof CZUI !== 'undefined' ? CZUI.getActiveFile() : null;
+        const langId = f ? f.language : null;
+        const langCfg = langId ? CZEngine.getLangConfig(langId) : null;
+        const blockStart = langCfg?.comment?.blockStart || '/*';
+        const blockEnd = langCfg?.comment?.blockEnd || '*/';
+        // Doc-comment prefix (/** for C-style, not applicable for HTML/XML)
+        const hasDocComment = blockStart === '/*';
+        const docStart = '/**';
+
         const lineCount = model.getLineCount();
         const states = new Array(lineCount);
         let insideComment = null; // null | 'comment' | 'doccomment'
@@ -324,20 +334,20 @@ class View {
             const line = model.getLine(i);
             if (insideComment) {
                 states[i] = insideComment;
-                if (line.indexOf('*/') >= 0) {
+                if (line.indexOf(blockEnd) >= 0) {
                     insideComment = null;
                 }
             } else {
-                const docIdx = line.indexOf('/**');
-                const blockIdx = line.indexOf('/*');
-                if (docIdx >= 0 && line.indexOf('*/', docIdx + 3) === -1) {
+                const docIdx = hasDocComment ? line.indexOf(docStart) : -1;
+                const blockIdx = line.indexOf(blockStart);
+                if (docIdx >= 0 && line.indexOf(blockEnd, docIdx + docStart.length) === -1) {
                     insideComment = 'doccomment';
                     states[i] = 'doccomment';
-                } else if (blockIdx >= 0 && line.indexOf('*/', blockIdx + 2) === -1) {
+                } else if (blockIdx >= 0 && line.indexOf(blockEnd, blockIdx + blockStart.length) === -1) {
                     insideComment = 'comment';
                     states[i] = 'comment';
                 }
-                // Single-line block comments (/* ... */ on same line) → let tokenizer handle
+                // Single-line block comments on same line → let tokenizer handle
             }
         }
         return states;

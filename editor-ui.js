@@ -582,7 +582,7 @@ const CZUI = (() => {
         _saveCursorState();
         // Save all files — strip non-serializable and runtime-only properties
         const saveable = files.map(f => {
-            const { fileHandle, dirty, ...rest } = f;
+            const { fileHandle, parentHandle, dirty, ...rest } = f;
             // Strip blob: URLs (non-persistent), keep data: URLs (base64)
             if (rest.imageUrl && rest.imageUrl.startsWith('blob:')) {
                 delete rest.imageUrl;
@@ -2305,20 +2305,32 @@ const CZUI = (() => {
     }
 
     async function openFileFromTree(fileHandle, fileName, parentHandle) {
-        // Check if already open — match by fileHandle identity OR by fileName for folder files
+        // Compute folderPath (relative path from project root) for accurate matching
+        let folderPath = null;
+        try {
+            const rootHandle = CZFS.getDirectoryHandle();
+            if (rootHandle && fileHandle) {
+                const segments = await rootHandle.resolve(fileHandle);
+                if (segments) folderPath = segments.join('/');
+            }
+        } catch { /* resolve() not supported or handle mismatch */ }
+
+        // Check if already open — match by handle identity, folderPath, or name (fallback)
         const existing = files.find(f => {
             // Exact handle identity (same session, same object)
             if (isValidHandle(f.fileHandle) && f.fileHandle === fileHandle) return true;
-            // Match by name for folder-originated files (handles change after refresh)
-            if (f.fromFolder && f.name === fileName) return true;
-            // After page reload, fileHandle is lost/stale — match by name
-            if (!isValidHandle(f.fileHandle) && f.name === fileName) return true;
+            // Match by folderPath (handles same-name files in different directories)
+            if (folderPath && f.folderPath) return f.folderPath === folderPath;
+            // Fallback for legacy files without folderPath: match by name
+            if (!f.folderPath && f.fromFolder && f.name === fileName) return true;
+            if (!f.folderPath && !isValidHandle(f.fileHandle) && f.name === fileName) return true;
             return false;
         });
         if (existing) {
-            // Re-attach fresh handles
+            // Re-attach fresh handles and path
             if (fileHandle) existing.fileHandle = fileHandle;
             if (parentHandle) existing.parentHandle = parentHandle;
+            if (folderPath) existing.folderPath = folderPath;
             switchFile(existing.id);
             return;
         }
@@ -2338,6 +2350,7 @@ const CZUI = (() => {
                     eol: 'LF',
                     fileHandle: fileHandle,
                     parentHandle: parentHandle,
+                    folderPath: folderPath,
                     isBinary: !isImg && !isAud,
                     isImage: isImg,
                     isAudio: isAud,
@@ -2381,6 +2394,7 @@ const CZUI = (() => {
                 eol: data.eol,
                 fileHandle: fileHandle,
                 parentHandle: parentHandle,
+                folderPath: folderPath,
                 isSvg: isSvgFile(fileName),
                 fromFolder: true
             };
@@ -2408,34 +2422,52 @@ const CZUI = (() => {
         sidebarTree.querySelectorAll('.tree-item.active').forEach(el => el.classList.remove('active'));
         const activeFile = getActiveFile();
         if (!activeFile) return;
-        // Find matching tree item by handle OR by name
+        // Find matching tree item by handle, then folderPath, then name (last resort)
+        let matched = false;
         sidebarTree.querySelectorAll('.tree-item[data-kind="file"]').forEach(el => {
+            if (matched) return;
             if (activeFile.fileHandle && el._fileHandle === activeFile.fileHandle) {
                 el.classList.add('active');
-            } else if (el.dataset.name === activeFile.name) {
-                el.classList.add('active');
+                matched = true;
             }
         });
+        if (!matched) {
+            // Fallback: match by name (only when handle identity fails, e.g. after refresh before reattach)
+            sidebarTree.querySelectorAll('.tree-item[data-kind="file"]').forEach(el => {
+                if (el.dataset.name === activeFile.name) {
+                    el.classList.add('active');
+                }
+            });
+        }
     }
 
     // Re-attach fileHandles to open tabs after folder restore (browser refresh)
     function reattachFileHandles() {
         const tree = CZFS.getCurrentTree();
         if (!tree) return;
-        function walkTree(nodes) {
+        function walkTree(nodes, parentDirHandle, pathPrefix) {
             nodes.forEach(n => {
+                const currentPath = pathPrefix ? pathPrefix + '/' + n.name : n.name;
                 if (n.kind === 'file') {
-                    const openFile = files.find(f => f.name === n.name && !isValidHandle(f.fileHandle));
+                    const openFile = files.find(f => {
+                        if (isValidHandle(f.fileHandle)) return false; // already attached
+                        // Match by folderPath (unique across same-name files in different dirs)
+                        if (f.folderPath) return f.folderPath === currentPath;
+                        // Legacy fallback: match by name (only if no other file has this name)
+                        return f.name === n.name;
+                    });
                     if (openFile) {
                         openFile.fileHandle = n.handle;
+                        openFile.parentHandle = parentDirHandle;
+                        openFile.folderPath = currentPath;
                         openFile.fromFolder = true;
                     }
                 } else if (n.kind === 'directory' && n.children) {
-                    walkTree(n.children);
+                    walkTree(n.children, n.handle, currentPath);
                 }
             });
         }
-        walkTree(tree);
+        walkTree(tree, CZFS.getDirectoryHandle(), '');
         // Refresh active tab if it's an image/binary that now has a handle
         const active = getActiveFile();
         if (active && (active.isImage || active.isBinary || active.isAudio) && isValidHandle(active.fileHandle)) {
@@ -2521,15 +2553,20 @@ const CZUI = (() => {
             if (result) {
                 // Update open file if it was renamed
                 if (target.kind === 'file') {
-                    // Match by handle identity OR by name (handles can differ after refresh)
+                    // Match by handle identity (always valid during same session from sidebar context)
                     const openFile = files.find(f =>
-                        f.fileHandle === target.handle ||
-                        (f.fromFolder && f.name === target.name)
+                        f.fileHandle === target.handle
                     );
                     if (openFile) {
                         openFile.name = newName.trim();
                         openFile.fileHandle = result;
                         openFile.parentHandle = parentHandle;
+                        // Update folderPath to reflect new name
+                        if (openFile.folderPath) {
+                            const pathParts = openFile.folderPath.split('/');
+                            pathParts[pathParts.length - 1] = newName.trim();
+                            openFile.folderPath = pathParts.join('/');
+                        }
                         const ext = newName.split('.').pop().toLowerCase();
                         const detected = CZEngine.detectByFilename(newName) || CZEngine.detectByExtension(ext);
                         if (detected) openFile.language = detected;

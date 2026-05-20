@@ -2598,15 +2598,15 @@ body.sidebar-resizing {
     min-width: 180px;
     max-height: 320px;
     overflow-y: auto;
-    background: rgba(30, 30, 46, 0.97);
+    background: var(--bg-header);
     backdrop-filter: blur(16px);
     border: 1px solid var(--border-color);
     border-radius: 8px;
-    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(var(--surface-rgb), 0.03);
+    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(var(--surface-rgb), 0.03);
     padding: 4px;
     z-index: 100;
     scrollbar-width: thin;
-    scrollbar-color: rgba(137, 180, 250, 0.3) transparent;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 
 .lang-picker::-webkit-scrollbar {
@@ -2618,7 +2618,7 @@ body.sidebar-resizing {
 }
 
 .lang-picker::-webkit-scrollbar-thumb {
-    background: rgba(137, 180, 250, 0.3);
+    background: var(--scrollbar-thumb);
     border-radius: 3px;
 }
 
@@ -2634,11 +2634,11 @@ body.sidebar-resizing {
 }
 
 .lang-picker-item:hover {
-    background: rgba(137, 180, 250, 0.12);
+    background: rgba(var(--surface-rgb), 0.06);
 }
 
 .lang-picker-item.active {
-    background: rgba(137, 180, 250, 0.18);
+    background: rgba(var(--surface-rgb), 0.1);
     color: var(--accent-color);
     font-weight: 600;
 }
