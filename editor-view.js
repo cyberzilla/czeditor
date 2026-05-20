@@ -514,7 +514,7 @@ class View {
 
             for (let level = 1; level <= effectiveIndent; level++) {
                 const guide = this._getIndentGuide();
-                const x = LINE_PAD + (level - 1) * tabSize * cw;
+                const x = Math.round(LINE_PAD + (level - 1) * tabSize * cw);
                 guide.style.top = (ln * lh) + 'px';
                 guide.style.left = x + 'px';
                 guide.style.height = lh + 'px';

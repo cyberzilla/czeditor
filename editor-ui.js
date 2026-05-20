@@ -411,10 +411,18 @@ const CZUI = (() => {
     }
     function isLottieContent(f) {
         if (!f || !f.content || !f.name.endsWith('.json')) return false;
+        // Return cached result — avoids JSON.parse on every keystroke
+        if (typeof f._isLottie === 'boolean') return f._isLottie;
         try {
             const d = JSON.parse(f.content);
-            return d && typeof d.v !== 'undefined' && typeof d.fr === 'number' && Array.isArray(d.layers);
-        } catch (e) { return false; }
+            const result = !!(d && typeof d.v !== 'undefined' && typeof d.fr === 'number' && Array.isArray(d.layers));
+            f._isLottie = result;
+            if (result) f._lottieData = d; // cache parsed data for reuse in loadLottieAnimation
+            return result;
+        } catch (e) {
+            f._isLottie = false;
+            return false;
+        }
     }
     // Check if a fileHandle is a real FileSystemFileHandle (not a stale deserialized object)
     function isValidHandle(h) {
@@ -1060,7 +1068,8 @@ const CZUI = (() => {
                     '<span class="lottie-frame-info" id="lottie-frame-info"></span>' +
                     '</div>';
             }
-            loadLottieAnimation(f.content);
+            loadLottieAnimation(f.content, f._lottieData);
+            f._lottieData = null; // consumed — avoid stale data on next edit
         } else if (isHtmlFile(f.name)) {
             content.className = 'preview-content html-preview';
             // Extract <title> from HTML content, fallback to 'HTML Preview'
@@ -1120,20 +1129,23 @@ const CZUI = (() => {
     let lottieLastHash = '';
     let lottieDebounceTimer = null;
 
-    function hashString(s) {
-        let h = 0;
-        for (let i = 0; i < s.length; i++) {
+    function quickHash(s) {
+        const len = s.length;
+        let h = len;
+        // Sample ~1000 chars evenly distributed instead of iterating every char
+        const step = Math.max(1, Math.floor(len / 1000));
+        for (let i = 0; i < len; i += step) {
             h = ((h << 5) - h + s.charCodeAt(i)) | 0;
         }
         return h;
     }
 
-    function loadLottieAnimation(jsonContent) {
+    function loadLottieAnimation(jsonContent, cachedData) {
         const container = document.getElementById('lottie-container');
         if (!container) return;
 
         // Skip if content hasn't changed
-        const hash = hashString(jsonContent);
+        const hash = quickHash(jsonContent);
         if (hash === lottieLastHash && lottieAnim) return;
         lottieLastHash = hash;
 
@@ -1145,7 +1157,7 @@ const CZUI = (() => {
 
         function initLottie() {
             try {
-                const animData = JSON.parse(jsonContent);
+                const animData = cachedData || JSON.parse(jsonContent);
 
                 // Set container dimensions BEFORE animation init so canvas gets correct size
                 if (animData.w && animData.h) {
