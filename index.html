@@ -47,9 +47,25 @@
             var hasFiles = false;
             try { var sf = localStorage.getItem('cz_files'); hasFiles = sf && JSON.parse(sf).length > 0; } catch (e) { }
             if (hasFiles) {
+                // Check if active file is binary/image/audio to avoid editor flash
+                var activeIsBin = false;
+                try {
+                    var parsedFiles = JSON.parse(sf);
+                    var aid = localStorage.getItem('cz_active_id');
+                    for (var i = 0; i < parsedFiles.length; i++) {
+                        if (parsedFiles[i].id === aid) {
+                            activeIsBin = parsedFiles[i].isImage || parsedFiles[i].isBinary || parsedFiles[i].isAudio;
+                            break;
+                        }
+                    }
+                } catch (e) {}
                 css += '#toolbar-right{display:flex!important}';
                 css += '#editor-footer{display:flex!important}';
-                css += '#editor-body{display:flex!important;flex-direction:column;flex-grow:1;height:100%}';
+                if (activeIsBin) {
+                    css += '#editor-body{display:none!important}';
+                } else {
+                    css += '#editor-body{display:flex!important;flex-direction:column;flex-grow:1;height:100%}';
+                }
                 css += '#welcome-screen{display:none!important}';
                 // Suppress tab scroll animation during initial load
                 css += '#tabs-container{scroll-behavior:auto!important}';
@@ -262,6 +278,31 @@
                         </div>
                     </div>
 
+                    <!-- Audio Player (for mp3, wav, ogg, flac, etc.) -->
+                    <div id="audio-player-panel" class="audio-player-panel hidden">
+                        <div class="audio-player-card">
+                            <div class="audio-player-icon" id="audio-player-icon"><span class="fi fi-ui fi-ui-music" style="width:48px;height:48px"></span></div>
+                            <div class="audio-player-name" id="audio-player-name"></div>
+                            <div class="audio-player-meta" id="audio-player-meta"></div>
+                            <div class="audio-player-waveform">
+                                <input type="range" class="audio-progress" id="audio-progress" min="0" max="100" value="0" step="0.1">
+                                <div class="audio-time">
+                                    <span id="audio-time-current">0:00</span>
+                                    <span id="audio-time-duration">0:00</span>
+                                </div>
+                            </div>
+                            <div class="audio-player-controls">
+                                <button class="audio-btn" id="btn-audio-backward" title="Rewind 10s"><span class="fi fi-ui fi-ui-backward"></span></button>
+                                <button class="audio-btn audio-btn-play" id="btn-audio-playpause" title="Play"><span class="fi fi-ui fi-ui-play" id="audio-playpause-icon"></span></button>
+                                <button class="audio-btn" id="btn-audio-forward" title="Forward 10s"><span class="fi fi-ui fi-ui-forward"></span></button>
+                            </div>
+                            <div class="audio-volume-row">
+                                <span class="audio-volume-icon" id="audio-volume-icon"><span class="fi fi-ui fi-ui-unmute"></span></span>
+                                <input type="range" class="audio-volume" id="audio-volume" min="0" max="100" value="100" step="1">
+                            </div>
+                        </div>
+                        <audio id="audio-element" preload="metadata"></audio>
+                    </div>
                     <!-- Binary File Info Panel (for non-text, non-image files) -->
                     <div id="binary-file-panel" class="binary-file-panel hidden">
                         <div class="binary-file-card">
@@ -584,7 +625,7 @@
                     for (var j = 0; j < files.length; j++) {
                         if (files[j].id === activeId) { active = files[j]; break; }
                     }
-                    if (active && active.content && !active.isImage && !active.isBinary) {
+                    if (active && active.content && !active.isImage && !active.isBinary && !active.isAudio) {
                         // Pre-render static placeholder matching virtual editor layout
                         var ve = document.getElementById('virtual-editor');
                         if (ve) {
@@ -644,6 +685,10 @@
                         if (sl) sl.textContent = 'Length: ' + active.content.length;
                         if (sli) sli.textContent = 'Lines: ' + lineCount;
                         if (sc && active.cursorLine != null) sc.textContent = 'Ln ' + (active.cursorLine + 1) + ', Col ' + ((active.cursorCol || 0) + 1);
+                    } else if (active && (active.isImage || active.isBinary || active.isAudio)) {
+                        // Active file is binary/image/audio — hide editor-body to prevent flash
+                        var eb = document.getElementById('editor-body');
+                        if (eb) eb.classList.add('hidden');
                     }
                     // Pre-fill footer language, encoding, EOL from active file
                     if (active) {

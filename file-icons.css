@@ -1366,3 +1366,38 @@
     -webkit-mask-image: url('icons/ui/clone.svg');
     mask-image: url('icons/ui/clone.svg');
 }
+
+.fi-ui-play {
+    -webkit-mask-image: url('icons/ui/play.svg');
+    mask-image: url('icons/ui/play.svg');
+}
+
+.fi-ui-pause {
+    -webkit-mask-image: url('icons/ui/debug-pause.svg');
+    mask-image: url('icons/ui/debug-pause.svg');
+}
+
+.fi-ui-backward {
+    -webkit-mask-image: url('icons/ui/debug-reverse-continue.svg');
+    mask-image: url('icons/ui/debug-reverse-continue.svg');
+}
+
+.fi-ui-forward {
+    -webkit-mask-image: url('icons/ui/debug-continue.svg');
+    mask-image: url('icons/ui/debug-continue.svg');
+}
+
+.fi-ui-mute {
+    -webkit-mask-image: url('icons/ui/mute.svg');
+    mask-image: url('icons/ui/mute.svg');
+}
+
+.fi-ui-unmute {
+    -webkit-mask-image: url('icons/ui/unmute.svg');
+    mask-image: url('icons/ui/unmute.svg');
+}
+
+.fi-ui-music {
+    -webkit-mask-image: url('icons/ui/file-media.svg');
+    mask-image: url('icons/ui/file-media.svg');
+}

@@ -24,14 +24,15 @@
         if (savedFiles) {
             let files = JSON.parse(savedFiles);
             // Filter out entries that truly can't be restored
-            files = files.filter(f => f.content !== undefined || f.isImage || f.isBinary);
+            files = files.filter(f => f.content !== undefined || f.isImage || f.isBinary || f.isAudio);
             if (files.length > 0) {
                 files.forEach(f => { if (f.isPinned === undefined) f.isPinned = false; });
                 CZUI.setFiles(files);
                 CZUI.setActiveId(savedActiveId || files[0].id);
                 CZUI.switchFile(CZUI.getActiveId(), { instant: true });
-                // Preload language configs
-                files.forEach(f => CZEngine.loadLanguage(f.language));
+                // Preload language configs (skip non-code file types)
+                const skipLangs = new Set(['image', 'binary', 'audio']);
+                files.forEach(f => { if (!skipLangs.has(f.language)) CZEngine.loadLanguage(f.language); });
             }
         }
         CZUI.renderTabs();

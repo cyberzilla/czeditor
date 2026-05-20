@@ -369,13 +369,14 @@ const CZUI = (() => {
     loadFileIcons();
 
     const IMAGE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'gif', 'ico', 'webp', 'bmp', 'avif']);
+    const AUDIO_EXTENSIONS = new Set(['mp3', 'wav', 'ogg', 'flac', 'aac', 'wma', 'm4a', 'opus', 'webm']);
     const BINARY_EXTENSIONS = new Set([
         // Fonts
         'woff2', 'woff', 'ttf', 'otf', 'eot',
         // Archives
         'zip', 'tar', 'gz', 'rar', '7z', 'bz2', 'xz', 'jar',
         // Audio
-        'mp3', 'wav', 'ogg', 'flac', 'aac', 'wma', 'm4a',
+        'mp3', 'wav', 'ogg', 'flac', 'aac', 'wma', 'm4a', 'opus',
         // Video
         'mp4', 'avi', 'mkv', 'webm', 'mov', 'wmv', 'flv',
         // Documents
@@ -390,6 +391,10 @@ const CZUI = (() => {
     function isImageFile(name) {
         const ext = name.split('.').pop().toLowerCase();
         return IMAGE_EXTENSIONS.has(ext);
+    }
+    function isAudioFile(name) {
+        const ext = name.split('.').pop().toLowerCase();
+        return AUDIO_EXTENSIONS.has(ext);
     }
     function isBinaryFile(name) {
         const ext = name.split('.').pop().toLowerCase();
@@ -466,10 +471,10 @@ const CZUI = (() => {
     function checkEmptyState() {
         const empty = files.length === 0;
         const activeFile = getActiveFile();
-        const isNonEditor = activeFile && (activeFile.isImage || activeFile.isBinary);
+        const isNonEditor = activeFile && (activeFile.isImage || activeFile.isBinary || activeFile.isAudio);
 
         welcomeScreen.classList.toggle('active', empty);
-        // Don't show editor-body if active file is a binary/image
+        // Don't show editor-body if active file is a binary/image/audio
         editorBody.classList.toggle('hidden', empty || isNonEditor);
         toolbarRight.classList.toggle('hidden', empty);
         editorFooter.classList.toggle('hidden', empty);
@@ -477,6 +482,9 @@ const CZUI = (() => {
         // Show/hide image viewer based on whether active file is a binary image
         const iv = $('image-viewer');
         if (iv) iv.classList.toggle('hidden', empty || !activeFile?.isImage);
+        // Show/hide audio player
+        const ap = $('audio-player-panel');
+        if (ap) ap.classList.toggle('hidden', empty || !activeFile?.isAudio);
         // Show/hide binary panel
         const bp = $('binary-file-panel');
         if (bp) bp.classList.toggle('hidden', empty || !activeFile?.isBinary);
@@ -579,6 +587,9 @@ const CZUI = (() => {
             if (rest.imageUrl && rest.imageUrl.startsWith('blob:')) {
                 delete rest.imageUrl;
             }
+            if (rest.audioUrl && rest.audioUrl.startsWith('blob:')) {
+                delete rest.audioUrl;
+            }
             return rest;
         });
         localStorage.setItem('cz_files', JSON.stringify(saveable));
@@ -592,7 +603,7 @@ const CZUI = (() => {
         // Don't overwrite saved state if editor has no content yet (initial load)
         if (editorView.model.getLineCount() <= 1 && !editorView.model.getLine(0)) return;
         const f = files.find(x => x.id === activeFileId);
-        if (!f || f.isImage || f.isBinary) return;
+        if (!f || f.isImage || f.isBinary || f.isAudio) return;
         const info = editorView.getCursorInfo();
         f.cursorLine = info.line - 1;  // store 0-indexed
         f.cursorCol = info.col - 1;
@@ -722,6 +733,8 @@ const CZUI = (() => {
         }
         const idx = files.findIndex(x => x.id === id);
         if (idx > -1) files.splice(idx, 1);
+        // Stop audio if closing an audio file
+        if (f.isAudio) stopAudioPlayer();
         if (files.length === 0) activeFileId = null;
         else if (id === activeFileId) activeFileId = (files[idx] || files[idx - 1]).id;
         saveData();
@@ -785,20 +798,32 @@ const CZUI = (() => {
         const imageViewer = $('image-viewer');
         const binaryPanel = $('binary-file-panel');
 
-        if (f.isBinary) {
-            // Switching to binary — hide editor and image viewer, show binary panel
+        const audioPanel = $('audio-player-panel');
+
+        if (f.isAudio) {
+            // Switching to audio — hide editor, image, binary panels, show audio player
             editorBody.classList.add('hidden');
             if (imageViewer) imageViewer.classList.add('hidden');
+            if (binaryPanel) binaryPanel.classList.add('hidden');
+            showAudioPlayer(f);
+        } else if (f.isBinary) {
+            // Switching to binary — hide editor, image, audio panels, show binary panel
+            editorBody.classList.add('hidden');
+            if (imageViewer) imageViewer.classList.add('hidden');
+            if (audioPanel) audioPanel.classList.add('hidden');
             showBinaryPanel(f);
         } else if (f.isImage) {
-            // Switching to image — hide editor and binary panel, show image viewer
+            // Switching to image — hide editor, binary, audio panels, show image viewer
             editorBody.classList.add('hidden');
             if (binaryPanel) binaryPanel.classList.add('hidden');
+            if (audioPanel) audioPanel.classList.add('hidden');
             showImageViewer(f);
         } else {
-            // Normal code file — hide binary/image panels, keep editor-body visible
+            // Normal code file — hide binary/image/audio panels, keep editor-body visible
             if (imageViewer) imageViewer.classList.add('hidden');
             if (binaryPanel) binaryPanel.classList.add('hidden');
+            if (audioPanel) audioPanel.classList.add('hidden');
+            stopAudioPlayer();
             editorBody.classList.remove('hidden');
             editingArea.value = f.content;
             langSelector.value = f.language;
@@ -868,6 +893,15 @@ const CZUI = (() => {
         // Set image source — always create fresh blob URL
         if (img) {
             img.draggable = false; // Prevent native drag triggering drop overlay
+            img.style.display = 'none'; // Hide until source is ready to prevent broken icon flash
+            // Show spinner while loading
+            let spinEl = viewer.querySelector('.spin-loader');
+            if (!spinEl) {
+                spinEl = document.createElement('div');
+                spinEl.className = 'spin-loader';
+                img.parentElement.insertBefore(spinEl, img);
+            }
+            spinEl.style.display = '';
             try {
                 if (f.fileHandle) {
                     const file = await f.fileHandle.getFile();
@@ -885,6 +919,9 @@ const CZUI = (() => {
                 else if (info) info.textContent = f.name + ' — re-open folder to view';
             }
             img.onload = () => {
+                img.style.display = ''; // Show image once loaded
+                const sp = viewer.querySelector('.spin-loader');
+                if (sp) sp.style.display = 'none';
                 if (info) {
                     const dims = img.naturalWidth && img.naturalHeight
                         ? `${img.naturalWidth} × ${img.naturalHeight}px`
@@ -893,6 +930,9 @@ const CZUI = (() => {
                 }
             };
             img.onerror = () => {
+                img.style.display = 'none'; // Keep hidden on error
+                const sp = viewer.querySelector('.spin-loader');
+                if (sp) sp.style.display = 'none';
                 if (info) info.textContent = f.name;
             };
         }
@@ -911,20 +951,263 @@ const CZUI = (() => {
         $('binary-file-icon').innerHTML = getBinaryIcon(f.name);
         $('binary-file-name').textContent = f.name;
 
-        // Get file size
+        // Get file size — show dots loader while waiting
+        const sizeEl = $('binary-file-size');
+        if (sizeEl) sizeEl.innerHTML = '<span class="dots-loader"><span></span><span></span><span></span></span>';
         if (isValidHandle(f.fileHandle)) {
             try {
                 const file = await f.fileHandle.getFile();
-                $('binary-file-size').textContent = formatFileSize(file.size);
+                if (sizeEl) sizeEl.textContent = formatFileSize(file.size);
             } catch (e) {
-                $('binary-file-size').textContent = '';
+                if (sizeEl) sizeEl.textContent = '';
             }
         } else {
-            $('binary-file-size').textContent = '';
+            if (sizeEl) sizeEl.textContent = '';
         }
 
         toolbarRight.classList.remove('hidden');
         editorFooter.classList.remove('hidden');
+    }
+
+    // ===== AUDIO PLAYER =====
+    let _audioEl = null;
+    let _audioRafId = 0;
+
+    function formatTime(sec) {
+        if (!isFinite(sec) || sec < 0) return '0:00';
+        const m = Math.floor(sec / 60);
+        const s = Math.floor(sec % 60);
+        return m + ':' + (s < 10 ? '0' : '') + s;
+    }
+
+    async function showAudioPlayer(f) {
+        const panel = $('audio-player-panel');
+        if (!panel) return;
+        panel.classList.remove('hidden');
+        toolbarRight.classList.remove('hidden');
+        editorFooter.classList.remove('hidden');
+
+        $('audio-player-name').textContent = f.name;
+        const metaEl = $('audio-player-meta');
+        const iconEl = $('audio-player-icon');
+        if (metaEl) metaEl.innerHTML = '<span class="dots-loader"><span></span><span></span><span></span></span>';
+        if (iconEl) iconEl.classList.remove('playing');
+
+        // Get or create audio element
+        _audioEl = $('audio-element');
+        if (!_audioEl) return;
+
+        // Set audio source — prefer fileHandle (always fresh), fall back to audioUrl
+        let audioSrc = '';
+        if (isValidHandle(f.fileHandle)) {
+            try {
+                const file = await f.fileHandle.getFile();
+                audioSrc = URL.createObjectURL(file);
+                f.audioUrl = audioSrc;
+            } catch (e) {
+                // fileHandle failed, try stored URL
+                if (f.audioUrl) audioSrc = f.audioUrl;
+                else {
+                    if (metaEl) metaEl.textContent = 'Re-open folder to play audio';
+                    return;
+                }
+            }
+        } else if (f.audioUrl) {
+            audioSrc = f.audioUrl;
+        }
+        if (!audioSrc) {
+            if (metaEl) metaEl.textContent = 'No audio source available';
+            return;
+        }
+
+        _audioEl.src = audioSrc;
+        _audioEl.load();
+
+        const progress = $('audio-progress');
+        const timeCurrent = $('audio-time-current');
+        const timeDuration = $('audio-time-duration');
+        const playBtn = $('btn-audio-playpause');
+        const fwdBtn = $('btn-audio-forward');
+        const bwdBtn = $('btn-audio-backward');
+        const volSlider = $('audio-volume');
+        const volIcon = $('audio-volume-icon');
+        const playIcon = $('audio-playpause-icon');
+
+        // Reset UI
+        if (progress) progress.value = 0;
+        if (timeCurrent) timeCurrent.textContent = '0:00';
+        if (timeDuration) timeDuration.textContent = '0:00';
+        if (playIcon) { playIcon.classList.add('fi-ui-play'); playIcon.classList.remove('fi-ui-pause'); }
+
+        // Duration loaded
+        _audioEl.onloadedmetadata = () => {
+            if (timeDuration) timeDuration.textContent = formatTime(_audioEl.duration);
+            // Show file info
+            const ext = f.name.split('.').pop().toUpperCase();
+            const sizeInfo = _audioEl.duration ? formatTime(_audioEl.duration) : '';
+            if (metaEl && !metaEl.dataset.hasMeta) {
+                metaEl.textContent = ext + ' • ' + sizeInfo;
+            }
+        };
+
+        // Progress update loop
+        function updateProgress() {
+            if (_audioEl && !_audioEl.paused) {
+                const pct = (_audioEl.currentTime / _audioEl.duration) * 100 || 0;
+                if (progress) progress.value = pct;
+                if (timeCurrent) timeCurrent.textContent = formatTime(_audioEl.currentTime);
+                _audioRafId = requestAnimationFrame(updateProgress);
+            }
+        }
+
+        // Play/Pause
+        _audioEl.onplay = () => {
+            if (playIcon) { playIcon.classList.remove('fi-ui-play'); playIcon.classList.add('fi-ui-pause'); }
+            if (iconEl) iconEl.classList.add('playing');
+            _audioRafId = requestAnimationFrame(updateProgress);
+        };
+        _audioEl.onpause = () => {
+            if (playIcon) { playIcon.classList.add('fi-ui-play'); playIcon.classList.remove('fi-ui-pause'); }
+            if (iconEl) iconEl.classList.remove('playing');
+            cancelAnimationFrame(_audioRafId);
+        };
+        _audioEl.onended = () => {
+            if (playIcon) { playIcon.classList.add('fi-ui-play'); playIcon.classList.remove('fi-ui-pause'); }
+            if (iconEl) iconEl.classList.remove('playing');
+            if (progress) progress.value = 0;
+            if (timeCurrent) timeCurrent.textContent = '0:00';
+            cancelAnimationFrame(_audioRafId);
+        };
+
+        // Button handlers
+        if (playBtn) {
+            playBtn.onclick = () => {
+                if (_audioEl.paused) _audioEl.play();
+                else _audioEl.pause();
+            };
+        }
+        if (fwdBtn) {
+            fwdBtn.onclick = () => {
+                _audioEl.currentTime = Math.min(_audioEl.duration, _audioEl.currentTime + 10);
+            };
+        }
+        if (bwdBtn) {
+            bwdBtn.onclick = () => {
+                _audioEl.currentTime = Math.max(0, _audioEl.currentTime - 10);
+            };
+        }
+
+        // Seek
+        if (progress) {
+            progress.oninput = () => {
+                if (_audioEl.duration) {
+                    _audioEl.currentTime = (progress.value / 100) * _audioEl.duration;
+                    if (timeCurrent) timeCurrent.textContent = formatTime(_audioEl.currentTime);
+                }
+            };
+        }
+
+        if (volSlider) {
+            volSlider.value = (_audioEl.volume * 100);
+            volSlider.oninput = () => {
+                _audioEl.volume = volSlider.value / 100;
+                updateVolIcon();
+            };
+        }
+        function updateVolIcon() {
+            if (!volIcon) return;
+            const ic = volIcon.querySelector('.fi-ui');
+            if (!ic) return;
+            const muted = _audioEl.muted || _audioEl.volume === 0;
+            ic.classList.toggle('fi-ui-mute', muted);
+            ic.classList.toggle('fi-ui-unmute', !muted);
+        }
+        if (volIcon) {
+            volIcon.onclick = () => {
+                _audioEl.muted = !_audioEl.muted;
+                updateVolIcon();
+            };
+        }
+
+        // Try to read ID3 metadata for mp3 files
+        if (f.name.toLowerCase().endsWith('.mp3') && isValidHandle(f.fileHandle)) {
+            try {
+                const file = await f.fileHandle.getFile();
+                const meta = await readID3(file);
+                if (meta && metaEl) {
+                    const parts = [];
+                    if (meta.title) parts.push(meta.title);
+                    if (meta.artist) parts.push(meta.artist);
+                    if (meta.album) parts.push(meta.album);
+                    if (parts.length > 0) {
+                        metaEl.textContent = parts.join(' • ');
+                        metaEl.dataset.hasMeta = '1';
+                    }
+                }
+            } catch (e) { /* silent */ }
+        }
+    }
+
+    function stopAudioPlayer() {
+        if (_audioEl) {
+            _audioEl.pause();
+            _audioEl.removeAttribute('src');
+            _audioEl.load();
+        }
+        cancelAnimationFrame(_audioRafId);
+    }
+
+    // Basic ID3v2 tag reader for mp3 files
+    async function readID3(file) {
+        try {
+            const buf = await file.slice(0, 4096).arrayBuffer();
+            const view = new DataView(buf);
+            // Check for ID3v2 header
+            if (view.getUint8(0) !== 0x49 || view.getUint8(1) !== 0x44 || view.getUint8(2) !== 0x33) {
+                return null; // No ID3v2 tag
+            }
+            const majorVer = view.getUint8(3);
+            const headerSize = (view.getUint8(6) & 0x7f) << 21 |
+                               (view.getUint8(7) & 0x7f) << 14 |
+                               (view.getUint8(8) & 0x7f) << 7 |
+                               (view.getUint8(9) & 0x7f);
+            const meta = {};
+            let pos = 10;
+            const end = Math.min(10 + headerSize, buf.byteLength);
+            const decoder = new TextDecoder('utf-8');
+
+            while (pos + 10 < end) {
+                const frameId = String.fromCharCode(view.getUint8(pos), view.getUint8(pos+1),
+                    view.getUint8(pos+2), majorVer >= 3 ? view.getUint8(pos+3) : 0);
+                if (frameId[0] === '\0') break;
+                let frameSize;
+                if (majorVer >= 3) {
+                    frameSize = view.getUint32(pos + 4);
+                    pos += 10; // 4 id + 4 size + 2 flags
+                } else {
+                    frameSize = (view.getUint8(pos+3) << 16) | (view.getUint8(pos+4) << 8) | view.getUint8(pos+5);
+                    pos += 6;
+                }
+                if (frameSize <= 0 || pos + frameSize > end) break;
+                const tag = frameId.substring(0, majorVer >= 3 ? 4 : 3);
+                if (['TIT2','TIT','TPE1','TPE','TALB','TAL'].includes(tag)) {
+                    const encoding = view.getUint8(pos);
+                    let text = '';
+                    if (encoding === 0 || encoding === 3) {
+                        text = decoder.decode(new Uint8Array(buf, pos + 1, frameSize - 1)).replace(/\0/g, '');
+                    } else if (encoding === 1 || encoding === 2) {
+                        // UTF-16
+                        const u16 = new Uint16Array(buf, pos + 1, Math.floor((frameSize - 1) / 2));
+                        text = String.fromCharCode(...u16).replace(/\0/g, '').replace(/^\ufeff/, '');
+                    }
+                    if (tag === 'TIT2' || tag === 'TIT') meta.title = text;
+                    else if (tag === 'TPE1' || tag === 'TPE') meta.artist = text;
+                    else if (tag === 'TALB' || tag === 'TAL') meta.album = text;
+                }
+                pos += frameSize;
+            }
+            return (meta.title || meta.artist || meta.album) ? meta : null;
+        } catch (e) { return null; }
     }
 
     async function openBinaryAsCode() {
@@ -2029,24 +2312,31 @@ const CZUI = (() => {
             // Check if it's a binary file (images, fonts, archives, video, etc.)
             if (isBinaryFile(fileName)) {
                 const isImg = isImageFile(fileName);
+                const isAud = isAudioFile(fileName);
                 const nf = {
                     id: 'file_' + Math.random().toString(36).substr(2, 9),
                     name: fileName,
-                    language: isImg ? 'image' : 'binary',
+                    language: isImg ? 'image' : (isAud ? 'audio' : 'binary'),
                     content: '',
                     isPinned: false,
                     encoding: 'binary',
                     eol: 'LF',
                     fileHandle: fileHandle,
                     parentHandle: parentHandle,
-                    isBinary: !isImg, // images go to image viewer, others to binary panel
+                    isBinary: !isImg && !isAud,
                     isImage: isImg,
+                    isAudio: isAud,
                     fromFolder: true
                 };
                 // For images, create a blob URL for the viewer
                 if (isImg) {
                     const file = await fileHandle.getFile();
                     nf.imageUrl = URL.createObjectURL(file);
+                }
+                // For audio, create a blob URL for the player
+                if (isAud) {
+                    const file = await fileHandle.getFile();
+                    nf.audioUrl = URL.createObjectURL(file);
                 }
                 if (files.length === 1 && files[0].name.startsWith('Untitled') && !files[0].content && !files[0].isPinned) {
                     files[0] = { ...nf, id: files[0].id };
@@ -2133,7 +2423,7 @@ const CZUI = (() => {
         walkTree(tree);
         // Refresh active tab if it's an image/binary that now has a handle
         const active = getActiveFile();
-        if (active && (active.isImage || active.isBinary) && isValidHandle(active.fileHandle)) {
+        if (active && (active.isImage || active.isBinary || active.isAudio) && isValidHandle(active.fileHandle)) {
             switchFile(activeFileId);
         }
     }
@@ -2371,6 +2661,25 @@ const CZUI = (() => {
                     id: 'file_' + Math.random().toString(36).substr(2, 9),
                     name, language: 'image', content: '', isPinned: false,
                     encoding: 'binary', eol: 'LF', isImage: true, imageUrl: url
+                };
+                if (files.length === 1 && files[0].name.startsWith('Untitled') && !files[0].content && !files[0].isPinned) {
+                    files[0] = { ...nf, id: files[0].id }; activeFileId = files[0].id;
+                } else { files.push(nf); activeFileId = nf.id; }
+                saveData(); switchFile(activeFileId);
+            };
+            reader.readAsDataURL(fileObj);
+            return;
+        }
+
+        // Handle audio files — open in audio player
+        if (isAudioFile(name)) {
+            const reader = new FileReader();
+            reader.onload = () => {
+                const url = reader.result;
+                const nf = {
+                    id: 'file_' + Math.random().toString(36).substr(2, 9),
+                    name, language: 'audio', content: '', isPinned: false,
+                    encoding: 'binary', eol: 'LF', isAudio: true, audioUrl: url
                 };
                 if (files.length === 1 && files[0].name.startsWith('Untitled') && !files[0].content && !files[0].isPinned) {
                     files[0] = { ...nf, id: files[0].id }; activeFileId = files[0].id;
