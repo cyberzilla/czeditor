@@ -1736,7 +1736,7 @@ const CZUI = (() => {
         }
         saveData();
         // Clean up sticky scroll
-        if (stickyScrollCleanup) { stickyScrollCleanup(); stickyScrollCleanup = null; }
+        if (ScrollCleanup) { stickyScrollCleanup(); stickyScrollCleanup = null; }
         // Reset sidebar — rescue sidebar-actions before clearing tree
         if (sidebarActions && sidebarActions.parentNode) {
             sidebarActions.parentNode.removeChild(sidebarActions);
@@ -2008,6 +2008,8 @@ const CZUI = (() => {
         let rafPending = false;
         // Cache previous sticky path to avoid unnecessary DOM rebuilds
         let prevStickyKey = '';
+        // Suppress a specific folder from becoming sticky after collapse-from-sticky
+        let suppressStickyEl = null;
 
         function updateStickyScroll() {
             rafPending = false;
@@ -2041,6 +2043,8 @@ const CZUI = (() => {
                     const folderItem = child.querySelector(':scope > .tree-item');
                     const folderChildren = child.querySelector(':scope > .tree-folder-children');
                     if (!folderItem || !folderChildren || folderChildren.classList.contains('collapsed')) continue;
+                    // Skip folder suppressed after collapse-from-sticky click
+                    if (folderItem === suppressStickyEl) continue;
 
                     const itemRect = folderItem.getBoundingClientRect();
                     // Use the CHILDREN container bottom — not the whole folder —
@@ -2048,9 +2052,10 @@ const CZUI = (() => {
                     const childrenRect = folderChildren.getBoundingClientRect();
                     const itemHeight = itemRect.height;
 
-                    // Folder header has scrolled above sticky zone AND
+                    // Folder header has scrolled above sticky zone (with 2px threshold
+                    // to prevent re-sticking immediately when expanded at top) AND
                     // children bottom is still below the sticky zone (any child still visible)
-                    if (itemRect.top < stickyZoneTop && childrenRect.bottom > stickyZoneTop) {
+                    if (itemRect.top < stickyZoneTop - 2 && childrenRect.bottom > stickyZoneTop) {
                         stickyItems.push({
                             element: folderItem,
                             height: itemHeight
@@ -2102,7 +2107,15 @@ const CZUI = (() => {
 
                         // If already scrolled to show this folder at top (within 2px tolerance) → collapse it
                         if (Math.abs(sidebarTree.scrollTop - targetScroll) < 2) {
-                            origEl.click(); // triggers the folder toggle handler
+                            // Suppress this folder from re-sticking until user scrolls
+                            suppressStickyEl = origEl;
+                            origEl.click(); // triggers the folder toggle handler (collapse)
+                            // After collapse, content shrinks and browser may clamp scrollTop,
+                            // pushing the header above the sticky zone. Reposition so the
+                            // header stays visible at top.
+                            const tRect2 = sidebarTree.getBoundingClientRect();
+                            const newHeaderPos = origEl.getBoundingClientRect().top - tRect2.top + sidebarTree.scrollTop;
+                            sidebarTree.scrollTop = newHeaderPos - (rh ? rh.offsetHeight : 0);
                         } else {
                             // Scroll so folder header sits right below root header + parent stickies
                             sidebarTree.scrollTop = targetScroll;
@@ -2121,8 +2134,12 @@ const CZUI = (() => {
             }
         }
 
-        // Listen for scroll
-        sidebarTree.addEventListener('scroll', scheduleUpdate, { passive: true });
+        // Listen for scroll — clear suppression on genuine user scroll
+        function onScroll() {
+            suppressStickyEl = null;
+            scheduleUpdate();
+        }
+        sidebarTree.addEventListener('scroll', onScroll, { passive: true });
 
         // Watch for folder expand/collapse class changes
         const observer = new MutationObserver(scheduleUpdate);
@@ -2133,7 +2150,7 @@ const CZUI = (() => {
 
         // Store cleanup function
         stickyScrollCleanup = () => {
-            sidebarTree.removeEventListener('scroll', scheduleUpdate);
+            sidebarTree.removeEventListener('scroll', onScroll);
             observer.disconnect();
             stickyContainer.innerHTML = '';
             prevStickyKey = '';
