@@ -2104,6 +2104,19 @@ const CZUI = (() => {
         let fi = 0, di = 0;
         nodes.forEach(node => {
             if (node.kind === 'directory') {
+                // Mirror compact folder logic from renderTreeNodes
+                let currentNode = node;
+                const compactChain = [node];
+                while (
+                    currentNode.children &&
+                    currentNode.children.length === 1 &&
+                    currentNode.children[0].kind === 'directory'
+                ) {
+                    currentNode = currentNode.children[0];
+                    compactChain.push(currentNode);
+                }
+                const effectiveNode = currentNode;
+
                 const folderDiv = folderDivs[di++];
                 if (!folderDiv) return;
                 const item = folderDiv.querySelector(':scope > .tree-item');
@@ -2111,30 +2124,32 @@ const CZUI = (() => {
                 if (item) {
                     // Sync expand/collapse DOM state with restored node.expanded
                     const arrowEl = item.querySelector('.folder-arrow');
-                    if (arrowEl) arrowEl.classList.toggle('expanded', !!node.expanded);
-                    if (childrenDiv) childrenDiv.classList.toggle('collapsed', !node.expanded);
+                    if (arrowEl) arrowEl.classList.toggle('expanded', !!effectiveNode.expanded);
+                    if (childrenDiv) childrenDiv.classList.toggle('collapsed', !effectiveNode.expanded);
 
                     item.onclick = (e) => {
                         e.stopPropagation();
-                        node.expanded = !node.expanded;
+                        const newState = !effectiveNode.expanded;
+                        compactChain.forEach(n => n.expanded = newState);
                         const arrowEl = item.querySelector('.folder-arrow');
-                        if (arrowEl) arrowEl.classList.toggle('expanded', node.expanded);
-                        if (childrenDiv) childrenDiv.classList.toggle('collapsed', !node.expanded);
+                        if (arrowEl) arrowEl.classList.toggle('expanded', newState);
+                        if (childrenDiv) childrenDiv.classList.toggle('collapsed', !newState);
+                        const oldIcon = item.querySelector('.fi');
+                        if (oldIcon) oldIcon.className = getFolderIconClass(node.name, newState);
                         const tree = CZFS.getCurrentTree();
                         if (tree) saveExpandedPaths(tree, CZFS.getDirectoryHandle()?.name || '');
-                        // Update cached tree HTML
                         cacheTreeHTML();
                     };
                     item.oncontextmenu = (e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        sidebarContextTarget = { handle: node.handle, parentHandle, name: node.name, kind: 'directory' };
+                        sidebarContextTarget = { handle: effectiveNode.handle, parentHandle, name: effectiveNode.name, kind: 'directory' };
                         showSidebarContextMenu(e.pageX, e.pageY);
                     };
                 }
-                // Recurse into children
-                if (childrenDiv && node.children && node.children.length > 0) {
-                    attachNodeHandlers(node.children, childrenDiv, depth + 1, node.handle);
+                // Recurse into children of the effective (last) node in the compact chain
+                if (childrenDiv && effectiveNode.children && effectiveNode.children.length > 0) {
+                    attachNodeHandlers(effectiveNode.children, childrenDiv, depth + 1, effectiveNode.handle);
                 }
             } else {
                 const item = fileDivs[fi++];

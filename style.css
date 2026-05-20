@@ -2646,14 +2646,13 @@ body.sidebar-resizing {
 /* ===== CONTEXT MENU ===== */
 .context-menu {
     position: fixed;
-    background: rgba(30, 30, 46, 0.95);
+    background: var(--bg-header, rgba(30, 30, 46, 0.95));
     backdrop-filter: blur(12px);
     border: 1px solid var(--border-color);
     border-radius: 8px;
     z-index: 9999;
     padding: 5px 0;
     min-width: 160px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
 .context-menu-item {
@@ -2665,7 +2664,7 @@ body.sidebar-resizing {
 }
 
 .context-menu-item:hover {
-    background: rgba(137, 180, 250, 0.1);
+    background: rgba(var(--surface-rgb, 0, 0, 0), 0.06);
     color: var(--accent-color);
 }
 
@@ -2682,7 +2681,7 @@ body.sidebar-resizing {
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(30, 30, 46, 0.92);
+    background: var(--bg-overlay, rgba(30, 30, 46, 0.92));
     color: var(--accent-color);
     display: flex;
     align-items: center;
