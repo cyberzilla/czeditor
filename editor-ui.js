@@ -806,18 +806,21 @@ const CZUI = (() => {
             if (imageViewer) imageViewer.classList.add('hidden');
             if (binaryPanel) binaryPanel.classList.add('hidden');
             showAudioPlayer(f);
+            updateFootbar();
         } else if (f.isBinary) {
             // Switching to binary — hide editor, image, audio panels, show binary panel
             editorBody.classList.add('hidden');
             if (imageViewer) imageViewer.classList.add('hidden');
             if (audioPanel) audioPanel.classList.add('hidden');
             showBinaryPanel(f);
+            updateFootbar();
         } else if (f.isImage) {
             // Switching to image — hide editor, binary, audio panels, show image viewer
             editorBody.classList.add('hidden');
             if (binaryPanel) binaryPanel.classList.add('hidden');
             if (audioPanel) audioPanel.classList.add('hidden');
             showImageViewer(f);
+            updateFootbar();
         } else {
             // Normal code file — hide binary/image/audio panels, keep editor-body visible
             if (imageViewer) imageViewer.classList.add('hidden');
@@ -2815,22 +2818,56 @@ const CZUI = (() => {
         if (!activeFileId || !files.length) return;
         const f = getActiveFile();
         if (!f) return;
-        // Use EditorView for cursor info (avoids expensive text.split on large files)
-        if (editorView) {
-            const info = editorView.getCursorInfo();
-            const m = editorView.model;
-            $('stat-length').textContent = CZi18n.t('stat_length', m.getTotalLength());
-            $('stat-lines').textContent = CZi18n.t('stat_lines', m.getLineCount());
-            $('stat-cursor').textContent = `Ln ${info.line}, Col ${info.col}`;
-            // Keep cursor position on file object always up-to-date
-            f.cursorLine = info.line - 1;
-            f.cursorCol = info.col - 1;
-            f.scrollTop = editorView.getScrollTop();
+
+        const isBin = f.isImage || f.isBinary || f.isAudio;
+
+        if (isBin) {
+            // Binary mode: show file info instead of code stats
+            editorFooter.classList.add('footer-binary');
+            const type = f.isImage ? 'Image' : (f.isAudio ? 'Audio' : 'Binary');
+            $('stat-length').textContent = f.name;
+            $('stat-lines').textContent = '';
+            $('stat-cursor').textContent = '';
+            // Right side: show type as non-clickable label, hide EOL/encoding
+            $('stat-eol').textContent = '';
+            $('stat-encoding').textContent = '';
+            $('stat-lang').textContent = type;
+            // Hide irrelevant dividers in binary mode
+            const leftDividers = editorFooter.querySelectorAll('.footer-left .divider');
+            leftDividers.forEach((d, i) => { if (i > 0) d.style.display = 'none'; });
+            const rightDividers = editorFooter.querySelectorAll('.footer-right .divider');
+            rightDividers.forEach(d => d.style.display = 'none');
+            // Async: get file size and update footer
+            if (isValidHandle(f.fileHandle)) {
+                f.fileHandle.getFile().then(file => {
+                    // Only update if still the active file
+                    if (getActiveFile() === f) {
+                        $('stat-lines').textContent = formatFileSize(file.size);
+                    }
+                }).catch(() => {});
+            }
+        } else {
+            // Text mode: show normal code stats
+            editorFooter.classList.remove('footer-binary');
+            // Restore dividers
+            editorFooter.querySelectorAll('.divider').forEach(d => d.style.display = '');
+            // Use EditorView for cursor info (avoids expensive text.split on large files)
+            if (editorView) {
+                const info = editorView.getCursorInfo();
+                const m = editorView.model;
+                $('stat-length').textContent = CZi18n.t('stat_length', m.getTotalLength());
+                $('stat-lines').textContent = CZi18n.t('stat_lines', m.getLineCount());
+                $('stat-cursor').textContent = `Ln ${info.line}, Col ${info.col}`;
+                // Keep cursor position on file object always up-to-date
+                f.cursorLine = info.line - 1;
+                f.cursorCol = info.col - 1;
+                f.scrollTop = editorView.getScrollTop();
+            }
+            langSelector.value = f.language;
+            $('stat-lang').textContent = langSelector.options[langSelector.selectedIndex]?.text || f.language;
+            $('stat-encoding').textContent = f.encoding || 'UTF-8';
+            $('stat-eol').textContent = f.eol || 'LF';
         }
-        langSelector.value = f.language;
-        $('stat-lang').textContent = langSelector.options[langSelector.selectedIndex]?.text || f.language;
-        $('stat-encoding').textContent = f.encoding || 'UTF-8';
-        $('stat-eol').textContent = f.eol || 'LF';
     }
 
     // ===== ACTIVE LINE HIGHLIGHT =====

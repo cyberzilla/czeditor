@@ -2541,6 +2541,9 @@ body.sidebar-resizing {
 /* ===== FOOTER ===== */
 .editor-footer {
     height: 25px;
+    min-height: 25px;
+    max-height: 25px;
+    overflow: hidden;
     background-color: var(--bg-footer);
     border-top: 1px solid var(--border-color);
     display: flex;
@@ -2573,7 +2576,18 @@ body.sidebar-resizing {
 
 .footer-lang-btn:hover {
     color: var(--accent-color);
-    background: rgba(137, 180, 250, 0.1);
+    background: rgba(var(--surface-rgb), 0.08);
+}
+
+/* Binary/image/audio file mode — pickers become non-interactive info labels */
+.editor-footer.footer-binary .footer-lang-btn {
+    cursor: default !important;
+    pointer-events: none;
+}
+
+.editor-footer.footer-binary .footer-lang-btn:hover {
+    color: inherit;
+    background: none;
 }
 
 .divider {

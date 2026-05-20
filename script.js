@@ -293,7 +293,8 @@
         const langPicker = document.getElementById('lang-picker');
         document.getElementById('stat-lang').onclick = (e) => {
             e.stopPropagation();
-            if (!CZUI.getActiveFile()) return;
+            const af = CZUI.getActiveFile();
+            if (!af || af.isImage || af.isBinary || af.isAudio) return;
             // Close other pickers
             document.getElementById('eol-picker').classList.add('hidden');
             document.getElementById('encoding-picker').classList.add('hidden');
@@ -328,7 +329,8 @@
         const eolPicker = document.getElementById('eol-picker');
         document.getElementById('stat-eol').onclick = (e) => {
             e.stopPropagation();
-            if (!CZUI.getActiveFile()) return;
+            const af = CZUI.getActiveFile();
+            if (!af || af.isImage || af.isBinary || af.isAudio) return;
             closeAllPickers();
             eolPicker.classList.toggle('hidden');
             if (!eolPicker.classList.contains('hidden')) {
@@ -355,7 +357,8 @@
         const encPicker = document.getElementById('encoding-picker');
         document.getElementById('stat-encoding').onclick = (e) => {
             e.stopPropagation();
-            if (!CZUI.getActiveFile()) return;
+            const af = CZUI.getActiveFile();
+            if (!af || af.isImage || af.isBinary || af.isAudio) return;
             closeAllPickers();
             encPicker.classList.toggle('hidden');
             if (!encPicker.classList.contains('hidden')) {
