@@ -604,6 +604,13 @@ const CZUI = (() => {
         if (editorView.model.getLineCount() <= 1 && !editorView.model.getLine(0)) return;
         const f = files.find(x => x.id === activeFileId);
         if (!f || f.isImage || f.isBinary || f.isAudio) return;
+        // Guard: don't save cursor if the model clearly doesn't belong to this file
+        // (e.g. activeFileId was changed but model still has the previous file's content)
+        // Use a tolerance check — small differences can occur from newline normalization
+        const modelLen = editorView.model.getTotalLength();
+        const fileLen = f.content ? f.content.length : 0;
+        if (fileLen > 0 && Math.abs(modelLen - fileLen) / fileLen > 0.1) return;
+        if (fileLen === 0 && modelLen > 0) return;
         const info = editorView.getCursorInfo();
         f.cursorLine = info.line - 1;  // store 0-indexed
         f.cursorCol = info.col - 1;
@@ -831,37 +838,40 @@ const CZUI = (() => {
             editingArea.value = f.content;
             langSelector.value = f.language;
             lastBracketKey = '';
-            // Restore cursor position BEFORE rendering
+            // Restore cursor position and scroll SYNCHRONOUSLY after content change
             if (editorView) {
-                const line = f.cursorLine || 0;
-                const col = f.cursorCol || 0;
+                const totalLines = editorView.model.getLineCount();
+                const maxLine = Math.max(0, totalLines - 1);
+                const line = Math.min(f.cursorLine || 0, maxLine);
+                const maxCol = editorView.model.getLineLength(line);
+                const col = Math.min(f.cursorCol || 0, maxCol);
                 editorView.cursor = { line, col };
                 editorView.anchor = null;
+                // Set sizer height immediately so scrollTop can be applied
+                const viewH = editorView.scrollEl.clientHeight || 400;
+                editorView.sizer.style.height = ((totalLines - 1) * editorView.lh + viewH) + 'px';
+                // Restore exact scroll position (or center cursor as fallback)
+                const maxScroll = Math.max(0, (totalLines - 1) * editorView.lh);
+                if (f.scrollTop > 0) {
+                    editorView.setScrollTop(Math.min(f.scrollTop, maxScroll));
+                } else if (line > 0) {
+                    editorView.setScrollTop(Math.min(Math.max(0, line * editorView.lh - viewH / 2), maxScroll));
+                } else {
+                    editorView.setScrollTop(0);
+                }
             }
+            // Always update footer immediately (removes footer-binary class for text files)
+            updateFootbar();
             // If preload is covering the editor, skip immediate render (user sees preload)
-            // and defer everything to the scroll-restore rAF for a single flicker-free paint
             const hasPreload = editorView && editorView._preloadEl;
             if (!hasPreload) {
-                updateEditorVisuals(); updateFootbar();
+                updateEditorVisuals();
             }
-            // Load language config first, then restore scroll + render with syntax colors
+            // Load language config, then re-render with syntax colors
             if (editorView) {
-                const savedScroll = f.scrollTop;
-                const cursorLine = f.cursorLine || 0;
                 CZEngine.loadLanguage(f.language).then(() => {
                     requestAnimationFrame(() => {
-                        // Set sizer height first so scrollTop can be applied
-                        const totalLines = editorView.model.getLineCount();
-                        const viewH = editorView.scrollEl.clientHeight || 400;
-                        editorView.sizer.style.height = ((totalLines - 1) * editorView.lh + viewH) + 'px';
-                        // Now restore scroll position
-                        if (savedScroll > 0) {
-                            editorView.setScrollTop(savedScroll);
-                        } else if (cursorLine > 0) {
-                            const vh = editorView.scrollEl.clientHeight || 400;
-                            editorView.setScrollTop(Math.max(0, cursorLine * editorView.lh - vh / 2));
-                        }
-                        // Single render at correct scroll position WITH syntax colors
+                        // Re-render with syntax highlighting at current scroll position
                         editorView._render(true);
                         updateFootbar();
                         // Remove preload — content is now correct

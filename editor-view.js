@@ -1141,6 +1141,8 @@ class View {
 
     setValue(text) {
         this.model.setValue(text);
+        // Reset scroll — new content, old scroll position is meaningless
+        this.scrollEl.scrollTop = 0;
         // Clamp cursor to valid range (don't reset to 0,0 — caller may restore position)
         const maxLine = Math.max(0, this.model.getLineCount() - 1);
         if (this.cursor.line > maxLine) {

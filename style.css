@@ -2543,7 +2543,6 @@ body.sidebar-resizing {
     height: 25px;
     min-height: 25px;
     max-height: 25px;
-    overflow: hidden;
     background-color: var(--bg-footer);
     border-top: 1px solid var(--border-color);
     display: flex;
