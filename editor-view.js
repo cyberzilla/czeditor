@@ -733,11 +733,19 @@ class View {
             const rect = sc.getBoundingClientRect();
             if (e.clientX > rect.left + sc.clientWidth) return;
             if (e.clientY > rect.top + sc.clientHeight) return;
-            // Ignore clicks below actual content (scroll-past-end area)
+            e.preventDefault();
+            // Clicks below actual content → place cursor at end of last line
             const totalLines = this.model.getLineCount();
             const contentBottom = totalLines * this.lh - sc.scrollTop;
-            if (e.clientY - rect.top > contentBottom) return;
-            e.preventDefault();
+            if (e.clientY - rect.top > contentBottom) {
+                this.inputEl.focus({ preventScroll: true });
+                const lastLine = totalLines - 1;
+                const lastCol = this.model.getLineLength(lastLine);
+                this.cursor = { line: lastLine, col: lastCol };
+                this.anchor = null;
+                this._scheduleRender();
+                return;
+            }
             this._handleMouseDown(e);
         });
         el.addEventListener('focus', () => { this._focused = true; this.cursorEl.classList.add('blink'); });
