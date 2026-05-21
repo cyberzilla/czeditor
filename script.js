@@ -5,7 +5,6 @@
     async function initApp() {
         // Initialize i18n first
         await CZi18n.init();
-        const savedFiles = localStorage.getItem('cz_files');
         const savedActiveId = localStorage.getItem('cz_active_id');
         const savedFontWeight = localStorage.getItem('cz_font_weight') || "400";
         const savedFontSize = localStorage.getItem('cz_font_size') || "13";
@@ -21,8 +20,17 @@
         await CZEngine.loadRegistry();
         CZUI.buildLangPicker();
 
-        if (savedFiles) {
-            let files = JSON.parse(savedFiles);
+        // Load files: prefer IndexedDB (has full content), fallback to localStorage (metadata only)
+        let files = null;
+        if (typeof CZCache !== 'undefined') {
+            try { files = await CZCache.get('cz_files'); } catch (_) {}
+        }
+        if (!files) {
+            const savedFiles = localStorage.getItem('cz_files');
+            if (savedFiles) try { files = JSON.parse(savedFiles); } catch (_) {}
+        }
+
+        if (files && files.length > 0) {
             // Filter out entries that truly can't be restored
             files = files.filter(f => f.content !== undefined || f.isImage || f.isBinary || f.isAudio);
             if (files.length > 0) {

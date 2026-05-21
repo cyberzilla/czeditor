@@ -592,7 +592,36 @@ const CZUI = (() => {
             }
             return rest;
         });
-        localStorage.setItem('cz_files', JSON.stringify(saveable));
+        // Save full data to IndexedDB (no size limit)
+        if (typeof CZCache !== 'undefined') {
+            CZCache.set('cz_files', saveable);
+        }
+        // Save metadata to localStorage for fast pre-render
+        // Keep active file content (truncated if huge), strip large non-active files
+        const meta = saveable.map(f => {
+            if (f.id === activeFileId) {
+                // Keep active file content for pre-render, truncate if very large
+                if (f.content && f.content.length > 200000) {
+                    return { ...f, content: f.content.substring(0, 200000) };
+                }
+                return f;
+            }
+            // Strip content from non-active files > 100KB
+            if (f.content && f.content.length > 100000) {
+                return { ...f, content: '' };
+            }
+            return f;
+        });
+        try {
+            localStorage.setItem('cz_files', JSON.stringify(meta));
+        } catch (_) {
+            // Quota exceeded even with trimming — strip all large content
+            const slim = saveable.map(f => {
+                if (f.content && f.content.length > 50000) return { ...f, content: '' };
+                return f;
+            });
+            try { localStorage.setItem('cz_files', JSON.stringify(slim)); } catch (_2) { /* give up */ }
+        }
         if (activeFileId) localStorage.setItem('cz_active_id', activeFileId);
         else localStorage.removeItem('cz_active_id');
     }
