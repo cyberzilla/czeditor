@@ -149,6 +149,10 @@
     pointer-events: none;
 }
 
+.virt-cursor-extra {
+    width: 1px;
+}
+
 .virt-cursor.blink {
     animation: virt-blink 1s step-end infinite;
 }

@@ -12,6 +12,7 @@ class View {
         this.model = new EditorModel.TextModel();
         this.cursor = { line: 0, col: 0 };
         this.anchor = null; // selection anchor, null = no selection
+        this.extraCursors = []; // [{cursor:{line,col}, anchor:{line,col}|null}, ...]
         this.lh = 24; this.cw = 7.8; // lineHeight, charWidth
         this._visLines = new Map(); // lineNum -> div element
         this._pool = [];
@@ -370,6 +371,7 @@ class View {
     // ===== CURSOR =====
     _lastCursorLine = -1;
     _lastCursorCol = -1;
+    _extraCursorEls = [];
     _updateCursor(gutterW) {
         const curLineText = this.model.getLine(this.cursor.line);
         const x = LINE_PAD + this._visualCol(curLineText, this.cursor.col) * this.cw;
@@ -390,8 +392,39 @@ class View {
             this.cursorEl.classList.remove('blink');
             void this.cursorEl.offsetWidth; // force reflow
             this.cursorEl.classList.add('blink');
+            // Sync blink for extra cursors
+            for (const el of this._extraCursorEls) {
+                if (el.style.display !== 'none') {
+                    el.classList.remove('blink');
+                    void el.offsetWidth;
+                    el.classList.add('blink');
+                }
+            }
             // Notify listeners
             for (const cb of this._cursorChangeCallbacks) cb(this.cursor);
+        }
+        // Render extra cursors
+        const needed = this.extraCursors.length;
+        while (this._extraCursorEls.length < needed) {
+            const el = document.createElement('div');
+            el.className = 'virt-cursor virt-cursor-extra blink';
+            this.sizer.appendChild(el);
+            this._extraCursorEls.push(el);
+        }
+        for (let i = 0; i < this._extraCursorEls.length; i++) {
+            const el = this._extraCursorEls[i];
+            if (i < needed) {
+                const ec = this.extraCursors[i];
+                const ecLineText = this.model.getLine(ec.cursor.line);
+                const ex = LINE_PAD + this._visualCol(ecLineText, ec.cursor.col) * this.cw;
+                const ey = ec.cursor.line * this.lh;
+                el.style.left = ex + 'px';
+                el.style.top = ey + 'px';
+                el.style.height = this.lh + 'px';
+                el.style.display = '';
+            } else {
+                el.style.display = 'none';
+            }
         }
     }
 
@@ -650,6 +683,52 @@ class View {
         return this._visualCol(lineText, lineText.length);
     }
 
+    // ===== MULTI-CURSOR HELPERS =====
+    _getAllCursors() {
+        const all = [{ cursor: { ...this.cursor }, anchor: this.anchor ? { ...this.anchor } : null }];
+        for (const ec of this.extraCursors) {
+            all.push({ cursor: { ...ec.cursor }, anchor: ec.anchor ? { ...ec.anchor } : null });
+        }
+        return all;
+    }
+
+    _setAllCursors(cursors) {
+        if (cursors.length === 0) return;
+        this.cursor = cursors[0].cursor;
+        this.anchor = cursors[0].anchor;
+        this.extraCursors = cursors.slice(1);
+    }
+
+    _mergeCursors() {
+        const all = this._getAllCursors();
+        all.sort((a, b) => a.cursor.line - b.cursor.line || a.cursor.col - b.cursor.col);
+        const merged = [all[0]];
+        for (let i = 1; i < all.length; i++) {
+            const prev = merged[merged.length - 1];
+            const curr = all[i];
+            if (curr.cursor.line === prev.cursor.line && curr.cursor.col === prev.cursor.col) continue;
+            merged.push(curr);
+        }
+        this._setAllCursors(merged);
+    }
+
+    _getSelectionRangeFor(cursor, anchor) {
+        if (!anchor) return null;
+        const before = anchor.line < cursor.line || (anchor.line === cursor.line && anchor.col < cursor.col);
+        return before
+            ? { startLine: anchor.line, startCol: anchor.col, endLine: cursor.line, endCol: cursor.col }
+            : { startLine: cursor.line, startCol: cursor.col, endLine: anchor.line, endCol: anchor.col };
+    }
+
+    _getWordAt(line, col) {
+        const text = this.model.getLine(line);
+        const isWordChar = (ch) => /[\p{L}\p{N}_]/u.test(ch);
+        let start = col, end = col;
+        while (start > 0 && isWordChar(text[start - 1])) start--;
+        while (end < text.length && isWordChar(text[end])) end++;
+        return { start, end, word: text.substring(start, end) };
+    }
+
     // ===== SELECTION =====
     hasSelection() {
         return this.anchor !== null &&
@@ -679,17 +758,11 @@ class View {
         return text;
     }
 
-    _updateSelection(gutterW) {
-        this.selLayer.innerHTML = '';
-        if (!this.hasSelection()) return;
-        const r = this.getSelectionRange();
+    _renderSelectionForRange(r) {
         for (let ln = r.startLine; ln <= r.endLine; ln++) {
             const lineLen = this.model.getLineLength(ln);
             const startCol = ln === r.startLine ? r.startCol : 0;
             const endCol = ln === r.endLine ? r.endCol : lineLen;
-            if (startCol === endCol && ln !== r.endLine) {
-                // Empty line in selection — show thin highlight
-            }
             const selLineText = this.model.getLine(ln);
             const vStart = this._visualCol(selLineText, startCol);
             const vEnd = this._visualCol(selLineText, endCol);
@@ -700,6 +773,22 @@ class View {
             div.style.width = ((vEnd - vStart) * this.cw || this.cw * 0.5) + 'px';
             div.style.height = this.lh + 'px';
             this.selLayer.appendChild(div);
+        }
+    }
+
+    _updateSelection(gutterW) {
+        this.selLayer.innerHTML = '';
+        // Primary selection
+        if (this.hasSelection()) {
+            const r = this.getSelectionRange();
+            this._renderSelectionForRange(r);
+        }
+        // Extra cursor selections
+        for (const ec of this.extraCursors) {
+            if (ec.anchor) {
+                const r = this._getSelectionRangeFor(ec.cursor, ec.anchor);
+                if (r) this._renderSelectionForRange(r);
+            }
         }
     }
 
@@ -922,10 +1011,35 @@ class View {
     }
 
     insertText(text) {
-        if (this.hasSelection()) this.deleteSelection();
-        const endPos = this.model.insert(this.cursor, text);
-        this.cursor = { ...endPos };
-        this.anchor = null;
+        if (this.extraCursors.length === 0) {
+            // Single-cursor fast path
+            if (this.hasSelection()) this.deleteSelection();
+            const endPos = this.model.insert(this.cursor, text);
+            this.cursor = { ...endPos };
+            this.anchor = null;
+            this._scrollToCursor();
+            this._onContentChange();
+            return;
+        }
+        // Multi-cursor: apply bottom-to-top
+        const all = this._getAllCursors();
+        all.sort((a, b) => b.cursor.line - a.cursor.line || b.cursor.col - a.cursor.col);
+        for (const c of all) {
+            if (c.anchor) {
+                const r = this._getSelectionRangeFor(c.cursor, c.anchor);
+                if (r) {
+                    this.model.delete(r);
+                    c.cursor = { line: r.startLine, col: r.startCol };
+                    c.anchor = null;
+                }
+            }
+            const endPos = this.model.insert(c.cursor, text);
+            c.cursor = { ...endPos };
+            c.anchor = null;
+        }
+        all.sort((a, b) => a.cursor.line - b.cursor.line || a.cursor.col - b.cursor.col);
+        this._setAllCursors(all);
+        this._mergeCursors();
         this._scrollToCursor();
         this._onContentChange();
     }
@@ -960,14 +1074,74 @@ class View {
         const ctrl = e.ctrlKey || e.metaKey;
         const shift = e.shiftKey;
 
+        // --- Multi-cursor shortcuts (before CZFeatures) ---
+        // Ctrl+Alt+Up/Down: add cursor above/below
+        if (ctrl && e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+            e.preventDefault();
+            const dir = e.key === 'ArrowUp' ? -1 : 1;
+            const newLine = this.cursor.line + dir;
+            if (newLine >= 0 && newLine < this.model.getLineCount()) {
+                const newCol = Math.min(this.cursor.col, this.model.getLineLength(newLine));
+                this.extraCursors.push({ cursor: { line: newLine, col: newCol }, anchor: null });
+                this._mergeCursors();
+                this._scheduleRender();
+            }
+            return;
+        }
+
+        // Escape: collapse multi-cursor to primary
+        if (e.key === 'Escape' && this.extraCursors.length > 0) {
+            e.preventDefault();
+            this.extraCursors = [];
+            this._scheduleRender();
+            return;
+        }
+
+        // Ctrl+D: select next occurrence
+        if (ctrl && e.key === 'd') {
+            e.preventDefault();
+            this._selectNextOccurrence();
+            return;
+        }
+
+        // Ctrl+Shift+L: select all occurrences
+        if (ctrl && shift && e.key === 'l') {
+            e.preventDefault();
+            this._selectAllOccurrences();
+            return;
+        }
+
+        // When multi-cursor active, handle Enter/Backspace/Delete/Tab directly
+        if (this.extraCursors.length > 0) {
+            if (e.key === 'Enter' && !ctrl) {
+                e.preventDefault();
+                this._multiCursorEnter();
+                return;
+            }
+            if (e.key === 'Backspace') {
+                e.preventDefault();
+                this._multiCursorBackspace();
+                return;
+            }
+            if (e.key === 'Delete') {
+                e.preventDefault();
+                this._multiCursorDelete();
+                return;
+            }
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                if (shift) {
+                    this._multiCursorOutdent();
+                } else {
+                    this.insertText('\t');
+                }
+                return;
+            }
+        }
+
         // --- Delegate to CZFeatures for ALL feature handling ---
-        // CZFeatures handles: autocomplete, auto-close brackets, Emmet, save,
-        // comment toggle, duplicate line, move line, search, etc.
-        // If CZFeatures calls preventDefault(), we stop here.
         if (typeof CZFeatures !== 'undefined') {
-            // Skip only Ctrl+Z/Y/A/C/V/X (EditorView native undo/redo/select/clipboard)
-            const isNativeCtrl = ctrl && ['z','y','a','c','v','x'].includes(e.key.toLowerCase());
-            // Skip arrow keys when autocomplete is NOT visible (EditorView handles cursor)
+            const isNativeCtrl = ctrl && ['z','y','a','c','v','x','d'].includes(e.key.toLowerCase());
             const isArrow = ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key);
             const skipArrow = isArrow && !CZFeatures.acVisible;
 
@@ -977,11 +1151,16 @@ class View {
             }
         }
 
-        // Arrow keys
-        if (e.key === 'ArrowLeft') { e.preventDefault(); this._moveCursor(0, -1, shift, ctrl); return; }
-        if (e.key === 'ArrowRight') { e.preventDefault(); this._moveCursor(0, 1, shift, ctrl); return; }
-        if (e.key === 'ArrowUp') { e.preventDefault(); this._moveCursor(-1, 0, shift); return; }
-        if (e.key === 'ArrowDown') { e.preventDefault(); this._moveCursor(1, 0, shift); return; }
+        // Arrow keys — collapse multi-cursor on arrow movement
+        if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)) {
+            e.preventDefault();
+            if (this.extraCursors.length > 0 && !shift) this.extraCursors = [];
+            if (e.key === 'ArrowLeft') this._moveCursor(0, -1, shift, ctrl);
+            else if (e.key === 'ArrowRight') this._moveCursor(0, 1, shift, ctrl);
+            else if (e.key === 'ArrowUp') this._moveCursor(-1, 0, shift);
+            else if (e.key === 'ArrowDown') this._moveCursor(1, 0, shift);
+            return;
+        }
 
         // Home/End
         if (e.key === 'Home') {
@@ -1029,6 +1208,7 @@ class View {
                     endLine: this.cursor.line, endCol: 0 });
                 this.cursor = { line: this.cursor.line - 1, col: prevLen };
             }
+            this.anchor = null;
             this._onContentChange();
             this._scrollToCursor();
             return;
@@ -1045,6 +1225,7 @@ class View {
                 this.model.delete({ startLine: this.cursor.line, startCol: this.cursor.col,
                     endLine: this.cursor.line + 1, endCol: 0 });
             }
+            this.anchor = null;
             this._onContentChange();
             return;
         }
@@ -1195,6 +1376,15 @@ class View {
     _handleMouseDown(e) {
         this.inputEl.focus({ preventScroll: true });
         const pos = this._getLineColFromMouse(e);
+        if (e.altKey && !e.shiftKey && !e.ctrlKey) {
+            // Alt+Click: add extra cursor
+            this.extraCursors.push({ cursor: { ...pos }, anchor: null });
+            this._mergeCursors();
+            this._scheduleRender();
+            return;
+        }
+        // Normal click: collapse multi-cursor
+        if (this.extraCursors.length > 0) this.extraCursors = [];
         if (e.shiftKey) {
             if (!this.anchor) this.anchor = { ...this.cursor };
             this.cursor = pos;
@@ -1246,6 +1436,7 @@ class View {
             this.cursor = { line: maxLine, col: 0 };
         }
         this.anchor = null;
+        this.extraCursors = [];
         this._visLines.forEach(d => { d.remove(); d._gutterEl?.remove(); });
         this._visLines.clear();
         this._commentStateCacheVersion = -1; // invalidate comment cache
@@ -1264,6 +1455,164 @@ class View {
     /** Get cursor position info for footbar */
     getCursorInfo() {
         return { line: this.cursor.line + 1, col: this.cursor.col + 1 };
+    }
+
+    // ===== MULTI-CURSOR OPERATIONS =====
+    _multiCursorEnter() {
+        const all = this._getAllCursors();
+        all.sort((a, b) => b.cursor.line - a.cursor.line || b.cursor.col - a.cursor.col);
+        for (const c of all) {
+            if (c.anchor) {
+                const r = this._getSelectionRangeFor(c.cursor, c.anchor);
+                if (r) { this.model.delete(r); c.cursor = { line: r.startLine, col: r.startCol }; c.anchor = null; }
+            }
+            const line = this.model.getLine(c.cursor.line);
+            const indent = line.match(/^(\s*)/)[1];
+            const before = line.substring(0, c.cursor.col).trimEnd();
+            const lastChar = before.slice(-1);
+            let insert = '\n' + indent;
+            if (lastChar && '{(['.includes(lastChar)) insert += '\t';
+            const endPos = this.model.insert(c.cursor, insert);
+            c.cursor = { ...endPos };
+            c.anchor = null;
+        }
+        all.sort((a, b) => a.cursor.line - b.cursor.line || a.cursor.col - b.cursor.col);
+        this._setAllCursors(all);
+        this._mergeCursors();
+        this._scrollToCursor();
+        this._onContentChange();
+    }
+
+    _multiCursorBackspace() {
+        const all = this._getAllCursors();
+        all.sort((a, b) => b.cursor.line - a.cursor.line || b.cursor.col - a.cursor.col);
+        for (const c of all) {
+            if (c.anchor) {
+                const r = this._getSelectionRangeFor(c.cursor, c.anchor);
+                if (r) { this.model.delete(r); c.cursor = { line: r.startLine, col: r.startCol }; c.anchor = null; }
+            } else if (c.cursor.col > 0) {
+                this.model.delete({ startLine: c.cursor.line, startCol: c.cursor.col - 1,
+                    endLine: c.cursor.line, endCol: c.cursor.col });
+                c.cursor.col--;
+            } else if (c.cursor.line > 0) {
+                const prevLen = this.model.getLineLength(c.cursor.line - 1);
+                this.model.delete({ startLine: c.cursor.line - 1, startCol: prevLen,
+                    endLine: c.cursor.line, endCol: 0 });
+                c.cursor = { line: c.cursor.line - 1, col: prevLen };
+            }
+            c.anchor = null;
+        }
+        all.sort((a, b) => a.cursor.line - b.cursor.line || a.cursor.col - b.cursor.col);
+        this._setAllCursors(all);
+        this._mergeCursors();
+        this._scrollToCursor();
+        this._onContentChange();
+    }
+
+    _multiCursorDelete() {
+        const all = this._getAllCursors();
+        all.sort((a, b) => b.cursor.line - a.cursor.line || b.cursor.col - a.cursor.col);
+        for (const c of all) {
+            if (c.anchor) {
+                const r = this._getSelectionRangeFor(c.cursor, c.anchor);
+                if (r) { this.model.delete(r); c.cursor = { line: r.startLine, col: r.startCol }; c.anchor = null; }
+            } else if (c.cursor.col < this.model.getLineLength(c.cursor.line)) {
+                this.model.delete({ startLine: c.cursor.line, startCol: c.cursor.col,
+                    endLine: c.cursor.line, endCol: c.cursor.col + 1 });
+            } else if (c.cursor.line < this.model.getLineCount() - 1) {
+                this.model.delete({ startLine: c.cursor.line, startCol: c.cursor.col,
+                    endLine: c.cursor.line + 1, endCol: 0 });
+            }
+            c.anchor = null;
+        }
+        all.sort((a, b) => a.cursor.line - b.cursor.line || a.cursor.col - b.cursor.col);
+        this._setAllCursors(all);
+        this._mergeCursors();
+        this._onContentChange();
+    }
+
+    _multiCursorOutdent() {
+        const all = this._getAllCursors();
+        all.sort((a, b) => b.cursor.line - a.cursor.line || b.cursor.col - a.cursor.col);
+        for (const c of all) {
+            const line = this.model.getLine(c.cursor.line);
+            if (line.startsWith('\t')) {
+                this.model.delete({ startLine: c.cursor.line, startCol: 0,
+                    endLine: c.cursor.line, endCol: 1 });
+                c.cursor.col = Math.max(0, c.cursor.col - 1);
+            }
+            c.anchor = null;
+        }
+        all.sort((a, b) => a.cursor.line - b.cursor.line || a.cursor.col - b.cursor.col);
+        this._setAllCursors(all);
+        this._mergeCursors();
+        this._onContentChange();
+    }
+
+    _selectNextOccurrence() {
+        // Get current word or selection
+        let searchWord;
+        if (this.hasSelection()) {
+            searchWord = this.getSelectedText();
+        } else {
+            const w = this._getWordAt(this.cursor.line, this.cursor.col);
+            if (!w.word) return;
+            searchWord = w.word;
+            // Select the word under primary cursor first
+            this.anchor = { line: this.cursor.line, col: w.start };
+            this.cursor = { line: this.cursor.line, col: w.end };
+            this._scheduleRender();
+            return;
+        }
+        if (!searchWord) return;
+        // Find next occurrence after the last cursor
+        const all = this._getAllCursors();
+        all.sort((a, b) => a.cursor.line - b.cursor.line || a.cursor.col - b.cursor.col);
+        const lastCursor = all[all.length - 1];
+        const fullText = this.model.getValue();
+        const lastOffset = this.model.getOffsetAt(lastCursor.cursor.line, lastCursor.cursor.col);
+        let idx = fullText.indexOf(searchWord, lastOffset);
+        if (idx === -1) idx = fullText.indexOf(searchWord); // wrap
+        if (idx === -1) return;
+        const startPos = this.model.getPositionAt(idx);
+        const endPos = this.model.getPositionAt(idx + searchWord.length);
+        // Check not already selected
+        const isDuplicate = all.some(c =>
+            c.cursor.line === endPos.line && c.cursor.col === endPos.col &&
+            c.anchor && c.anchor.line === startPos.line && c.anchor.col === startPos.col
+        );
+        if (isDuplicate) return;
+        this.extraCursors.push({ cursor: { ...endPos }, anchor: { ...startPos } });
+        // Scroll to new cursor
+        const y = endPos.line * this.lh;
+        const viewH = this.scrollEl.clientHeight;
+        const st = this.scrollEl.scrollTop;
+        if (y < st || y > st + viewH) this.scrollEl.scrollTop = Math.max(0, y - viewH / 2);
+        this._scheduleRender();
+    }
+
+    _selectAllOccurrences() {
+        let searchWord;
+        if (this.hasSelection()) {
+            searchWord = this.getSelectedText();
+        } else {
+            const w = this._getWordAt(this.cursor.line, this.cursor.col);
+            if (!w.word) return;
+            searchWord = w.word;
+        }
+        if (!searchWord) return;
+        const fullText = this.model.getValue();
+        const cursors = [];
+        let idx = 0;
+        while ((idx = fullText.indexOf(searchWord, idx)) !== -1) {
+            const startPos = this.model.getPositionAt(idx);
+            const endPos = this.model.getPositionAt(idx + searchWord.length);
+            cursors.push({ cursor: { ...endPos }, anchor: { ...startPos } });
+            idx += searchWord.length;
+        }
+        if (cursors.length === 0) return;
+        this._setAllCursors(cursors);
+        this._scheduleRender();
     }
 
     destroy() {
