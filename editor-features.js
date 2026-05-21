@@ -749,7 +749,6 @@ function goToMatch() {
     const match = searchMatches[searchCurrentIdx];
     if (!match) return;
     const ta = CZUI.getEditingArea();
-    ta.focus();
     ta.setSelectionRange(match.start, match.end);
     updateSearchCountDisplay();
     // Scroll into view
@@ -765,7 +764,6 @@ function replaceOne() {
     if (searchMatches.length === 0 || searchCurrentIdx < 0) return;
     const match = searchMatches[searchCurrentIdx];
     const ta = CZUI.getEditingArea();
-    ta.focus();
     replaceRange(ta, match.start, match.end, replaceInput.value);
     CZUI.handleInput();
     updateSearchMatches();
@@ -775,7 +773,6 @@ function replaceAll() {
     if (searchMatches.length === 0) return;
     const ta = CZUI.getEditingArea();
     const replacement = replaceInput.value;
-    ta.focus();
     // Replace from end to start to preserve indices
     const sorted = [...searchMatches].sort((a, b) => b.start - a.start);
     for (const match of sorted) {
