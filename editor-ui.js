@@ -2346,7 +2346,12 @@ const CZUI = (() => {
             } else {
                 const item = fileDivs[fi++];
                 if (!item) return;
-                item.onclick = async (e) => {
+                item.onclick = (e) => {
+                    e.stopPropagation();
+                    sidebarTree.querySelectorAll('.tree-item.active').forEach(el => el.classList.remove('active'));
+                    item.classList.add('active');
+                };
+                item.ondblclick = async (e) => {
                     e.stopPropagation();
                     await openFileFromTree(node.handle, node.name, parentHandle);
                 };
@@ -2434,7 +2439,12 @@ const CZUI = (() => {
 
                 item.innerHTML = `${fileIconHTML(node.name)}<span class="tree-name">${CZEngine.escapeHTML(node.name)}</span>`;
 
-                item.onclick = async (e) => {
+                item.onclick = (e) => {
+                    e.stopPropagation();
+                    sidebarTree.querySelectorAll('.tree-item.active').forEach(el => el.classList.remove('active'));
+                    item.classList.add('active');
+                };
+                item.ondblclick = async (e) => {
                     e.stopPropagation();
                     await openFileFromTree(node.handle, node.name, parentHandle);
                 };
