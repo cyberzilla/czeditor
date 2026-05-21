@@ -263,6 +263,7 @@
         document.getElementById('btn-preview-zoom-in').onclick = () => CZUI.setPreviewZoom(parseInt(document.getElementById('preview-zoom-level').textContent) + 25);
         document.getElementById('btn-preview-zoom-out').onclick = () => CZUI.setPreviewZoom(parseInt(document.getElementById('preview-zoom-level').textContent) - 25);
         document.getElementById('btn-preview-zoom-reset').onclick = () => CZUI.setPreviewZoom(100);
+        document.getElementById('btn-preview-fullwidth').onclick = () => CZUI.togglePreviewFullWidth();
         CZUI.setupPreviewResize();
 
         document.getElementById('close-shortcuts').onclick = () => document.getElementById('shortcuts-modal').classList.add('hidden');

@@ -1262,7 +1262,8 @@
 .sidebar-reopen-btn:hover .fi-ui,
 .sidebar-open-btn:hover .fi-ui,
 .pwa-install-btn:hover .fi-ui,
-.preview-toggle-btn:hover .fi-ui {
+.preview-toggle-btn:hover .fi-ui,
+.preview-zoom-btn:hover .fi-ui {
     background-color: var(--text-main);
 }
 
@@ -1405,4 +1406,34 @@
 .fi-ui-github {
     -webkit-mask-image: url('icons/ui/github.svg');
     mask-image: url('icons/ui/github.svg');
+}
+
+.fi-ui-screen-full {
+    -webkit-mask-image: url('icons/ui/screen-full.svg');
+    mask-image: url('icons/ui/screen-full.svg');
+}
+
+.fi-ui-screen-normal {
+    -webkit-mask-image: url('icons/ui/screen-normal.svg');
+    mask-image: url('icons/ui/screen-normal.svg');
+}
+
+.fi-ui-zoom-in {
+    -webkit-mask-image: url('icons/ui/zoom-in.svg');
+    mask-image: url('icons/ui/zoom-in.svg');
+}
+
+.fi-ui-zoom-out {
+    -webkit-mask-image: url('icons/ui/zoom-out.svg');
+    mask-image: url('icons/ui/zoom-out.svg');
+}
+
+.fi-ui-refresh {
+    -webkit-mask-image: url('icons/ui/refresh.svg');
+    mask-image: url('icons/ui/refresh.svg');
+}
+
+.fi-ui-close {
+    -webkit-mask-image: url('icons/ui/close.svg');
+    mask-image: url('icons/ui/close.svg');
 }

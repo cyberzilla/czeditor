@@ -208,6 +208,18 @@ body {
     flex-shrink: 0;
 }
 
+.editor-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--border-color);
+    z-index: 1;
+    pointer-events: none;
+}
+
 /* Sidebar reopen button â€” visible only when sidebar is collapsed */
 .sidebar-reopen-btn {
     display: none;
@@ -256,12 +268,13 @@ body {
     background-color: var(--bg-tab);
     color: var(--text-muted);
     border-right: 1px solid var(--border-color);
-    border-top: 1px solid transparent;
+    border-top: none;
     border-bottom: none;
+    box-sizing: border-box;
     cursor: pointer;
     font-size: 12.5px;
     user-select: none;
-    transition: background-color 0.2s, color 0.2s;
+    transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
     min-width: 80px;
     max-width: 180px;
     flex-shrink: 0;
@@ -272,9 +285,11 @@ body {
 }
 
 .tab.active {
-    background-color: var(--bg-tab-active);
+    background-color: var(--bg-main);
     color: var(--text-main);
-    border-top: 1px solid var(--accent-color);
+    box-shadow: inset 0 1px 0 var(--accent-color);
+    position: relative;
+    z-index: 2;
 }
 
 .tab-name {
@@ -1410,7 +1425,7 @@ body.sidebar-resizing {
     top: 8px;
     right: 10px;
     z-index: 10;
-    background: rgba(30, 30, 46, 0.9);
+    background: var(--bg-panel);
     backdrop-filter: blur(8px);
     border: 1px solid rgba(var(--surface-rgb), 0.1);
     border-radius: 6px;
@@ -1418,14 +1433,14 @@ body.sidebar-resizing {
     color: var(--text-muted);
     font-size: 13px;
     cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    box-shadow: var(--shadow-panel);
     transition: all 0.15s;
 }
 
 .preview-toggle-btn:hover {
-    background: rgba(40, 40, 60, 0.97);
+    background: rgba(var(--surface-rgb), 0.08);
     color: var(--accent-color);
-    border-color: rgba(137, 180, 250, 0.3);
+    border-color: rgba(var(--surface-rgb), 0.2);
 }
 
 .preview-toggle-btn.active {
@@ -1534,7 +1549,6 @@ body.sidebar-resizing {
     border: 1px solid transparent;
     color: var(--text-muted);
     cursor: pointer;
-    padding: 2px 6px;
     border-radius: 4px;
     font-size: 13px;
     transition: all 0.15s;
@@ -1558,6 +1572,26 @@ body.sidebar-resizing {
     min-width: 38px;
     text-align: center;
     user-select: none;
+}
+
+/* Full-width preview mode — hides editor, preview takes all space */
+.preview-fullwidth .editor-pane {
+    display: none !important;
+}
+
+.preview-fullwidth .preview-resize-handle {
+    display: none !important;
+}
+
+.preview-fullwidth .preview-pane {
+    width: 100% !important;
+    flex-basis: 100% !important;
+    flex-grow: 1 !important;
+}
+
+.preview-zoom-btn.active {
+    background: rgba(var(--surface-rgb), 0.12);
+    color: var(--accent-color);
 }
 
 /* Lottie preview */
@@ -2176,16 +2210,16 @@ body.sidebar-resizing {
     top: 0;
     right: 18px;
     z-index: 50;
-    background: rgba(30, 30, 46, 0.97);
+    background: var(--bg-panel);
     backdrop-filter: blur(12px);
-    border: 1px solid rgba(137, 180, 250, 0.15);
+    border: 1px solid rgba(var(--surface-rgb), 0.1);
     border-top: none;
     border-radius: 0 0 8px 8px;
     padding: 8px 10px;
     display: flex;
     flex-direction: column;
     gap: 6px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    box-shadow: var(--shadow-panel);
     min-width: 340px;
     animation: searchSlideDown 0.15s ease-out;
 }
@@ -2303,11 +2337,11 @@ body.sidebar-resizing {
 .autocomplete-popup {
     position: fixed;
     z-index: 9999;
-    background: rgba(30, 30, 46, 0.95);
+    background: var(--bg-panel);
     backdrop-filter: blur(16px);
     border: 1px solid var(--border-color);
     border-radius: 8px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(var(--surface-rgb), 0.03);
+    box-shadow: var(--shadow-panel);
     max-height: 220px;
     min-width: 220px;
     max-width: 380px;

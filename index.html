@@ -41,8 +41,8 @@
             }
             // Hide sidebar-empty initially to prevent flash when folder restores
             css += '#sidebar-empty{display:none}';
-            // Ensure active tab never flashes a bottom border
-            css += '.tab.active{box-shadow:none!important;border-bottom:none!important}';
+            // Ensure active tab covers header border-bottom (VS Code style)
+            css += '.tab.active{box-shadow:inset 0 1px 0 var(--accent-color)!important;position:relative;z-index:2}';
             // Pre-show UI elements if files exist to prevent layout shift & flicker
             var hasFiles = false;
             try { var sf = localStorage.getItem('cz_files'); hasFiles = sf && JSON.parse(sf).length > 0; } catch (e) { }
@@ -246,14 +246,16 @@
                                     <span class="preview-title" id="preview-title">Preview</span>
                                     <div class="preview-zoom-controls">
                                         <button class="preview-zoom-btn" id="btn-preview-zoom-out"
-                                            title="Zoom Out">−</button>
+                                            title="Zoom Out"><span class="fi fi-ui fi-ui-zoom-out"></span></button>
                                         <span class="preview-zoom-level" id="preview-zoom-level">100%</span>
                                         <button class="preview-zoom-btn" id="btn-preview-zoom-in"
-                                            title="Zoom In">+</button>
+                                            title="Zoom In"><span class="fi fi-ui fi-ui-zoom-in"></span></button>
                                         <button class="preview-zoom-btn" id="btn-preview-zoom-reset"
-                                            title="Reset Zoom">⟲</button>
+                                            title="Reset Zoom"><span class="fi fi-ui fi-ui-refresh"></span></button>
+                                        <button class="preview-zoom-btn" id="btn-preview-fullwidth"
+                                            title="Full Width"><span class="fi fi-ui fi-ui-screen-full"></span></button>
                                         <button class="preview-zoom-btn preview-close-btn" id="btn-preview-close"
-                                            title="Close Preview">✕</button>
+                                            title="Close Preview"><span class="fi fi-ui fi-ui-close"></span></button>
                                     </div>
                                 </div>
                                 <div class="preview-content" id="preview-content"></div>

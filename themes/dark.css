@@ -9,6 +9,8 @@
     --bg-tab: #11111b;
     --bg-tab-active: #1e1e2e;
     --bg-tab-hover: #313244;
+    --bg-panel: rgba(30, 30, 46, 0.95);
+    --shadow-panel: 0 4px 16px rgba(0, 0, 0, 0.4);
 
     /* Text */
     --text-main: #cdd6f4;
@@ -21,7 +23,7 @@
     /* Borders & Selection */
     --border-color: rgba(255, 255, 255, 0.08);
     --selection-bg: rgba(137, 180, 250, 0.3);
-    --active-line-bg: rgba(255, 255, 255, 0.04);
+    --active-line-bg: rgba(255, 255, 255, 0.07);
     --cursor-color: #f5e0dc;
 
     /* Surface channel — used for rgba(var(--surface-rgb), alpha) compositing

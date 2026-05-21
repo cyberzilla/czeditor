@@ -1418,7 +1418,34 @@ const CZUI = (() => {
     function closePreview() {
         if (lottieAnim) { try { lottieAnim.destroy(); } catch (e) {} lottieAnim = null; }
         lottieLastHash = '';
+        // Exit full-width mode if active
+        const container = $('preview-pane')?.parentElement;
+        if (container) container.classList.remove('preview-fullwidth');
+        const fwBtn = $('btn-preview-fullwidth');
+        if (fwBtn) {
+            fwBtn.classList.remove('active');
+            const icon = fwBtn.querySelector('.fi-ui');
+            if (icon) { icon.classList.remove('fi-ui-screen-normal'); icon.classList.add('fi-ui-screen-full'); }
+        }
         if (previewOpen) togglePreview();
+    }
+
+    function togglePreviewFullWidth() {
+        if (!previewOpen) return;
+        const pane = $('preview-pane');
+        const container = pane?.parentElement;
+        const btn = $('btn-preview-fullwidth');
+        if (!container) return;
+
+        const isFullWidth = container.classList.toggle('preview-fullwidth');
+        if (btn) {
+            btn.classList.toggle('active', isFullWidth);
+            const icon = btn.querySelector('.fi-ui');
+            if (icon) {
+                icon.classList.toggle('fi-ui-screen-full', !isFullWidth);
+                icon.classList.toggle('fi-ui-screen-normal', isFullWidth);
+            }
+        }
     }
 
     let htmlPreviewDebounceTimer = null;
@@ -3347,7 +3374,7 @@ const CZUI = (() => {
         executeSidebarAction, openExplorerSettings, applyExplorerSettings,
         // Image / SVG / Binary
         // Preview
-        isPreviewableFile, togglePreview, updatePreview, closePreview, setupPreviewResize, setPreviewZoom,
+        isPreviewableFile, togglePreview, updatePreview, closePreview, setupPreviewResize, setPreviewZoom, togglePreviewFullWidth,
         openBinaryAsCode, openBinaryExternal,
         // Icons
         getFileIcons, setFileIcons, getFileIconClass, fileIconHTML, folderIconHTML, getFolderIconClass,

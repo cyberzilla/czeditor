@@ -9,6 +9,8 @@
     --bg-tab: #dce0e8;
     --bg-tab-active: #eff1f5;
     --bg-tab-hover: #ccd0da;
+    --bg-panel: rgba(230, 233, 239, 0.97);
+    --shadow-panel: 0 4px 16px rgba(0, 0, 0, 0.12);
 
     /* Text */
     --text-main: #4c4f69;
