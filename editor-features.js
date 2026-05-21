@@ -179,8 +179,9 @@ function positionAutocomplete(ta, pos) {
         const gutterW = view.gutter ? view.gutter.offsetWidth : 40;
         const curLine = view.cursor.line;
         const curCol = view.cursor.col;
+        const acLineText = view.model.getLine(curLine);
         let top = rect.top + (curLine + 1) * lh - view.scrollEl.scrollTop;
-        let left = rect.left + gutterW + 8 + curCol * view.cw - view.scrollEl.scrollLeft;
+        let left = rect.left + gutterW + 8 + view._visualCol(acLineText, curCol) * view.cw - view.scrollEl.scrollLeft;
         if (top + 230 > window.innerHeight) top = top - 230 - lh;
         if (left + 300 > window.innerWidth) left = window.innerWidth - 310;
         acPopup.style.top = top+'px'; acPopup.style.left = Math.max(0,left)+'px';
@@ -299,7 +300,7 @@ function handleEnter(e) {
     const before = text.substring(0, pos), after = text.substring(pos);
     const currentLine = before.split('\n').pop();
     const indent = currentLine.match(/^(\s*)/)[1];
-    const prevChar = before.trimEnd().slice(-1);
+    const prevChar = currentLine.trimEnd().slice(-1);
     const nextChar = after[0];
 
     e.preventDefault();

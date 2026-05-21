@@ -40,6 +40,7 @@
     --line-num-active: #4c4f69;
     --indent-guide-color: rgba(0, 0, 0, 0.06);
     --indent-guide-active: rgba(0, 0, 0, 0.15);
+    --ws-indicator-color: rgba(0, 0, 0, 0.4);
     --bg-overlay: rgba(0, 0, 0, 0.45);
     --bg-checkerboard: rgba(0, 0, 0, 0.06);
 

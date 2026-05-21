@@ -180,6 +180,26 @@
     background: var(--selection-bg, rgba(116, 199, 236, 0.18));
 }
 
+/* Whitespace indicators (visible on selection) */
+.virt-ws {
+    position: absolute;
+    pointer-events: none;
+    color: var(--ws-indicator-color, rgba(255, 255, 255, 0.38));
+    font-family: var(--font-mono);
+    font-size: var(--editor-font-size, 15px);
+    line-height: var(--editor-line-height, 24px);
+    z-index: 2;
+    overflow: hidden;
+}
+
+.virt-ws-space {
+    text-align: center;
+}
+
+.virt-ws-tab {
+    padding-left: 2px;
+}
+
 /* Hidden input textarea (captures keystrokes + IME) */
 .virt-input {
     position: absolute;

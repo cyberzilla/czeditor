@@ -153,12 +153,12 @@ class View {
         const first = Math.max(0, Math.floor(scrollTop / this.lh) - BUFFER);
         const last = Math.min(totalLines - 1, Math.ceil((scrollTop + viewH) / this.lh) + BUFFER);
 
-        // Calculate max line width for horizontal scrolling
-        let maxLineLen = 0;
+        // Calculate max line width for horizontal scrolling (tab-aware)
+        let maxVisualLen = 0;
         for (let ln = first; ln <= last; ln++) {
-            maxLineLen = Math.max(maxLineLen, m.getLineLength(ln));
+            maxVisualLen = Math.max(maxVisualLen, this._visualLineWidth(m.getLine(ln)));
         }
-        const contentW = LINE_PAD + maxLineLen * this.cw + this.cw * 2;
+        const contentW = LINE_PAD + maxVisualLen * this.cw + this.cw * 2;
         this.sizer.style.minWidth = contentW + 'px';
 
         // Get language config for tokenization
@@ -251,6 +251,7 @@ class View {
         this._lastVersion = m.version;
         this._updateCursor(gutterW);
         this._updateSelection(gutterW);
+        this._updateWhitespaceIndicators();
         this._updateSearchHighlights(gutterW);
         this._updateBracketMatch(gutterW);
         this._updateActiveLine(gutterW);
@@ -370,7 +371,8 @@ class View {
     _lastCursorLine = -1;
     _lastCursorCol = -1;
     _updateCursor(gutterW) {
-        const x = LINE_PAD + this.cursor.col * this.cw;
+        const curLineText = this.model.getLine(this.cursor.line);
+        const x = LINE_PAD + this._visualCol(curLineText, this.cursor.col) * this.cw;
         const y = this.cursor.line * this.lh;
         this.cursorEl.style.left = x + 'px';
         this.cursorEl.style.top = y + 'px';
@@ -609,6 +611,45 @@ class View {
         return Math.min(above, below);
     }
 
+    // ===== TAB-AWARE VISUAL COLUMN =====
+    _visualCol(lineText, col) {
+        let visual = 0;
+        const tabSize = 4; // matches CSS tab-size
+        const end = Math.min(col, lineText.length);
+        for (let i = 0; i < end; i++) {
+            if (lineText[i] === '\t') {
+                visual = Math.floor(visual / tabSize + 1) * tabSize;
+            } else {
+                visual++;
+            }
+        }
+        if (col > lineText.length) visual += col - lineText.length;
+        return visual;
+    }
+
+    _colFromVisual(lineText, visualCol) {
+        if (visualCol <= 0) return 0;
+        let visual = 0;
+        const tabSize = 4;
+        for (let i = 0; i < lineText.length; i++) {
+            let nextVisual;
+            if (lineText[i] === '\t') {
+                nextVisual = Math.floor(visual / tabSize + 1) * tabSize;
+            } else {
+                nextVisual = visual + 1;
+            }
+            if (visualCol < nextVisual) {
+                return (visualCol - visual >= (nextVisual - visual) / 2) ? i + 1 : i;
+            }
+            visual = nextVisual;
+        }
+        return lineText.length;
+    }
+
+    _visualLineWidth(lineText) {
+        return this._visualCol(lineText, lineText.length);
+    }
+
     // ===== SELECTION =====
     hasSelection() {
         return this.anchor !== null &&
@@ -649,14 +690,64 @@ class View {
             if (startCol === endCol && ln !== r.endLine) {
                 // Empty line in selection — show thin highlight
             }
+            const selLineText = this.model.getLine(ln);
+            const vStart = this._visualCol(selLineText, startCol);
+            const vEnd = this._visualCol(selLineText, endCol);
             const div = document.createElement('div');
             div.className = 'virt-sel-rect';
             div.style.top = (ln * this.lh) + 'px';
-            div.style.left = (LINE_PAD + startCol * this.cw) + 'px';
-            div.style.width = ((endCol - startCol) * this.cw || this.cw * 0.5) + 'px';
+            div.style.left = (LINE_PAD + vStart * this.cw) + 'px';
+            div.style.width = ((vEnd - vStart) * this.cw || this.cw * 0.5) + 'px';
             div.style.height = this.lh + 'px';
             this.selLayer.appendChild(div);
         }
+    }
+
+    _updateWhitespaceIndicators() {
+        // Show · for spaces and → for tabs within selected text
+        if (!this.hasSelection()) return;
+        const r = this.getSelectionRange();
+        const cw = this.cw;
+        const lh = this.lh;
+        const tabSize = 4;
+        // Only render for visible lines
+        const scrollTop = this.scrollEl.scrollTop;
+        const viewH = this.scrollEl.clientHeight;
+        const firstVis = Math.floor(scrollTop / lh);
+        const lastVis = Math.ceil((scrollTop + viewH) / lh);
+        const frag = document.createDocumentFragment();
+
+        for (let ln = Math.max(r.startLine, firstVis); ln <= Math.min(r.endLine, lastVis); ln++) {
+            const lineText = this.model.getLine(ln);
+            const startCol = ln === r.startLine ? r.startCol : 0;
+            const endCol = ln === r.endLine ? r.endCol : lineText.length;
+            let visual = 0;
+
+            for (let i = 0; i < lineText.length; i++) {
+                const ch = lineText[i];
+                const isTab = ch === '\t';
+                const isSpace = ch === ' ';
+                let nextVisual;
+                if (isTab) {
+                    nextVisual = Math.floor(visual / tabSize + 1) * tabSize;
+                } else {
+                    nextVisual = visual + 1;
+                }
+
+                if ((isTab || isSpace) && i >= startCol && i < endCol) {
+                    const el = document.createElement('div');
+                    el.className = isTab ? 'virt-ws virt-ws-tab' : 'virt-ws virt-ws-space';
+                    el.style.top = (ln * lh) + 'px';
+                    el.style.left = (LINE_PAD + visual * cw) + 'px';
+                    el.style.width = ((nextVisual - visual) * cw) + 'px';
+                    el.style.height = lh + 'px';
+                    el.textContent = isTab ? '→' : '·';
+                    frag.appendChild(el);
+                }
+                visual = nextVisual;
+            }
+        }
+        this.selLayer.appendChild(frag);
     }
 
     _updateSearchHighlights(gutterW) {
@@ -684,11 +775,14 @@ class View {
                 const lineLen = m.getLineLength(ln);
                 const sc = ln === startPos.line ? startPos.col : 0;
                 const ec = ln === endPos.line ? endPos.col : lineLen;
+                const srchLineText = this.model.getLine(ln);
+                const vSc = this._visualCol(srchLineText, sc);
+                const vEc = this._visualCol(srchLineText, ec);
                 const div = document.createElement('div');
                 div.className = i === currentIdx ? 'virt-search-match current' : 'virt-search-match';
                 div.style.top = (ln * this.lh) + 'px';
-                div.style.left = (LINE_PAD + sc * this.cw) + 'px';
-                div.style.width = ((ec - sc) * this.cw) + 'px';
+                div.style.left = (LINE_PAD + vSc * this.cw) + 'px';
+                div.style.width = ((vEc - vSc) * this.cw) + 'px';
                 div.style.height = this.lh + 'px';
                 this.selLayer.appendChild(div);
             }
@@ -710,7 +804,8 @@ class View {
             const div = document.createElement('div');
             div.className = 'virt-bracket-match';
             div.style.top = (pos.line * this.lh) + 'px';
-            div.style.left = (LINE_PAD + pos.col * this.cw) + 'px';
+            const bLineText = this.model.getLine(pos.line);
+            div.style.left = (LINE_PAD + this._visualCol(bLineText, pos.col) * this.cw) + 'px';
             div.style.width = this.cw + 'px';
             div.style.height = this.lh + 'px';
             this.selLayer.appendChild(div);
@@ -1073,7 +1168,8 @@ class View {
         else if (y + this.lh > st + viewH) this.scrollEl.scrollTop = y - viewH + this.lh;
 
         // Horizontal auto-scroll — cursor position is relative to scroll container
-        const cursorX = LINE_PAD + this.cursor.col * this.cw;
+        const scrollLineText = this.model.getLine(this.cursor.line);
+        const cursorX = LINE_PAD + this._visualCol(scrollLineText, this.cursor.col) * this.cw;
         const viewW = this.scrollEl.clientWidth;
         const sl = this.scrollEl.scrollLeft;
         const margin = this.cw * 2; // 2 char margin
@@ -1091,7 +1187,8 @@ class View {
         const x = e.clientX - rect.left + this.scrollEl.scrollLeft - LINE_PAD;
         const y = e.clientY - rect.top + this.scrollEl.scrollTop;
         const line = Math.max(0, Math.min(this.model.getLineCount() - 1, Math.floor(y / this.lh)));
-        const col = Math.max(0, Math.min(this.model.getLineLength(line), Math.round(x / this.cw)));
+        const lineText = this.model.getLine(line);
+        const col = this._colFromVisual(lineText, x / this.cw);
         return { line, col };
     }
 
