@@ -828,7 +828,10 @@ function minifyCode() {
     const f = CZUI.getActiveFile();
     if (!f) return;
     const ta = CZUI.getEditingArea();
-    const text = ta.value;
+    const hasSelection = ta.selectionStart !== ta.selectionEnd;
+    const selStart = ta.selectionStart;
+    const selEnd = ta.selectionEnd;
+    const text = hasSelection ? ta.value.substring(selStart, selEnd) : ta.value;
     let result = text;
     const lang = f.language;
 
@@ -865,7 +868,8 @@ function minifyCode() {
     }
 
     ta.focus();
-    ta.select();
+    if (!hasSelection) ta.setSelectionRange(0, ta.value.length);
+    else ta.setSelectionRange(selStart, selEnd);
     document.execCommand('insertText', false, result);
     CZUI.handleInput();
 }
@@ -874,7 +878,10 @@ function beautifyCode() {
     const f = CZUI.getActiveFile();
     if (!f) return;
     const ta = CZUI.getEditingArea();
-    const text = ta.value;
+    const hasSelection = ta.selectionStart !== ta.selectionEnd;
+    const selStart = ta.selectionStart;
+    const selEnd = ta.selectionEnd;
+    const text = hasSelection ? ta.value.substring(selStart, selEnd) : ta.value;
     let result = text;
     const lang = f.language;
     const indent = '\t';
@@ -883,6 +890,8 @@ function beautifyCode() {
         try { result = JSON.stringify(JSON.parse(text), null, indent); } catch (e) { return; }
     } else if (lang === 'css') {
         result = beautifyCSS(text, indent);
+    } else if (lang === 'javascript' || lang === 'typescript') {
+        result = beautifyJS(text, indent);
     } else if (lang === 'html' || lang === 'xml') {
         result = beautifyHTML(text, indent);
     } else if (lang === 'sql') {
@@ -893,9 +902,153 @@ function beautifyCode() {
     }
 
     ta.focus();
-    ta.select();
+    if (!hasSelection) ta.setSelectionRange(0, ta.value.length);
+    else ta.setSelectionRange(selStart, selEnd);
     document.execCommand('insertText', false, result);
     CZUI.handleInput();
+}
+
+function beautifyJS(text, indent) {
+    // 1. Single-pass tokenizer to preserve strings, comments, template literals, regex
+    const preserved = [];
+    let safe = '';
+    let i = 0;
+    while (i < text.length) {
+        // Block comment /* ... */
+        if (text[i] === '/' && text[i + 1] === '*') {
+            const end = text.indexOf('*/', i + 2);
+            if (end !== -1) {
+                preserved.push(text.substring(i, end + 2));
+                safe += `\n__CZPR${preserved.length - 1}__\n`;
+                i = end + 2;
+                continue;
+            }
+        }
+        // Single-line comment //
+        if (text[i] === '/' && text[i + 1] === '/') {
+            let end = text.indexOf('\n', i);
+            if (end === -1) end = text.length;
+            preserved.push(text.substring(i, end));
+            safe += `__CZPR${preserved.length - 1}__`;
+            i = end;
+            continue;
+        }
+        // Regex literal: / ... /flags — detect by preceding context
+        if (text[i] === '/' && i > 0) {
+            // Look back for operator/keyword context that indicates regex
+            const prevChar = safe.trimEnd().slice(-1);
+            if ('=(:,;!&|?~^%[{+\n'.includes(prevChar) || safe.trimEnd().endsWith('return')) {
+                let j = i + 1;
+                let escaped = false;
+                let inClass = false;
+                while (j < text.length) {
+                    if (escaped) { escaped = false; j++; continue; }
+                    if (text[j] === '\\') { escaped = true; j++; continue; }
+                    if (text[j] === '[') { inClass = true; j++; continue; }
+                    if (text[j] === ']') { inClass = false; j++; continue; }
+                    if (text[j] === '/' && !inClass) { j++; break; }
+                    j++;
+                }
+                // Consume flags
+                while (j < text.length && /[gimsuy]/.test(text[j])) j++;
+                preserved.push(text.substring(i, j));
+                safe += `__CZPR${preserved.length - 1}__`;
+                i = j;
+                continue;
+            }
+        }
+        // Template literal `...`
+        if (text[i] === '`') {
+            let j = i + 1;
+            while (j < text.length) {
+                if (text[j] === '\\') { j += 2; continue; }
+                if (text[j] === '`') { j++; break; }
+                j++;
+            }
+            preserved.push(text.substring(i, j));
+            safe += `__CZPR${preserved.length - 1}__`;
+            i = j;
+            continue;
+        }
+        // Quoted string " or '
+        if (text[i] === '"' || text[i] === "'") {
+            const q = text[i];
+            let j = i + 1;
+            while (j < text.length) {
+                if (text[j] === '\\') { j += 2; continue; }
+                if (text[j] === q) { j++; break; }
+                j++;
+            }
+            preserved.push(text.substring(i, j));
+            safe += `__CZPR${preserved.length - 1}__`;
+            i = j;
+            continue;
+        }
+        safe += text[i];
+        i++;
+    }
+
+    // 2. Normalize whitespace
+    safe = safe.replace(/[ \t]+/g, ' ');
+    safe = safe.replace(/\n\s*\n/g, '\n');
+
+    // 3. Add newlines around structural tokens
+    safe = safe.replace(/ *\{ */g, ' {\n');
+    safe = safe.replace(/ *\} */g, '\n}\n');
+
+    // Only add newline after ; when NOT inside parentheses (avoids breaking for-loops & function args)
+    let result3 = '';
+    let parenDepth = 0;
+    for (let c = 0; c < safe.length; c++) {
+        const ch = safe[c];
+        if (ch === '(') parenDepth++;
+        else if (ch === ')') parenDepth = Math.max(0, parenDepth - 1);
+        result3 += ch;
+        if (ch === ';' && parenDepth === 0) {
+            // Add newline after ; only at top paren level
+            if (safe[c + 1] !== '\n') result3 += '\n';
+        }
+    }
+    safe = result3;
+
+    // Keep } else / } catch / } finally on same line
+    safe = safe.replace(/\}\s*(else|catch|finally)/g, '} $1');
+    // Keep }); and }, together (callback closings)
+    safe = safe.replace(/\}\s*\)\s*;/g, '});');
+    safe = safe.replace(/\}\s*\)\s*\./g, '}).');
+    safe = safe.replace(/\}\s*\)/g, '})');
+    safe = safe.replace(/\}\s*,/g, '},');
+
+    // 4. Clean up multiple newlines
+    safe = safe.replace(/\n{2,}/g, '\n');
+
+    // 5. Re-indent based on brace depth
+    const lines = safe.split('\n');
+    let depth = 0;
+    const out = [];
+    for (const raw of lines) {
+        const line = raw.trim();
+        if (!line) continue;
+        // Count closing tokens at start of line
+        const closeMatch = line.match(/^([}\])])+/);
+        if (closeMatch) {
+            depth = Math.max(0, depth - closeMatch[0].length);
+        }
+        out.push(indent.repeat(depth) + line);
+        // Count net opening tokens (exclude those in preserved placeholders)
+        const cleanLine = line.replace(/__CZPR\d+__/g, '');
+        const opens = (cleanLine.match(/[{(\[]/g) || []).length;
+        const closes = (cleanLine.match(/[}\])]/g) || []).length;
+        const net = opens - closes;
+        if (net > 0) depth += net;
+    }
+
+    // 6. Restore preserved tokens
+    let result = out.join('\n');
+    for (let j = preserved.length - 1; j >= 0; j--) {
+        result = result.replace(`__CZPR${j}__`, preserved[j]);
+    }
+    return result;
 }
 
 function beautifyCSS(text, indent) {
