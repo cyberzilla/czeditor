@@ -411,8 +411,62 @@ const CZUI = (() => {
         const ext = name.split('.').pop().toLowerCase();
         return ['html', 'htm'].includes(ext);
     }
+    function isCsvFile(name) {
+        const ext = name.split('.').pop().toLowerCase();
+        return ['csv', 'tsv'].includes(ext);
+    }
+    function parseCsv(text, name) {
+        const isTsv = name && name.split('.').pop().toLowerCase() === 'tsv';
+        const sep = isTsv ? '\t' : ',';
+        const rows = [];
+        const lines = text.split('\n');
+        for (const line of lines) {
+            if (!line.trim()) continue;
+            const row = [];
+            let inQuote = false, cell = '';
+            for (let i = 0; i < line.length; i++) {
+                const ch = line[i];
+                if (inQuote) {
+                    if (ch === '"' && line[i + 1] === '"') { cell += '"'; i++; }
+                    else if (ch === '"') inQuote = false;
+                    else cell += ch;
+                } else {
+                    if (ch === '"') inQuote = true;
+                    else if (ch === sep) { row.push(cell); cell = ''; }
+                    else if (ch === '\r') { /* skip */ }
+                    else cell += ch;
+                }
+            }
+            row.push(cell);
+            rows.push(row);
+        }
+        return rows;
+    }
+    function renderCsvTable(rows) {
+        if (!rows.length) return '<p style="color:var(--text-muted);padding:16px">Empty CSV</p>';
+        const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        let html = '<div class="csv-table-wrapper"><table class="csv-table">';
+        // Header row
+        html += '<thead><tr>';
+        for (const cell of rows[0]) {
+            html += '<th>' + esc(cell) + '</th>';
+        }
+        html += '</tr></thead><tbody>';
+        // Data rows
+        for (let i = 1; i < rows.length; i++) {
+            html += '<tr>';
+            for (let j = 0; j < rows[0].length; j++) {
+                const val = rows[i][j] !== undefined ? rows[i][j] : '';
+                html += '<td>' + esc(val) + '</td>';
+            }
+            html += '</tr>';
+        }
+        html += '</tbody></table></div>';
+        html += '<div class="csv-info">' + (rows.length - 1) + ' rows \u00d7 ' + rows[0].length + ' columns</div>';
+        return html;
+    }
     function isPreviewableFile(f) {
-        return f && !f.isImage && !f.isBinary && (f.isSvg || isSvgFile(f.name) || isMarkdownFile(f.name) || isHtmlFile(f.name) || isLottieContent(f));
+        return f && !f.isImage && !f.isBinary && (f.isSvg || isSvgFile(f.name) || isMarkdownFile(f.name) || isHtmlFile(f.name) || isCsvFile(f.name) || isLottieContent(f));
     }
     function isLottieContent(f) {
         if (!f || !f.content || !f.name.endsWith('.json')) return false;
@@ -1423,6 +1477,11 @@ const CZUI = (() => {
             if (title) title.textContent = 'Markdown Preview';
             const html = renderMarkdown(f.content);
             content.innerHTML = '<div style="transform:scale(' + (previewZoom / 100) + ');transform-origin:top left;transition:transform 0.15s;width:' + (10000 / previewZoom) + '%">' + html + '</div>';
+        } else if (isCsvFile(f.name)) {
+            content.className = 'preview-content csv-preview';
+            if (title) title.textContent = 'CSV Preview';
+            const rows = parseCsv(f.content, f.name);
+            content.innerHTML = renderCsvTable(rows);
         } else {
             content.innerHTML = '';
         }

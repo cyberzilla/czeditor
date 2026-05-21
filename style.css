@@ -1801,6 +1801,77 @@ body.sidebar-resizing {
     accent-color: var(--accent-color);
 }
 
+/* CSV preview content */
+.preview-content.csv-preview {
+    background-image: none;
+    background: var(--bg-main);
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.csv-table-wrapper {
+    flex: 1;
+    overflow: auto;
+    min-height: 0;
+}
+
+.csv-table {
+    border-collapse: collapse;
+    width: 100%;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.csv-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+.csv-table th {
+    background: var(--bg-tab, #181825);
+    color: var(--accent-color);
+    font-weight: 600;
+    padding: 8px 14px;
+    text-align: left;
+    border-bottom: 2px solid var(--accent-color);
+    white-space: nowrap;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.csv-table td {
+    padding: 6px 14px;
+    border-bottom: 1px solid rgba(var(--surface-rgb), 0.05);
+    color: var(--text-main);
+    white-space: nowrap;
+    max-width: 400px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.csv-table tbody tr:nth-child(even) {
+    background: rgba(var(--surface-rgb), 0.03);
+}
+
+.csv-table tbody tr:hover {
+    background: rgba(137, 180, 250, 0.06);
+}
+
+.csv-info {
+    padding: 10px 14px;
+    font-size: 11px;
+    color: var(--text-muted);
+    border-top: 1px solid var(--border-color);
+    background: var(--bg-tab, #181825);
+    font-family: var(--font-mono);
+    flex-shrink: 0;
+}
+
 /* Root folder item — flex row with inline actions (VS Code style) */
 .tree-root-folder {
     padding-bottom: 2px;

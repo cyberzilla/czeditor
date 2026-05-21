@@ -3,6 +3,7 @@
   {"id":"batch","name":"Batch (CMD)","extensions":["bat","cmd"]},
   {"id":"c","name":"C/C++","extensions":["c","h","cpp","hpp","cc","cxx","hh","hxx","ino"]},
   {"id":"csharp","name":"C#","extensions":["cs"]},
+  {"id":"csv","name":"CSV","extensions":["csv","tsv"]},
   {"id":"css","name":"CSS","extensions":["css","scss","less"]},
   {"id":"env","name":"Environment","extensions":["env"],"filenames":[".env",".env.local",".env.development",".env.production",".env.staging",".env.test",".env.example"]},
   {"id":"html","name":"HTML","extensions":["html","htm","xhtml"]},

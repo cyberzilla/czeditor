@@ -1,0 +1,21 @@
+{
+  "id": "csv",
+  "name": "CSV",
+  "extensions": ["csv", "tsv"],
+  "comment": { "line": null, "blockStart": null, "blockEnd": null },
+  "autoClosePairs": [
+    ["\"", "\""], ["'", "'"]
+  ],
+  "brackets": [],
+  "syntax": [
+    { "match": "\"(?:[^\"\\\\]|\\\\.)*\"", "scope": "string" },
+    { "match": "'(?:[^'\\\\]|\\\\.)*'", "scope": "string" },
+    { "match": "\\b-?\\d+\\.?\\d*(?:[eE][+-]?\\d+)?\\b", "scope": "number" },
+    { "match": "\\b(?:true|false|TRUE|FALSE|null|NULL|N/A)\\b", "scope": "keyword" },
+    { "match": ",|\\t|\\|", "scope": "tag" }
+  ],
+  "autocomplete": {
+    "keywords": ["true", "false", "null", "N/A"]
+  },
+  "snippets": {}
+}
