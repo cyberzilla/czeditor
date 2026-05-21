@@ -1263,7 +1263,7 @@
 .sidebar-open-btn:hover .fi-ui,
 .pwa-install-btn:hover .fi-ui,
 .preview-toggle-btn:hover .fi-ui {
-    background-color: var(--text-color, #e0e0e0);
+    background-color: var(--text-main);
 }
 
 /* Context menu icons */
@@ -1400,4 +1400,9 @@
 .fi-ui-music {
     -webkit-mask-image: url('icons/ui/file-media.svg');
     mask-image: url('icons/ui/file-media.svg');
+}
+
+.fi-ui-github {
+    -webkit-mask-image: url('icons/ui/github.svg');
+    mask-image: url('icons/ui/github.svg');
 }

@@ -536,32 +536,35 @@
         fetch('manifest.json', { cache: 'no-store' }).then(r => r.json()).then(applyManifest)
             .catch(() => applyManifest({ short_name: 'CZEditor', version: '2.0.0', name: 'CZEditor - Modern Code Editor' }));
 
-        // ===== PWA: Service Worker + Install Prompt =====
+        // ===== PWA: Service Worker =====
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js').catch(() => { });
         }
 
-        let deferredPrompt = null;
-        window.addEventListener('beforeinstallprompt', e => {
-            e.preventDefault();
-            deferredPrompt = e;
-            const btn = document.getElementById('pwa-install-btn');
-            if (btn) btn.classList.remove('hidden');
-        });
+        // PWA install button click handler (deferredPrompt captured at top-level)
         document.getElementById('pwa-install-btn')?.addEventListener('click', async () => {
-            if (!deferredPrompt) return;
-            deferredPrompt.prompt();
-            const result = await deferredPrompt.userChoice;
+            if (!_deferredPrompt) return;
+            _deferredPrompt.prompt();
+            const result = await _deferredPrompt.userChoice;
             if (result.outcome === 'accepted') {
                 document.getElementById('pwa-install-btn').classList.add('hidden');
             }
-            deferredPrompt = null;
+            _deferredPrompt = null;
         });
         window.addEventListener('appinstalled', () => {
             document.getElementById('pwa-install-btn')?.classList.add('hidden');
-            deferredPrompt = null;
+            _deferredPrompt = null;
         });
     }
+
+    // ===== PWA: Install Prompt (registered immediately to avoid race condition) =====
+    let _deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', e => {
+        e.preventDefault();
+        _deferredPrompt = e;
+        const btn = document.getElementById('pwa-install-btn');
+        if (btn) btn.classList.remove('hidden');
+    });
 
     window.addEventListener('DOMContentLoaded', initApp);
 })();

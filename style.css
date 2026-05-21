@@ -1974,37 +1974,39 @@ body.sidebar-resizing {
     text-align: center;
 }
 
-.cz-hints p {
-    font-size: 13px;
-    color: var(--text-muted);
-    opacity: 0.7;
-    margin-bottom: 18px;
-}
-
-.shortcut-hints {
-    display: flex;
+.github-link {
+    display: inline-flex;
     align-items: center;
     gap: 8px;
-    font-size: 11px;
+    padding: 10px 22px;
+    font-size: 13px;
+    font-family: var(--font-ui);
     color: var(--text-muted);
-    flex-wrap: wrap;
-    justify-content: center;
-}
-
-.hint-badge {
-    background: rgba(137, 180, 250, 0.08);
+    text-decoration: none;
+    background: rgba(137, 180, 250, 0.06);
     border: 1px solid rgba(137, 180, 250, 0.15);
-    color: var(--accent-color);
-    padding: 3px 10px;
-    border-radius: 5px;
-    font-family: var(--font-mono);
-    font-size: 10px;
-    transition: 0.2s;
+    border-radius: 20px;
+    transition: all 0.25s ease;
+    letter-spacing: 0.3px;
 }
 
-.hint-badge:hover {
-    background: rgba(137, 180, 250, 0.15);
-    transform: translateY(-1px);
+.github-link .fi-ui-github {
+    width: 18px;
+    height: 18px;
+    background-color: var(--text-muted);
+    transition: background-color 0.25s ease;
+}
+
+.github-link:hover {
+    color: var(--text-main);
+    background: rgba(137, 180, 250, 0.12);
+    border-color: var(--accent-color);
+    box-shadow: 0 0 20px rgba(137, 180, 250, 0.12);
+    transform: translateY(-2px);
+}
+
+.github-link:hover .fi-ui-github {
+    background-color: var(--text-main);
 }
 
 /* Fade-up entrance animation */
@@ -2036,11 +2038,19 @@ body.sidebar-resizing {
     letter-spacing: 0.3px;
 }
 
+.pwa-install-btn .fi-ui {
+    background-color: var(--text-main);
+}
+
 .pwa-install-btn:hover {
     background: rgba(137, 180, 250, 0.15);
     border-color: var(--accent-color);
     box-shadow: 0 0 20px rgba(137, 180, 250, 0.15);
     transform: translateY(-2px);
+}
+
+.pwa-install-btn:hover .fi-ui {
+    background-color: var(--text-main);
 }
 
 /* ===== EDITOR BODY ===== */
