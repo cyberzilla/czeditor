@@ -1,0 +1,42 @@
+{
+  "id": "ass",
+  "name": "ASS / SSA (SubStation)",
+  "extensions": ["ass", "ssa"],
+  "comment": { "line": ";", "blockStart": null, "blockEnd": null },
+  "autoClosePairs": [
+    ["(", ")"], ["{", "}"], ["\"", "\""]
+  ],
+  "brackets": [["(", ")"], ["{", "}"]],
+  "syntax": [
+    { "match": ";[^\\n]*", "scope": "comment" },
+    { "match": "^\\s*\\[[^\\]]*\\]", "scope": "keyword", "flags": "m" },
+    { "match": "^\\s*(?:Title|Original Script|Original Translation|Original Editing|Original Timing|Synch Point|Script Updated By|Update Details|ScriptType|Collisions|PlayResX|PlayResY|PlayDepth|Timer|WrapStyle|ScaledBorderAndShadow|YCbCr Matrix|Last Style Storage)(?=\\s*:)", "scope": "property", "flags": "m" },
+    { "match": "^\\s*(?:Format|Style|Dialogue|Comment|Picture|Sound|Movie|Command)\\s*:", "scope": "tag", "flags": "m" },
+    { "match": "\\b\\d{1,2}:\\d{2}:\\d{2}\\.\\d{2}\\b", "scope": "number" },
+    { "match": "\\{\\\\[^}]+\\}", "scope": "variable" },
+    { "match": "\\\\(?:an?|b|i|u|s|fe|fn|fs|fsc[xy]|fsp|fr[xyz]?|fa[xy]|bord|shad|be|blur|[1-4]?c|[1-4]?a|pos|move|org|fad|fade|clip|iclip|t|r|p|k[fo]?|K|q)\\b", "scope": "function" },
+    { "match": "&H[0-9A-Fa-f]+&?", "scope": "string" },
+    { "match": "\\b(?:Name|Fontname|Fontsize|PrimaryColour|SecondaryColour|OutlineColour|BackColour|Bold|Italic|Underline|StrikeOut|ScaleX|ScaleY|Spacing|Angle|BorderStyle|Outline|Shadow|Alignment|MarginL|MarginR|MarginV|Encoding|Layer|Start|End|Effect|Text|Actor|MarginR|MarginL|MarginV)\\b", "scope": "class" },
+    { "match": "\\b-?\\d+\\.?\\d*\\b", "scope": "number" },
+    { "match": "\"(?:[^\"\\\\]|\\\\.)*\"", "scope": "string" }
+  ],
+  "autocomplete": {
+    "keywords": ["Script Info", "V4+ Styles", "V4 Styles", "Events", "Fonts", "Graphics",
+      "Title", "ScriptType", "Collisions", "PlayResX", "PlayResY", "Timer", "WrapStyle",
+      "ScaledBorderAndShadow", "YCbCr Matrix"],
+    "builtins": ["Format", "Style", "Dialogue", "Comment",
+      "Name", "Fontname", "Fontsize", "PrimaryColour", "SecondaryColour", "OutlineColour", "BackColour",
+      "Bold", "Italic", "Underline", "StrikeOut", "ScaleX", "ScaleY", "Spacing", "Angle",
+      "BorderStyle", "Outline", "Shadow", "Alignment", "MarginL", "MarginR", "MarginV", "Encoding",
+      "Layer", "Start", "End", "Effect", "Text", "Actor"]
+  },
+  "snippets": {
+    "info": { "body": "[Script Info]\nTitle: $1\nScriptType: v4.00+\nPlayResX: 1920\nPlayResY: 1080\nWrapStyle: 0\nScaledBorderAndShadow: yes\n", "description": "Script Info Section" },
+    "style": { "body": "[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\nStyle: Default,Arial,48,&H00FFFFFF,&H000000FF,&H00000000,&H64000000,0,0,0,0,100,100,0,0,1,2,1,2,10,10,10,1\n", "description": "V4+ Styles Section" },
+    "events": { "body": "[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\nDialogue: 0,0:00:00.00,0:00:05.00,Default,,0,0,0,,$1\n", "description": "Events Section" },
+    "dialogue": { "body": "Dialogue: 0,$1,$2,Default,,0,0,0,,$3", "description": "Dialogue Line" },
+    "pos": { "body": "{\\pos($1,$2)}", "description": "Position Override" },
+    "fade": { "body": "{\\fad($1,$2)}", "description": "Fade In/Out" },
+    "color": { "body": "{\\c&H$1&}", "description": "Color Override" }
+  }
+}

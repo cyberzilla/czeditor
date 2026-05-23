@@ -1,0 +1,30 @@
+{
+  "id": "srt",
+  "name": "SRT (SubRip)",
+  "extensions": ["srt"],
+  "comment": { "line": null, "blockStart": null, "blockEnd": null },
+  "autoClosePairs": [
+    ["<", ">"], ["(", ")"], ["\"", "\""]
+  ],
+  "brackets": [["<", ">"], ["(", ")"]],
+  "syntax": [
+    { "match": "<!--[\\s\\S]*?-->", "scope": "comment" },
+    { "match": "\\b\\d{1,2}:\\d{2}:\\d{2}[,.]\\d{3}\\b", "scope": "number" },
+    { "match": "-->", "scope": "operator" },
+    { "match": "^\\d+$", "scope": "constant", "flags": "m" },
+    { "match": "<\\/?(?:b|i|u|font|ruby|rt|c|v|lang)(?:\\s[^>]*)?>", "scope": "tag", "flags": "i" },
+    { "match": "\\b(?:color|face|size)\\s*=\\s*\"[^\"]*\"", "scope": "property", "flags": "i" },
+    { "match": "\\{[^}]*\\}", "scope": "variable" }
+  ],
+  "autocomplete": {
+    "keywords": [],
+    "builtins": []
+  },
+  "snippets": {
+    "cue": { "body": "$1\n00:00:00,000 --> 00:00:00,000\n$2\n", "description": "SRT Cue Block" },
+    "bold": { "body": "<b>$1</b>", "description": "Bold Tag" },
+    "italic": { "body": "<i>$1</i>", "description": "Italic Tag" },
+    "underline": { "body": "<u>$1</u>", "description": "Underline Tag" },
+    "color": { "body": "<font color=\"$1\">$2</font>", "description": "Font Color Tag" }
+  }
+}

@@ -476,6 +476,11 @@ const CZEngine = (() => {
         if (/^---\s*$/m.test(content) && /^\s*[a-zA-Z_]+\s*:/m.test(content)) return 'yaml';
         if (/@echo\s+off|\bSETLOCAL\b|\bENDLOCAL\b|%%[a-zA-Z]/im.test(content)) return 'batch';
         if (/\$[a-zA-Z_]+\s*=|\b(?:Get|Set|New|Remove|Write)-[A-Z][a-z]+|\[CmdletBinding\(\)\]|\bparam\s*\(/m.test(content)) return 'powershell';
+        // Subtitle / Lyrics detection
+        if (/^WEBVTT/m.test(content)) return 'vtt';
+        if (/^\d+\s*\n\d{1,2}:\d{2}:\d{2}[,.]\d{3}\s*-->/m.test(content)) return 'srt';
+        if (/^\[Script Info\]/mi.test(content) || /^Dialogue:\s*\d+,\d+:\d{2}:\d{2}\.\d{2}/m.test(content)) return 'ass';
+        if (/^\[\d{1,2}:\d{2}\.\d{2,3}\]/m.test(content)) return 'lrc';
         return 'plaintext';
     }
 

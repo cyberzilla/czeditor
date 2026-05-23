@@ -251,6 +251,11 @@
     background-image: url('icons/files/psd.svg');
 }
 
+/* Subtitles / Lyrics */
+.fi-subtitle {
+    background-image: url('icons/files/subtitle.svg');
+}
+
 .fi-font {
     background-image: url('icons/files/font.svg');
 }

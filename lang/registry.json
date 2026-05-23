@@ -1,5 +1,6 @@
 [
   {"id":"apacheconf","name":"Apache Config","extensions":["htaccess","conf","apache","apache2"],"filenames":[".htaccess","httpd.conf","apache2.conf","sites-available","sites-enabled"]},
+  {"id":"ass","name":"ASS / SSA (SubStation)","extensions":["ass","ssa"]},
   {"id":"batch","name":"Batch (CMD)","extensions":["bat","cmd"]},
   {"id":"c","name":"C/C++","extensions":["c","h","cpp","hpp","cc","cxx","hh","hxx","ino"]},
   {"id":"csharp","name":"C#","extensions":["cs"]},
@@ -13,15 +14,19 @@
   {"id":"json","name":"JSON","extensions":["json","jsonc","json5"]},
   {"id":"jsx","name":"JSX (React)","extensions":["jsx","tsx"]},
   {"id":"kotlin","name":"Kotlin","extensions":["kt","kts"]},
+  {"id":"lrc","name":"LRC (Lyrics)","extensions":["lrc"]},
   {"id":"markdown","name":"Markdown","extensions":["md","markdown","mdown","mkd"]},
   {"id":"php","name":"PHP","extensions":["php","phtml","php3","php4","php5"]},
   {"id":"powershell","name":"PowerShell","extensions":["ps1","psm1","psd1","ps1xml"]},
   {"id":"python","name":"Python","extensions":["py","pyw","pyi"]},
   {"id":"shell","name":"Shell/Bash","extensions":["sh","bash","zsh","fish","ksh"]},
   {"id":"sql","name":"SQL","extensions":["sql","ddl","dml"]},
+  {"id":"srt","name":"SRT (SubRip)","extensions":["srt"]},
   {"id":"typescript","name":"TypeScript","extensions":["ts","mts","cts"]},
   {"id":"vb","name":"Visual Basic","extensions":["vb","vbs","bas","cls","frm"]},
+  {"id":"vtt","name":"WebVTT","extensions":["vtt"]},
   {"id":"vue","name":"Vue","extensions":["vue"]},
   {"id":"xml","name":"XML","extensions":["xml","svg","xsl","xslt","xsd","rss","atom","xaml","plist","csproj","fsproj","vbproj","vcxproj","props","targets","resx","config","nuspec","wsdl"]},
   {"id":"yaml","name":"YAML","extensions":["yml","yaml"]}
 ]
+

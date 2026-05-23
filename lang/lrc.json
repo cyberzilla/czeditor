@@ -1,0 +1,25 @@
+{
+  "id": "lrc",
+  "name": "LRC (Lyrics)",
+  "extensions": ["lrc"],
+  "comment": { "line": null, "blockStart": null, "blockEnd": null },
+  "autoClosePairs": [
+    ["[", "]"], ["(", ")"], ["\"", "\""]
+  ],
+  "brackets": [["[", "]"], ["(", ")"]],
+  "syntax": [
+    { "match": "\\[\\d{1,2}:\\d{2}\\.\\d{2,3}\\]", "scope": "number" },
+    { "match": "\\[\\d{1,2}:\\d{2}:\\d{2}\\.\\d{2,3}\\]", "scope": "number" },
+    { "match": "\\[(?:ti|ar|al|au|by|re|ve|length|offset):[^\\]]*\\]", "scope": "keyword", "flags": "i" },
+    { "match": "<\\d{1,2}:\\d{2}\\.\\d{2,3}>", "scope": "constant" },
+    { "match": "\\b(?:ti|ar|al|au|by|re|ve|length|offset)(?=:)", "scope": "property", "flags": "i" }
+  ],
+  "autocomplete": {
+    "keywords": ["ti", "ar", "al", "au", "by", "re", "ve", "length", "offset"],
+    "builtins": []
+  },
+  "snippets": {
+    "meta": { "body": "[ti:$1]\n[ar:$2]\n[al:$3]\n[by:$4]\n[offset:0]\n", "description": "LRC Metadata" },
+    "line": { "body": "[00:00.00]$1", "description": "LRC Lyric Line" }
+  }
+}

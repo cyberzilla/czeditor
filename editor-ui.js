@@ -124,6 +124,8 @@ const CZUI = (() => {
         psd: 'psd',
         mp3: 'audio', wav: 'audio', ogg: 'audio', flac: 'audio', aac: 'audio',
         mp4: 'video', avi: 'video', mkv: 'video', webm: 'video', mov: 'video',
+        // Subtitles / Lyrics
+        srt: 'subtitle', vtt: 'subtitle', ass: 'subtitle', ssa: 'subtitle', sub: 'subtitle', lrc: 'subtitle',
         // Archives
         zip: 'archive', tar: 'archive', gz: 'archive', rar: 'archive',
         '7z': 'archive', bz2: 'archive',

@@ -1,0 +1,35 @@
+{
+  "id": "vtt",
+  "name": "WebVTT",
+  "extensions": ["vtt"],
+  "comment": { "line": null, "blockStart": null, "blockEnd": null },
+  "autoClosePairs": [
+    ["<", ">"], ["(", ")"], ["\"", "\""]
+  ],
+  "brackets": [["<", ">"], ["(", ")"]],
+  "syntax": [
+    { "match": "^WEBVTT.*$", "scope": "keyword", "flags": "m" },
+    { "match": "^NOTE[\\s\\S]*?(?=\\n\\n|$)", "scope": "comment", "flags": "m" },
+    { "match": "^STYLE[\\s\\S]*?(?=\\n\\n|$)", "scope": "decorator", "flags": "m" },
+    { "match": "^REGION\\b", "scope": "keyword", "flags": "m" },
+    { "match": "\\b\\d{1,2}:\\d{2}:\\d{2}\\.\\d{3}\\b", "scope": "number" },
+    { "match": "\\b\\d{2}\\.\\d{3}\\b", "scope": "number" },
+    { "match": "-->", "scope": "operator" },
+    { "match": "\\b(?:position|line|size|align|vertical|region|id|width|scroll|viewportanchor|regionanchor)\\s*:", "scope": "property" },
+    { "match": "\\b(?:start|center|end|left|right|auto|rl|lr)\\b", "scope": "constant" },
+    { "match": "<\\/?(?:b|i|u|c|v|ruby|rt|lang)(?:\\.[a-zA-Z0-9_-]+)*(?:\\s[^>]*)?>", "scope": "tag", "flags": "i" },
+    { "match": "::cue(?:\\([^)]*\\))?", "scope": "function" },
+    { "match": "\\b\\d+%", "scope": "number" }
+  ],
+  "autocomplete": {
+    "keywords": ["WEBVTT", "NOTE", "STYLE", "REGION"],
+    "builtins": ["position", "line", "size", "align", "vertical", "region", "start", "center", "end", "left", "right", "auto", "rl", "lr"]
+  },
+  "snippets": {
+    "webvtt": { "body": "WEBVTT\n\n$1\n00:00:00.000 --> 00:00:00.000\n$2\n", "description": "WebVTT File" },
+    "cue": { "body": "$1\n00:00:00.000 --> 00:00:00.000\n$2\n", "description": "VTT Cue Block" },
+    "note": { "body": "NOTE\n$1\n", "description": "VTT Note/Comment" },
+    "style": { "body": "STYLE\n::cue {\n  $1\n}\n", "description": "VTT Style Block" },
+    "region": { "body": "REGION\nid:$1\nwidth:$2%\nlines:$3\nregionanchor:0%,100%\nviewportanchor:0%,100%\nscroll:up\n", "description": "VTT Region" }
+  }
+}
