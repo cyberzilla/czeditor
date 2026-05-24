@@ -54,7 +54,7 @@
                     var aid = localStorage.getItem('cz_active_id');
                     for (var i = 0; i < parsedFiles.length; i++) {
                         if (parsedFiles[i].id === aid) {
-                            activeIsBin = parsedFiles[i].isImage || parsedFiles[i].isBinary || parsedFiles[i].isAudio;
+                            activeIsBin = parsedFiles[i].isImage || parsedFiles[i].isBinary || parsedFiles[i].isAudio || parsedFiles[i].isVideo;
                             break;
                         }
                     }
@@ -298,7 +298,96 @@
                         </div>
                         <audio id="audio-element" preload="metadata"></audio>
                     </div>
-                    <!-- Binary File Info Panel (for non-text, non-image files) -->
+                    <!-- Video Player Panel -->
+                    <div id="video-player-panel" class="video-player-panel hidden">
+                        <div class="video-player-wrapper" id="video-player-wrapper">
+                            <video id="video-element" preload="metadata"></video>
+                            <div class="video-skip-toast hidden" id="video-skip-toast">⏭ Skipped</div>
+                            <div class="video-toggle-toast" id="video-toggle-toast"></div>
+                            <div class="video-subtitle-overlay" id="video-subtitle-overlay"></div>
+                            <!-- Transcode banner (shown on playback error) -->
+                            <div class="video-transcode-banner hidden" id="video-transcode-banner">
+                                <div class="video-transcode-icon">⚠</div>
+                                <p class="video-transcode-msg" id="video-transcode-msg">This video format is not supported by your browser.</p>
+                                <button class="video-transcode-btn" id="btn-video-transcode">
+                                    <span class="fi fi-ui fi-ui-refresh" style="margin-right:4px"></span>Transcode with FFmpeg
+                                </button>
+                                <div class="video-transcode-progress hidden" id="video-transcode-progress">
+                                    <div class="video-transcode-bar" id="video-transcode-bar"></div>
+                                    <span class="video-transcode-pct" id="video-transcode-pct">0%</span>
+                                </div>
+                            </div>
+                            <!-- Controls overlay -->
+                            <div class="video-controls" id="video-controls">
+                                <div class="video-progress-wrap">
+                                    <div class="video-progress-track" id="video-progress-track">
+                                        <div class="video-progress-filled" id="video-progress-filled"></div>
+                                        <div class="video-progress-buffered" id="video-progress-buffered"></div>
+                                        <div class="video-skip-markers" id="video-skip-markers"></div>
+                                        <div class="video-time-tooltip" id="video-time-tooltip">00:00:00</div>
+                                        <div class="video-progress-hover" id="video-progress-hover"></div>
+                                        <div class="video-seek-thumb" id="video-seek-thumb"></div>
+                                    </div>
+                                </div>
+                                <div class="video-controls-row">
+                                    <div class="video-controls-left">
+                                        <button class="video-ctrl-btn" id="btn-video-playpause" title="Play/Pause"><span class="fi fi-ui fi-ui-play" id="video-playpause-icon"></span></button>
+                                        <button class="video-ctrl-btn" id="btn-video-backward" title="Rewind 10s"><span class="fi fi-ui fi-ui-backward"></span></button>
+                                        <button class="video-ctrl-btn" id="btn-video-forward" title="Forward 10s"><span class="fi fi-ui fi-ui-forward"></span></button>
+                                        <span class="video-time" id="video-time-display">00:00:00 / 00:00:00</span>
+                                    </div>
+                                    <div class="video-controls-right">
+                                        <span class="video-cc-wrap">
+                                        <button class="video-ctrl-btn" id="btn-video-subtitle" title="Subtitles">CC</button>
+                                        <div class="video-subtitle-popover hidden" id="video-subtitle-popover">
+                                            <div class="vsp-panels">
+                                                <!-- Main panel -->
+                                                <div class="vsp-panel vsp-main" id="vsp-main">
+                                                    <div class="vsp-menu-item" id="vsp-track-btn">
+                                                        <span class="vsp-menu-label">Subtitle Track</span>
+                                                        <span class="vsp-menu-value" id="vsp-track-value">Off</span>
+                                                        <span class="vsp-chevron">›</span>
+                                                    </div>
+                                                    <div class="vsp-divider"></div>
+                                                    <div class="vsp-slider-section">
+                                                        <div class="vsp-slider-label">Font Size</div>
+                                                        <div class="video-sub-slider-row">
+                                                            <input type="range" id="video-sub-fontsize" min="50" max="200" value="100" step="10">
+                                                            <span class="sub-slider-val" id="video-sub-fontsize-val">100%</span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="vsp-divider"></div>
+                                                    <div class="vsp-slider-section">
+                                                        <div class="vsp-slider-label">Vertical Position</div>
+                                                        <div class="video-sub-slider-row">
+                                                            <input type="range" id="video-sub-position" min="0" max="100" value="90" step="5">
+                                                            <span class="sub-slider-val" id="video-sub-position-val">90%</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <!-- Track list panel -->
+                                                <div class="vsp-panel vsp-tracks" id="vsp-tracks">
+                                                    <div class="vsp-back" id="vsp-back">
+                                                        <span class="vsp-chevron-back">‹</span>
+                                                        <span>Subtitle Track</span>
+                                                    </div>
+                                                    <div class="vsp-divider"></div>
+                                                    <div class="video-sub-list" id="video-sub-list"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        </span>
+                                        <button class="video-ctrl-btn" id="btn-video-skip-toggle" title="Auto-Skip">⏭</button>
+                                        <span class="video-volume-wrap">
+                                            <button class="video-ctrl-btn" id="btn-video-mute" title="Mute"><span class="fi fi-ui fi-ui-unmute" id="video-mute-icon"></span></button>
+                                            <input type="range" class="video-volume-slider" id="video-volume" min="0" max="100" value="100" step="1">
+                                        </span>
+                                        <button class="video-ctrl-btn" id="btn-video-fullscreen" title="Fullscreen"><span class="fi fi-ui fi-ui-screen-full" id="video-fullscreen-icon"></span></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <div id="binary-file-panel" class="binary-file-panel hidden">
                         <div class="binary-file-card">
                             <div class="binary-file-icon" id="binary-file-icon"><span class="fi fi-default"
@@ -680,7 +769,7 @@
                         if (sl) sl.textContent = 'Length: ' + active.content.length;
                         if (sli) sli.textContent = 'Lines: ' + lineCount;
                         if (sc && active.cursorLine != null) sc.textContent = 'Ln ' + (active.cursorLine + 1) + ', Col ' + ((active.cursorCol || 0) + 1);
-                    } else if (active && (active.isImage || active.isBinary || active.isAudio)) {
+                    } else if (active && (active.isImage || active.isBinary || active.isAudio || active.isVideo)) {
                         // Active file is binary/image/audio — hide editor-body to prevent flash
                         var eb = document.getElementById('editor-body');
                         if (eb) eb.classList.add('hidden');

@@ -372,6 +372,7 @@ const CZUI = (() => {
 
     const IMAGE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'gif', 'ico', 'webp', 'bmp', 'avif']);
     const AUDIO_EXTENSIONS = new Set(['mp3', 'wav', 'ogg', 'flac', 'aac', 'wma', 'm4a', 'opus', 'webm']);
+    const VIDEO_EXTENSIONS = new Set(['mp4', 'avi', 'mkv', 'webm', 'mov', 'wmv', 'flv', 'mpg', 'mpeg', 'm4v', 'ts', '3gp', 'ogv']);
     const BINARY_EXTENSIONS = new Set([
         // Fonts
         'woff2', 'woff', 'ttf', 'otf', 'eot',
@@ -380,7 +381,7 @@ const CZUI = (() => {
         // Audio
         'mp3', 'wav', 'ogg', 'flac', 'aac', 'wma', 'm4a', 'opus',
         // Video
-        'mp4', 'avi', 'mkv', 'webm', 'mov', 'wmv', 'flv',
+        'mp4', 'avi', 'mkv', 'webm', 'mov', 'wmv', 'flv', 'mpg', 'mpeg', 'm4v', 'ts', '3gp', 'ogv',
         // Documents
         'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',
         // Executables
@@ -397,6 +398,10 @@ const CZUI = (() => {
     function isAudioFile(name) {
         const ext = name.split('.').pop().toLowerCase();
         return AUDIO_EXTENSIONS.has(ext);
+    }
+    function isVideoFile(name) {
+        const ext = name.split('.').pop().toLowerCase();
+        return VIDEO_EXTENSIONS.has(ext);
     }
     function isBinaryFile(name) {
         const ext = name.split('.').pop().toLowerCase();
@@ -527,10 +532,10 @@ const CZUI = (() => {
     function checkEmptyState() {
         const empty = files.length === 0;
         const activeFile = getActiveFile();
-        const isNonEditor = activeFile && (activeFile.isImage || activeFile.isBinary || activeFile.isAudio);
+        const isNonEditor = activeFile && (activeFile.isImage || activeFile.isBinary || activeFile.isAudio || activeFile.isVideo);
 
         welcomeScreen.classList.toggle('active', empty);
-        // Don't show editor-body if active file is a binary/image/audio
+        // Don't show editor-body if active file is a binary/image/audio/video
         editorBody.classList.toggle('hidden', empty || isNonEditor);
         toolbarRight.classList.toggle('hidden', empty);
         editorFooter.classList.toggle('hidden', empty);
@@ -541,6 +546,9 @@ const CZUI = (() => {
         // Show/hide audio player
         const ap = $('audio-player-panel');
         if (ap) ap.classList.toggle('hidden', empty || !activeFile?.isAudio);
+        // Show/hide video player
+        const vp = $('video-player-panel');
+        if (vp) vp.classList.toggle('hidden', empty || !activeFile?.isVideo);
         // Show/hide binary panel
         const bp = $('binary-file-panel');
         if (bp) bp.classList.toggle('hidden', empty || !activeFile?.isBinary);
@@ -646,6 +654,9 @@ const CZUI = (() => {
             if (rest.audioUrl && rest.audioUrl.startsWith('blob:')) {
                 delete rest.audioUrl;
             }
+            if (rest.videoUrl && rest.videoUrl.startsWith('blob:')) {
+                delete rest.videoUrl;
+            }
             return rest;
         });
         // Save full data to IndexedDB (no size limit)
@@ -688,7 +699,7 @@ const CZUI = (() => {
         // Don't overwrite saved state if editor has no content yet (initial load)
         if (editorView.model.getLineCount() <= 1 && !editorView.model.getLine(0)) return;
         const f = files.find(x => x.id === activeFileId);
-        if (!f || f.isImage || f.isBinary || f.isAudio) return;
+        if (!f || f.isImage || f.isBinary || f.isAudio || f.isVideo) return;
         // Guard: don't save cursor if the model clearly doesn't belong to this file
         // (e.g. activeFileId was changed but model still has the previous file's content)
         // Use a tolerance check — small differences can occur from newline normalization
@@ -825,8 +836,13 @@ const CZUI = (() => {
         }
         const idx = files.findIndex(x => x.id === id);
         if (idx > -1) files.splice(idx, 1);
-        // Stop audio if closing an audio file
+        // Stop audio/video if closing such a file
         if (f.isAudio) stopAudioPlayer();
+        if (f.isVideo) stopVideoPlayer();
+        // Revoke blob URLs
+        if (f.videoUrl) { try { URL.revokeObjectURL(f.videoUrl); } catch(e){} }
+        if (f.audioUrl) { try { URL.revokeObjectURL(f.audioUrl); } catch(e){} }
+        if (f.imageUrl) { try { URL.revokeObjectURL(f.imageUrl); } catch(e){} }
         if (files.length === 0) activeFileId = null;
         else if (id === activeFileId) activeFileId = (files[idx] || files[idx - 1]).id;
         saveData();
@@ -891,33 +907,48 @@ const CZUI = (() => {
         const binaryPanel = $('binary-file-panel');
 
         const audioPanel = $('audio-player-panel');
+        const videoPanel = $('video-player-panel');
 
-        if (f.isAudio) {
-            // Switching to audio — hide editor, image, binary panels, show audio player
-            editorBody.classList.add('hidden');
+        // Helper to hide all media panels
+        function hideAllMedia() {
             if (imageViewer) imageViewer.classList.add('hidden');
             if (binaryPanel) binaryPanel.classList.add('hidden');
+            if (audioPanel) audioPanel.classList.add('hidden');
+            if (videoPanel) videoPanel.classList.add('hidden');
+        }
+
+        if (f.isVideo) {
+            // Switching to video — hide everything else, show video player
+            editorBody.classList.add('hidden');
+            hideAllMedia();
+            stopAudioPlayer();
+            showVideoPlayer(f);
+            updateFootbar();
+        } else if (f.isAudio) {
+            // Switching to audio — hide editor, image, binary, video panels, show audio player
+            editorBody.classList.add('hidden');
+            hideAllMedia();
+            stopVideoPlayer();
             showAudioPlayer(f);
             updateFootbar();
         } else if (f.isBinary) {
-            // Switching to binary — hide editor, image, audio panels, show binary panel
+            // Switching to binary — hide editor, image, audio, video panels, show binary panel
             editorBody.classList.add('hidden');
-            if (imageViewer) imageViewer.classList.add('hidden');
-            if (audioPanel) audioPanel.classList.add('hidden');
+            hideAllMedia();
+            stopAudioPlayer(); stopVideoPlayer();
             showBinaryPanel(f);
             updateFootbar();
         } else if (f.isImage) {
-            // Switching to image — hide editor, binary, audio panels, show image viewer
+            // Switching to image — hide editor, binary, audio, video panels, show image viewer
             editorBody.classList.add('hidden');
-            if (binaryPanel) binaryPanel.classList.add('hidden');
-            if (audioPanel) audioPanel.classList.add('hidden');
+            hideAllMedia();
+            stopAudioPlayer(); stopVideoPlayer();
             showImageViewer(f);
             updateFootbar();
         } else {
-            // Normal code file — hide binary/image/audio panels, keep editor-body visible
-            if (imageViewer) imageViewer.classList.add('hidden');
-            if (binaryPanel) binaryPanel.classList.add('hidden');
-            if (audioPanel) audioPanel.classList.add('hidden');
+            // Normal code file — hide all media panels, keep editor-body visible
+            hideAllMedia();
+            stopVideoPlayer();
             stopAudioPlayer();
             editorBody.classList.remove('hidden');
             editingArea.value = f.content;
@@ -1072,6 +1103,14 @@ const CZUI = (() => {
     let _audioRafId = 0;
 
     function formatTime(sec) {
+        if (!isFinite(sec) || sec < 0) return '00:00:00';
+        const h = Math.floor(sec / 3600);
+        const m = Math.floor((sec % 3600) / 60);
+        const s = Math.floor(sec % 60);
+        const pad = v => (v < 10 ? '0' : '') + v;
+        return pad(h) + ':' + pad(m) + ':' + pad(s);
+    }
+    function formatTimeShort(sec) {
         if (!isFinite(sec) || sec < 0) return '0:00';
         const m = Math.floor(sec / 60);
         const s = Math.floor(sec % 60);
@@ -1095,23 +1134,19 @@ const CZUI = (() => {
         _audioEl = $('audio-element');
         if (!_audioEl) return;
 
-        // Set audio source — prefer fileHandle (always fresh), fall back to audioUrl
+        // Set audio source — reuse cached blob URL if available
         let audioSrc = '';
-        if (isValidHandle(f.fileHandle)) {
+        if (f.audioUrl) {
+            audioSrc = f.audioUrl;
+        } else if (isValidHandle(f.fileHandle)) {
             try {
                 const file = await f.fileHandle.getFile();
                 audioSrc = URL.createObjectURL(file);
                 f.audioUrl = audioSrc;
             } catch (e) {
-                // fileHandle failed, try stored URL
-                if (f.audioUrl) audioSrc = f.audioUrl;
-                else {
-                    if (metaEl) metaEl.textContent = 'Re-open folder to play audio';
-                    return;
-                }
+                if (metaEl) metaEl.textContent = 'Re-open folder to play audio';
+                return;
             }
-        } else if (f.audioUrl) {
-            audioSrc = f.audioUrl;
         }
         if (!audioSrc) {
             if (metaEl) metaEl.textContent = 'No audio source available';
@@ -1139,10 +1174,10 @@ const CZUI = (() => {
 
         // Duration loaded
         _audioEl.onloadedmetadata = () => {
-            if (timeDuration) timeDuration.textContent = formatTime(_audioEl.duration);
+            if (timeDuration) timeDuration.textContent = formatTimeShort(_audioEl.duration);
             // Show file info
             const ext = f.name.split('.').pop().toUpperCase();
-            const sizeInfo = _audioEl.duration ? formatTime(_audioEl.duration) : '';
+            const sizeInfo = _audioEl.duration ? formatTimeShort(_audioEl.duration) : '';
             if (metaEl && !metaEl.dataset.hasMeta) {
                 metaEl.textContent = ext + ' • ' + sizeInfo;
             }
@@ -1153,7 +1188,7 @@ const CZUI = (() => {
             if (_audioEl && !_audioEl.paused) {
                 const pct = (_audioEl.currentTime / _audioEl.duration) * 100 || 0;
                 if (progress) progress.value = pct;
-                if (timeCurrent) timeCurrent.textContent = formatTime(_audioEl.currentTime);
+                if (timeCurrent) timeCurrent.textContent = formatTimeShort(_audioEl.currentTime);
                 _audioRafId = requestAnimationFrame(updateProgress);
             }
         }
@@ -1200,7 +1235,7 @@ const CZUI = (() => {
             progress.oninput = () => {
                 if (_audioEl.duration) {
                     _audioEl.currentTime = (progress.value / 100) * _audioEl.duration;
-                    if (timeCurrent) timeCurrent.textContent = formatTime(_audioEl.currentTime);
+                    if (timeCurrent) timeCurrent.textContent = formatTimeShort(_audioEl.currentTime);
                 }
             };
         }
@@ -1306,6 +1341,566 @@ const CZUI = (() => {
             }
             return (meta.title || meta.artist || meta.album) ? meta : null;
         } catch (e) { return null; }
+    }
+
+    // ===== VIDEO PLAYER =====
+    let _videoEl = null;
+    let _videoRafId = 0;
+    let _videoSkipRegions = [];
+    let _videoSkipEnabled = true;
+    let _videoSkipToast = null;
+    let _videoControlsTimer = 0;
+    let _ffmpegLoaded = false;
+    let _ffmpegInstance = null;
+
+    function srtToVtt(srtText) {
+        let vtt = 'WEBVTT\n\n';
+        srtText = srtText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+        const blocks = srtText.trim().split(/\n\n+/);
+        for (const block of blocks) {
+            const lines = block.split('\n');
+            if (lines.length < 2) continue;
+            let tsIdx = lines.findIndex(l => l.includes('-->'));
+            if (tsIdx < 0) continue;
+            const ts = lines[tsIdx].replace(/,/g, '.');
+            const text = lines.slice(tsIdx + 1).join('\n');
+            vtt += ts + '\n' + text + '\n\n';
+        }
+        return vtt;
+    }
+
+    function parsePBF(text) {
+        const regions = [];
+        const lines = text.replace(/\r\n/g, '\n').split('\n');
+        let inSkip = false;
+        for (const line of lines) {
+            if (line.trim() === '[PlaySkip]') { inSkip = true; continue; }
+            if (line.trim().startsWith('[') && inSkip) break;
+            if (!inSkip) continue;
+            const m = line.match(/^\d+=(\d+)\*(\d+)\*(\d+)/);
+            if (m) {
+                const enabled = parseInt(m[1], 10);
+                const startMs = parseInt(m[2], 10);
+                const durationMs = parseInt(m[3], 10);
+                if (enabled && durationMs > 0) {
+                    regions.push({ start: startMs / 1000, end: (startMs + durationMs) / 1000 });
+                }
+            }
+        }
+        return regions;
+    }
+
+    function renderSkipMarkers(duration) {
+        const container = $('video-skip-markers');
+        if (!container) return;
+        container.innerHTML = '';
+        if (!duration || !_videoSkipRegions.length) return;
+        for (const r of _videoSkipRegions) {
+            const left = (r.start / duration) * 100;
+            const width = ((r.end - r.start) / duration) * 100;
+            const marker = document.createElement('div');
+            marker.className = 'video-skip-marker';
+            marker.style.left = left + '%';
+            marker.style.width = Math.max(width, 0.2) + '%';
+            container.appendChild(marker);
+        }
+    }
+
+    function showSkipToast() {
+        const toast = $('video-skip-toast');
+        if (!toast) return;
+        toast.classList.remove('hidden');
+        clearTimeout(_videoSkipToast);
+        _videoSkipToast = setTimeout(() => toast.classList.add('hidden'), 1500);
+    }
+
+    function showVideoControls() {
+        const wrapper = $('video-player-wrapper');
+        if (wrapper) wrapper.classList.add('controls-visible');
+        clearTimeout(_videoControlsTimer);
+        _videoControlsTimer = setTimeout(() => {
+            if (wrapper && _videoEl && !_videoEl.paused) wrapper.classList.remove('controls-visible');
+        }, 3000);
+    }
+
+    async function findCompanionFiles(f) {
+        const baseName = f.name.replace(/\.[^.]+$/, '');
+        const subtitles = [];
+        let pbfContent = null;
+
+        // 1. Search in currently open editor tabs
+        for (const tab of files) {
+            if (tab.id === f.id) continue;
+            const n = tab.name.toLowerCase();
+            const fb = tab.name.replace(/\.[^.]+$/, '');
+            if (fb.toLowerCase() !== baseName.toLowerCase()) continue;
+            if (n.endsWith('.srt') || n.endsWith('.vtt')) {
+                let content = tab.content;
+                if (!content && isValidHandle(tab.fileHandle)) {
+                    try { const data = await CZFS.readFile(tab.fileHandle); content = data.content; } catch (e) {}
+                }
+                if (content) subtitles.push({ name: tab.name, content, ext: n.split('.').pop() });
+            }
+            if (n.endsWith('.pbf')) {
+                let content = tab.content;
+                if (!content && isValidHandle(tab.fileHandle)) {
+                    try { const data = await CZFS.readFile(tab.fileHandle); content = data.content; } catch (e) {}
+                }
+                if (content) pbfContent = content;
+            }
+        }
+
+        // 2. Search in the video file's parent directory (most likely location)
+        const dirHandle = f.parentHandle || CZFS.getDirectoryHandle();
+        if (dirHandle) {
+            try {
+                for await (const entry of dirHandle.values()) {
+                    if (entry.kind !== 'file') continue;
+                    const n = entry.name.toLowerCase();
+                    const fb = entry.name.replace(/\.[^.]+$/, '');
+                    if (fb.toLowerCase() !== baseName.toLowerCase()) continue;
+                    if (n.endsWith('.srt') || n.endsWith('.vtt')) {
+                        if (!subtitles.find(s => s.name.toLowerCase() === n)) {
+                            try {
+                                const file = await entry.getFile();
+                                const content = await file.text();
+                                subtitles.push({ name: entry.name, content, ext: n.split('.').pop() });
+                            } catch (e) {}
+                        }
+                    }
+                    if (n.endsWith('.pbf') && !pbfContent) {
+                        try { const file = await entry.getFile(); pbfContent = await file.text(); } catch (e) {}
+                    }
+                }
+            } catch (e) {}
+        }
+        return { subtitles, pbfContent };
+    }
+
+    async function showVideoPlayer(f) {
+        const panel = $('video-player-panel');
+        if (!panel) return;
+        panel.classList.remove('hidden');
+        toolbarRight.classList.remove('hidden');
+        editorFooter.classList.remove('hidden');
+        _videoEl = $('video-element');
+        if (!_videoEl) return;
+        _videoSkipRegions = [];
+        const transcodeBanner = $('video-transcode-banner');
+        if (transcodeBanner) transcodeBanner.classList.add('hidden');
+        let videoSrc = '';
+        if (f.videoUrl) {
+            // Reuse existing blob URL — no need to recreate
+            videoSrc = f.videoUrl;
+        } else if (isValidHandle(f.fileHandle)) {
+            try {
+                const file = await f.fileHandle.getFile();
+                videoSrc = URL.createObjectURL(file);
+                f.videoUrl = videoSrc;
+            } catch (e) { console.warn('[CZUI] Video file handle error:', e); }
+        }
+        if (!videoSrc) return;
+        // If same video is already loaded, just show the panel — skip re-init
+        if (_videoEl.src === videoSrc && !_videoEl.error) {
+            // Update time display to reflect current position
+            const td = $('video-time-display');
+            if (td && _videoEl.duration) td.textContent = formatTime(_videoEl.currentTime) + ' / ' + formatTime(_videoEl.duration);
+            return;
+        }
+        _videoEl.src = videoSrc;
+        _videoEl.load();
+        while (_videoEl.querySelector('track')) _videoEl.querySelector('track').remove();
+        const progressFilled = $('video-progress-filled');
+        const progressBuffered = $('video-progress-buffered');
+        const timeDisplay = $('video-time-display');
+        const playIcon = $('video-playpause-icon');
+        const fwdBtn = $('btn-video-forward');
+        const bwdBtn = $('btn-video-backward');
+        const volSlider = $('video-volume');
+        const muteBtn = $('btn-video-mute');
+        const muteIcon = $('video-mute-icon');
+        const fullscreenBtn = $('btn-video-fullscreen');
+        const subtitleBtn = $('btn-video-subtitle');
+        const skipToggle = $('btn-video-skip-toggle');
+        const wrapper = $('video-player-wrapper');
+        const playBtn = $('btn-video-playpause');
+        if (progressFilled) progressFilled.style.width = '0%';
+        if (timeDisplay) timeDisplay.textContent = '00:00:00 / 00:00:00';
+        if (playIcon) { playIcon.classList.add('fi-ui-play'); playIcon.classList.remove('fi-ui-pause'); }
+        _videoEl.onerror = () => {
+            if (transcodeBanner) transcodeBanner.classList.remove('hidden');
+            const msg = $('video-transcode-msg');
+            if (msg) msg.textContent = f.name.split('.').pop().toUpperCase() + ' format is not supported by your browser.';
+        };
+        _videoEl.onloadedmetadata = () => {
+            if (timeDisplay) timeDisplay.textContent = '00:00:00 / ' + formatTime(_videoEl.duration);
+            renderSkipMarkers(_videoEl.duration);
+            // Restore saved playback position
+            if (f.videoTime && f.videoTime > 0 && f.videoTime < _videoEl.duration) {
+                _videoEl.currentTime = f.videoTime;
+                const pct = (f.videoTime / _videoEl.duration) * 100;
+                if (progressFilled) progressFilled.style.width = pct + '%';
+                const st = $('video-seek-thumb');
+                if (st) st.style.left = pct + '%';
+                if (timeDisplay) timeDisplay.textContent = formatTime(f.videoTime) + ' / ' + formatTime(_videoEl.duration);
+            }
+        };
+        
+        function updateVideoProgress() {
+            if (_videoEl && !_videoEl.paused) {
+                const pct = (_videoEl.currentTime / _videoEl.duration) * 100 || 0;
+                if (progressFilled) progressFilled.style.width = pct + '%';
+                const st = $('video-seek-thumb');
+                if (st) st.style.left = pct + '%';
+                if (timeDisplay) timeDisplay.textContent = formatTime(_videoEl.currentTime) + ' / ' + formatTime(_videoEl.duration);
+                // Periodically save position (every ~5s of playback)
+                if (Math.floor(_videoEl.currentTime) % 5 === 0) f.videoTime = _videoEl.currentTime;
+                if (progressBuffered && _videoEl.buffered.length > 0) {
+                    progressBuffered.style.width = ((_videoEl.buffered.end(_videoEl.buffered.length - 1) / _videoEl.duration) * 100) + '%';
+                }
+                if (_videoSkipEnabled && _videoSkipRegions.length) {
+                    const ct = _videoEl.currentTime;
+                    for (const r of _videoSkipRegions) {
+                        if (ct >= r.start && ct < r.end) { _videoEl.currentTime = r.end; showSkipToast(); break; }
+                    }
+                }
+                _videoRafId = requestAnimationFrame(updateVideoProgress);
+            }
+        }
+        _videoEl.onplay = () => { if (playIcon) { playIcon.classList.remove('fi-ui-play'); playIcon.classList.add('fi-ui-pause'); } _videoRafId = requestAnimationFrame(updateVideoProgress); };
+        _videoEl.onpause = () => { if (playIcon) { playIcon.classList.add('fi-ui-play'); playIcon.classList.remove('fi-ui-pause'); } cancelAnimationFrame(_videoRafId); f.videoTime = _videoEl.currentTime; };
+        _videoEl.onended = () => { if (playIcon) { playIcon.classList.add('fi-ui-play'); playIcon.classList.remove('fi-ui-pause'); } cancelAnimationFrame(_videoRafId); f.videoTime = 0; };
+        if (playBtn) playBtn.onclick = () => { if (_videoEl.paused) _videoEl.play(); else _videoEl.pause(); };
+        _videoEl.onclick = () => { if (_videoEl.paused) _videoEl.play(); else _videoEl.pause(); showVideoControls(); };
+        _videoEl.ondblclick = () => { if (wrapper) { if (document.fullscreenElement) document.exitFullscreen(); else wrapper.requestFullscreen?.(); } };
+        if (fwdBtn) fwdBtn.onclick = () => { _videoEl.currentTime = Math.min(_videoEl.duration, _videoEl.currentTime + 10); f.videoTime = _videoEl.currentTime; };
+        if (bwdBtn) bwdBtn.onclick = () => { _videoEl.currentTime = Math.max(0, _videoEl.currentTime - 10); f.videoTime = _videoEl.currentTime; };
+
+        // --- Div-based progress seeking (no range input = perfect tooltip sync) ---
+        const progressTrack = $('video-progress-track');
+        const timeTooltip = $('video-time-tooltip');
+        const seekThumb = $('video-seek-thumb');
+        let _isSeeking = false;
+
+        function getSeekPct(e) {
+            if (!progressTrack) return 0;
+            const rect = progressTrack.getBoundingClientRect();
+            return Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+        }
+
+        function seekTo(pct) {
+            if (!_videoEl || !_videoEl.duration) return;
+            _videoEl.currentTime = pct * _videoEl.duration;
+            if (progressFilled) progressFilled.style.width = (pct * 100) + '%';
+            if (seekThumb) seekThumb.style.left = (pct * 100) + '%';
+            if (timeDisplay) timeDisplay.textContent = formatTime(_videoEl.currentTime) + ' / ' + formatTime(_videoEl.duration);
+            f.videoTime = _videoEl.currentTime;
+        }
+
+        if (progressTrack) {
+            // Click to seek
+            progressTrack.addEventListener('mousedown', (e) => {
+                if (e.button !== 0) return;
+                _isSeeking = true;
+                seekTo(getSeekPct(e));
+                e.preventDefault();
+            });
+
+            // Drag to seek
+            document.addEventListener('mousemove', (e) => {
+                if (!_isSeeking) return;
+                seekTo(getSeekPct(e));
+            });
+
+            document.addEventListener('mouseup', () => {
+                _isSeeking = false;
+            });
+
+            // Tooltip + hover preview bar on hover
+            const hoverBar = $('video-progress-hover');
+            progressTrack.addEventListener('mousemove', (e) => {
+                if (!_videoEl || !_videoEl.duration || !timeTooltip) return;
+                const rect = progressTrack.getBoundingClientRect();
+                const rawX = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
+                const pct = rawX / rect.width;
+                const hoverTime = pct * _videoEl.duration;
+                timeTooltip.textContent = formatTime(hoverTime);
+                const tooltipW = timeTooltip.offsetWidth || 60;
+                const leftPx = Math.max(tooltipW / 2, Math.min(rawX, rect.width - tooltipW / 2));
+                timeTooltip.style.left = leftPx + 'px';
+                // Hover preview bar follows cursor
+                if (hoverBar) hoverBar.style.width = (pct * 100) + '%';
+            });
+
+            progressTrack.addEventListener('mouseleave', () => {
+                if (timeTooltip) timeTooltip.style.left = '-9999px';
+                if (hoverBar) hoverBar.style.width = '0';
+            });
+        }
+        if (volSlider) {
+            volSlider.value = (_videoEl.volume * 100);
+            volSlider.oninput = () => {
+                _videoEl.volume = volSlider.value / 100;
+                _videoEl.muted = false;
+                updateVideoMuteIcon();
+            };
+        }
+        function updateVideoMuteIcon() {
+            if (!muteIcon) return;
+            const muted = _videoEl.muted || _videoEl.volume === 0;
+            muteIcon.classList.toggle('fi-ui-mute', muted);
+            muteIcon.classList.toggle('fi-ui-unmute', !muted);
+        }
+        if (muteBtn) {
+            muteBtn.onclick = () => { _videoEl.muted = !_videoEl.muted; updateVideoMuteIcon(); };
+        }
+        if (fullscreenBtn) {
+            fullscreenBtn.onclick = () => {
+                if (wrapper) { if (document.fullscreenElement) document.exitFullscreen(); else wrapper.requestFullscreen?.(); }
+            };
+        }
+        if (wrapper) wrapper.onmousemove = showVideoControls;
+        panel.onkeydown = (e) => {
+            if (!_videoEl) return;
+            if (e.key === ' ' || e.key === 'k') { e.preventDefault(); if (_videoEl.paused) _videoEl.play(); else _videoEl.pause(); }
+            else if (e.key === 'ArrowRight') { e.preventDefault(); _videoEl.currentTime = Math.min(_videoEl.duration, _videoEl.currentTime + 5); }
+            else if (e.key === 'ArrowLeft') { e.preventDefault(); _videoEl.currentTime = Math.max(0, _videoEl.currentTime - 5); }
+            else if (e.key === 'ArrowUp') { e.preventDefault(); _videoEl.volume = Math.min(1, _videoEl.volume + 0.1); if (volSlider) volSlider.value = _videoEl.volume * 100; }
+            else if (e.key === 'ArrowDown') { e.preventDefault(); _videoEl.volume = Math.max(0, _videoEl.volume - 0.1); if (volSlider) volSlider.value = _videoEl.volume * 100; }
+            else if (e.key === 'f') { if (wrapper) { if (document.fullscreenElement) document.exitFullscreen(); else wrapper.requestFullscreen?.(); } }
+            else if (e.key === 'm') { _videoEl.muted = !_videoEl.muted; updateVideoMuteIcon(); }
+        };
+        panel.tabIndex = 0;
+
+        // --- Toggle toast helper ---
+        let _toggleToastTimer = 0;
+        function showToggleToast(text) {
+            const toast = $('video-toggle-toast');
+            if (!toast) return;
+            toast.textContent = text;
+            toast.classList.add('show');
+            clearTimeout(_toggleToastTimer);
+            _toggleToastTimer = setTimeout(() => toast.classList.remove('show'), 1200);
+        }
+
+        // --- Skip toggle with toast ---
+        if (skipToggle) {
+            _videoSkipEnabled = true;
+            skipToggle.classList.add('active');
+            skipToggle.onclick = () => {
+                _videoSkipEnabled = !_videoSkipEnabled;
+                skipToggle.classList.toggle('active', _videoSkipEnabled);
+                skipToggle.classList.toggle('inactive', !_videoSkipEnabled);
+                showToggleToast(_videoSkipEnabled ? '⏭ Auto-Skip ON' : '⏭ Auto-Skip OFF');
+            };
+        }
+
+        const companions = await findCompanionFiles(f);
+        console.log('[CZUI] Video companions found:', { subtitles: companions.subtitles.length, hasPBF: !!companions.pbfContent });
+        if (companions.pbfContent) {
+            _videoSkipRegions = parsePBF(companions.pbfContent);
+            console.log('[CZUI] PBF skip regions:', _videoSkipRegions.length);
+            if (_videoEl.duration) renderSkipMarkers(_videoEl.duration);
+            if (skipToggle && _videoSkipRegions.length > 0) skipToggle.title = `Auto-Skip (${_videoSkipRegions.length} regions)`;
+        }
+
+        // --- Subtitles ---
+        let _subActive = -1; // -1 = off
+        const popover = $('video-subtitle-popover');
+        const subList = $('video-sub-list');
+        const fontSizeSlider = $('video-sub-fontsize');
+        const fontSizeVal = $('video-sub-fontsize-val');
+        const posSlider = $('video-sub-position');
+        const posVal = $('video-sub-position-val');
+        const subOverlay = $('video-subtitle-overlay');
+        let _subFontSize = 100;
+        let _subPosition = 90; // 90 = near bottom
+
+        // Cue change handler — renders subtitle text in our custom overlay
+        function onCueChange() {
+            if (!subOverlay) return;
+            let html = '';
+            for (let i = 0; i < _videoEl.textTracks.length; i++) {
+                const track = _videoEl.textTracks[i];
+                if (track.mode !== 'hidden') continue;
+                if (!track.activeCues) continue;
+                for (let j = 0; j < track.activeCues.length; j++) {
+                    const cue = track.activeCues[j];
+                    html += (html ? '<br>' : '') + cue.text;
+                }
+            }
+            subOverlay.innerHTML = html;
+        }
+
+        // Build track list
+        const trackValueEl = $('vsp-track-value');
+        const panels = popover ? popover.querySelector('.vsp-panels') : null;
+        const trackBtn = $('vsp-track-btn');
+        const backBtn = $('vsp-back');
+
+        function updateTrackValue(name) {
+            if (trackValueEl) trackValueEl.textContent = name;
+        }
+
+        let listHtml = '<div class="video-sub-item active" data-idx="-1"><span class="sub-check">✓</span><span class="sub-name">Off</span></div>';
+        if (companions.subtitles.length > 0) {
+            for (const sub of companions.subtitles) {
+                let vttContent = sub.content;
+                if (sub.ext === 'srt') vttContent = srtToVtt(sub.content);
+                else if (sub.ext !== 'vtt') continue;
+                const blob = new Blob([vttContent], { type: 'text/vtt' });
+                const url = URL.createObjectURL(blob);
+                const track = document.createElement('track');
+                track.kind = 'subtitles'; track.label = sub.name; track.srclang = 'und'; track.src = url;
+                _videoEl.appendChild(track);
+                console.log('[CZUI] Subtitle track added:', sub.name, sub.ext);
+            }
+            companions.subtitles.forEach((s, i) => {
+                listHtml += `<div class="video-sub-item" data-idx="${i}"><span class="sub-check"></span><span class="sub-name">${s.name}</span></div>`;
+            });
+            // Auto-enable first subtitle (hidden mode = get cue events, custom render)
+            if (_videoEl.textTracks.length > 0) {
+                _videoEl.textTracks[0].mode = 'hidden';
+                _videoEl.textTracks[0].addEventListener('cuechange', onCueChange);
+                _subActive = 0;
+                listHtml = '<div class="video-sub-item" data-idx="-1"><span class="sub-check"></span><span class="sub-name">Off</span></div>';
+                companions.subtitles.forEach((s, i) => {
+                    listHtml += `<div class="video-sub-item${i === 0 ? ' active' : ''}" data-idx="${i}"><span class="sub-check">${i === 0 ? '✓' : ''}</span><span class="sub-name">${s.name}</span></div>`;
+                });
+                updateTrackValue(companions.subtitles[0].name);
+            }
+        }
+        if (subList) subList.innerHTML = listHtml;
+
+        // CC button active state
+        if (subtitleBtn) {
+            subtitleBtn.classList.toggle('active', _subActive >= 0);
+            subtitleBtn.classList.toggle('inactive', _subActive < 0);
+        }
+
+        // Subtitle button toggle popover — always reset to main panel
+        if (subtitleBtn && popover) {
+            subtitleBtn.onclick = (e) => {
+                e.stopPropagation();
+                popover.classList.toggle('hidden');
+                if (panels) panels.classList.remove('show-tracks');
+            };
+        }
+
+        // Panel navigation
+        if (trackBtn && panels) {
+            trackBtn.onclick = (e) => { e.stopPropagation(); panels.classList.add('show-tracks'); };
+        }
+        if (backBtn && panels) {
+            backBtn.onclick = (e) => { e.stopPropagation(); panels.classList.remove('show-tracks'); };
+        }
+
+        // Track selection
+        if (subList) {
+            subList.onclick = (e) => {
+                const item = e.target.closest('.video-sub-item');
+                if (!item) return;
+                const idx = parseInt(item.dataset.idx, 10);
+                // Disable all tracks and remove listeners
+                for (let i = 0; i < _videoEl.textTracks.length; i++) {
+                    _videoEl.textTracks[i].removeEventListener('cuechange', onCueChange);
+                    _videoEl.textTracks[i].mode = 'disabled';
+                }
+                // Enable selected track in hidden mode
+                if (idx >= 0 && idx < _videoEl.textTracks.length) {
+                    _videoEl.textTracks[idx].mode = 'hidden';
+                    _videoEl.textTracks[idx].addEventListener('cuechange', onCueChange);
+                }
+                _subActive = idx;
+                if (subOverlay) subOverlay.innerHTML = '';
+                subList.querySelectorAll('.video-sub-item').forEach(el => { el.classList.remove('active'); el.querySelector('.sub-check').textContent = ''; });
+                item.classList.add('active'); item.querySelector('.sub-check').textContent = '✓';
+                subtitleBtn.classList.toggle('active', idx >= 0);
+                subtitleBtn.classList.toggle('inactive', idx < 0);
+                const trackName = idx >= 0 ? companions.subtitles[idx].name : 'Off';
+                updateTrackValue(trackName);
+                showToggleToast(idx >= 0 ? '🅂 ' + trackName : '🅂 Subtitles OFF');
+                // Slide back to main panel after selection
+                if (panels) panels.classList.remove('show-tracks');
+            };
+        }
+
+        // Font size slider — directly modifies our overlay div
+        if (fontSizeSlider) {
+            fontSizeSlider.oninput = () => {
+                _subFontSize = parseInt(fontSizeSlider.value, 10);
+                if (fontSizeVal) fontSizeVal.textContent = _subFontSize + '%';
+                if (subOverlay) subOverlay.style.fontSize = Math.round(22 * _subFontSize / 100) + 'px';
+            };
+        }
+
+        // Vertical position slider — moves our overlay div up/down
+        if (posSlider) {
+            posSlider.oninput = () => {
+                _subPosition = parseInt(posSlider.value, 10);
+                if (posVal) posVal.textContent = _subPosition + '%';
+                // Convert: 0=top (bottom:90%), 100=bottom (bottom:2%)
+                const bottomPct = Math.max(2, 90 - (_subPosition * 0.88));
+                if (subOverlay) subOverlay.style.bottom = bottomPct + '%';
+            };
+        }
+
+        // Close popover on outside click
+        document.addEventListener('click', (e) => {
+            if (popover && !popover.contains(e.target) && e.target !== subtitleBtn) popover.classList.add('hidden');
+        });
+
+        const transcodeBtn = $('btn-video-transcode');
+        if (transcodeBtn) transcodeBtn.onclick = async () => { await transcodeVideo(f); };
+    }
+
+    async function transcodeVideo(f) {
+        const progressEl = $('video-transcode-progress'), barEl = $('video-transcode-bar'), pctEl = $('video-transcode-pct'), btn = $('btn-video-transcode'), banner = $('video-transcode-banner');
+        if (progressEl) progressEl.classList.remove('hidden');
+        if (btn) btn.disabled = true;
+        try {
+            if (!_ffmpegLoaded) {
+                if (pctEl) pctEl.textContent = 'Loading FFmpeg...';
+                const { FFmpeg } = await import('https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js');
+                const { toBlobURL } = await import('https://unpkg.com/@ffmpeg/util@0.12.1/dist/esm/index.js');
+                _ffmpegInstance = new FFmpeg();
+                const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm';
+                await _ffmpegInstance.load({ coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'), wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm') });
+                _ffmpegLoaded = true;
+            }
+            _ffmpegInstance.on('progress', ({ progress }) => { const pct = Math.round(progress * 100); if (barEl) barEl.style.width = pct + '%'; if (pctEl) pctEl.textContent = pct + '%'; });
+            if (pctEl) pctEl.textContent = 'Reading file...';
+            let fileData;
+            if (isValidHandle(f.fileHandle)) { const file = await f.fileHandle.getFile(); fileData = new Uint8Array(await file.arrayBuffer()); }
+            else if (f.videoUrl) { const resp = await fetch(f.videoUrl); fileData = new Uint8Array(await resp.arrayBuffer()); }
+            if (!fileData) throw new Error('No video data');
+            const ext = f.name.split('.').pop().toLowerCase();
+            await _ffmpegInstance.writeFile('input.' + ext, fileData);
+            if (pctEl) pctEl.textContent = 'Transcoding...';
+            await _ffmpegInstance.exec(['-i', 'input.' + ext, '-c:v', 'libx264', '-preset', 'fast', '-crf', '28', '-c:a', 'aac', '-b:a', '128k', 'output.mp4']);
+            const data = await _ffmpegInstance.readFile('output.mp4');
+            const blob = new Blob([data.buffer], { type: 'video/mp4' });
+            const url = URL.createObjectURL(blob);
+            _videoEl.src = url; _videoEl.load(); f.videoUrl = url;
+            if (banner) banner.classList.add('hidden');
+            await _ffmpegInstance.deleteFile('input.' + ext);
+            await _ffmpegInstance.deleteFile('output.mp4');
+        } catch (e) {
+            console.error('[CZUI] FFmpeg transcode failed:', e);
+            if (pctEl) pctEl.textContent = 'Error: ' + e.message;
+        } finally { if (btn) btn.disabled = false; }
+    }
+
+    function stopVideoPlayer() {
+        if (_videoEl) {
+            _videoEl.pause(); _videoEl.removeAttribute('src'); _videoEl.load();
+            while (_videoEl.querySelector('track')) _videoEl.querySelector('track').remove();
+        }
+        cancelAnimationFrame(_videoRafId);
+        clearTimeout(_videoControlsTimer);
+        _videoSkipRegions = [];
+        const overlay = $('video-subtitle-overlay');
+        if (overlay) { overlay.innerHTML = ''; overlay.style.cssText = ''; }
     }
 
     async function openBinaryAsCode() {
@@ -1845,6 +2440,17 @@ const CZUI = (() => {
     }
 
     function closeFolder() {
+        // Stop any playing media before closing
+        stopVideoPlayer();
+        stopAudioPlayer();
+        // Revoke blob URLs to free memory
+        for (const f of files) {
+            if (f.fileHandle) {
+                if (f.videoUrl) { try { URL.revokeObjectURL(f.videoUrl); } catch(e){} f.videoUrl = null; }
+                if (f.audioUrl) { try { URL.revokeObjectURL(f.audioUrl); } catch(e){} f.audioUrl = null; }
+                if (f.imageUrl) { try { URL.revokeObjectURL(f.imageUrl); } catch(e){} f.imageUrl = null; }
+            }
+        }
         // Close all files that have a fileHandle from this folder
         files = files.filter(f => !f.fileHandle);
         if (files.length === 0) activeFileId = null;
@@ -1853,7 +2459,7 @@ const CZUI = (() => {
         }
         saveData();
         // Clean up sticky scroll
-        if (ScrollCleanup) { stickyScrollCleanup(); stickyScrollCleanup = null; }
+        if (stickyScrollCleanup) { stickyScrollCleanup(); stickyScrollCleanup = null; }
         // Reset sidebar — rescue sidebar-actions before clearing tree
         if (sidebarActions && sidebarActions.parentNode) {
             sidebarActions.parentNode.removeChild(sidebarActions);
@@ -2659,10 +3265,11 @@ const CZUI = (() => {
             if (isBinaryFile(fileName)) {
                 const isImg = isImageFile(fileName);
                 const isAud = isAudioFile(fileName);
+                const isVid = isVideoFile(fileName);
                 const nf = {
                     id: 'file_' + Math.random().toString(36).substr(2, 9),
                     name: fileName,
-                    language: isImg ? 'image' : (isAud ? 'audio' : 'binary'),
+                    language: isImg ? 'image' : (isAud ? 'audio' : (isVid ? 'video' : 'binary')),
                     content: '',
                     isPinned: false,
                     encoding: 'binary',
@@ -2670,9 +3277,10 @@ const CZUI = (() => {
                     fileHandle: fileHandle,
                     parentHandle: parentHandle,
                     folderPath: folderPath,
-                    isBinary: !isImg && !isAud,
+                    isBinary: !isImg && !isAud && !isVid,
                     isImage: isImg,
                     isAudio: isAud,
+                    isVideo: isVid,
                     fromFolder: true
                 };
                 // For images, create a blob URL for the viewer
@@ -2684,6 +3292,11 @@ const CZUI = (() => {
                 if (isAud) {
                     const file = await fileHandle.getFile();
                     nf.audioUrl = URL.createObjectURL(file);
+                }
+                // For video, create a blob URL for the player
+                if (isVid) {
+                    const file = await fileHandle.getFile();
+                    nf.videoUrl = URL.createObjectURL(file);
                 }
                 if (files.length === 1 && files[0].name.startsWith('Untitled') && !files[0].content && !files[0].isPinned) {
                     files[0] = { ...nf, id: files[0].id };
@@ -2789,7 +3402,7 @@ const CZUI = (() => {
         walkTree(tree, CZFS.getDirectoryHandle(), '');
         // Refresh active tab if it's an image/binary that now has a handle
         const active = getActiveFile();
-        if (active && (active.isImage || active.isBinary || active.isAudio) && isValidHandle(active.fileHandle)) {
+        if (active && (active.isImage || active.isBinary || active.isAudio || active.isVideo) && isValidHandle(active.fileHandle)) {
             switchFile(activeFileId);
         }
     }
@@ -3042,6 +3655,21 @@ const CZUI = (() => {
             return;
         }
 
+        // Handle video files — open in video player
+        if (isVideoFile(name)) {
+            const url = URL.createObjectURL(fileObj);
+            const nf = {
+                id: 'file_' + Math.random().toString(36).substr(2, 9),
+                name, language: 'video', content: '', isPinned: false,
+                encoding: 'binary', eol: 'LF', isVideo: true, videoUrl: url
+            };
+            if (files.length === 1 && files[0].name.startsWith('Untitled') && !files[0].content && !files[0].isPinned) {
+                files[0] = { ...nf, id: files[0].id }; activeFileId = files[0].id;
+            } else { files.push(nf); activeFileId = nf.id; }
+            saveData(); switchFile(activeFileId);
+            return;
+        }
+
         // Handle audio files — open in audio player
         if (isAudioFile(name)) {
             const reader = new FileReader();
@@ -3135,12 +3763,12 @@ const CZUI = (() => {
         const f = getActiveFile();
         if (!f) return;
 
-        const isBin = f.isImage || f.isBinary || f.isAudio;
+        const isBin = f.isImage || f.isBinary || f.isAudio || f.isVideo;
 
         if (isBin) {
             // Binary mode: show file info instead of code stats
             editorFooter.classList.add('footer-binary');
-            const type = f.isImage ? 'Image' : (f.isAudio ? 'Audio' : 'Binary');
+            const type = f.isImage ? 'Image' : (f.isAudio ? 'Audio' : (f.isVideo ? 'Video' : 'Binary'));
             $('stat-length').textContent = f.name;
             $('stat-lines').textContent = '';
             $('stat-cursor').textContent = '';

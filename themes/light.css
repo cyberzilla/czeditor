@@ -46,6 +46,11 @@
     --bg-overlay: rgba(0, 0, 0, 0.45);
     --bg-checkerboard: rgba(0, 0, 0, 0.06);
 
+    /* Video popover */
+    --popover-bg: rgba(239, 241, 245, 0.98);
+    --popover-border: rgba(0, 0, 0, 0.12);
+    --popover-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+
     /* Scrollbar */
     --scrollbar-thumb: rgba(108, 112, 134, 0.3);
     --scrollbar-thumb-hover: rgba(108, 112, 134, 0.5);

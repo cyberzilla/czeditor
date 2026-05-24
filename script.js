@@ -32,14 +32,14 @@
 
         if (files && files.length > 0) {
             // Filter out entries that truly can't be restored
-            files = files.filter(f => f.content !== undefined || f.isImage || f.isBinary || f.isAudio);
+            files = files.filter(f => f.content !== undefined || f.isImage || f.isBinary || f.isAudio || f.isVideo);
             if (files.length > 0) {
                 files.forEach(f => { if (f.isPinned === undefined) f.isPinned = false; });
                 CZUI.setFiles(files);
                 CZUI.setActiveId(savedActiveId || files[0].id);
                 CZUI.switchFile(CZUI.getActiveId(), { instant: true });
                 // Preload language configs (skip non-code file types)
-                const skipLangs = new Set(['image', 'binary', 'audio']);
+                const skipLangs = new Set(['image', 'binary', 'audio', 'video']);
                 files.forEach(f => { if (!skipLangs.has(f.language)) CZEngine.loadLanguage(f.language); });
             }
         }
@@ -303,7 +303,7 @@
         document.getElementById('stat-lang').onclick = (e) => {
             e.stopPropagation();
             const af = CZUI.getActiveFile();
-            if (!af || af.isImage || af.isBinary || af.isAudio) return;
+            if (!af || af.isImage || af.isBinary || af.isAudio || af.isVideo) return;
             // Close other pickers
             document.getElementById('eol-picker').classList.add('hidden');
             document.getElementById('encoding-picker').classList.add('hidden');
@@ -339,7 +339,7 @@
         document.getElementById('stat-eol').onclick = (e) => {
             e.stopPropagation();
             const af = CZUI.getActiveFile();
-            if (!af || af.isImage || af.isBinary || af.isAudio) return;
+            if (!af || af.isImage || af.isBinary || af.isAudio || af.isVideo) return;
             closeAllPickers();
             eolPicker.classList.toggle('hidden');
             if (!eolPicker.classList.contains('hidden')) {
@@ -367,7 +367,7 @@
         document.getElementById('stat-encoding').onclick = (e) => {
             e.stopPropagation();
             const af = CZUI.getActiveFile();
-            if (!af || af.isImage || af.isBinary || af.isAudio) return;
+            if (!af || af.isImage || af.isBinary || af.isAudio || af.isVideo) return;
             closeAllPickers();
             encPicker.classList.toggle('hidden');
             if (!encPicker.classList.contains('hidden')) {
