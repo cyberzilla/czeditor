@@ -1442,3 +1442,8 @@
     -webkit-mask-image: url('icons/ui/close.svg');
     mask-image: url('icons/ui/close.svg');
 }
+
+.fi-ui-skip {
+    -webkit-mask-image: url('icons/ui/debug-step-over.svg');
+    mask-image: url('icons/ui/debug-step-over.svg');
+}

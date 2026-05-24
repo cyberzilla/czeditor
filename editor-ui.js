@@ -761,7 +761,7 @@ const CZUI = (() => {
             const pin = file.isPinned ? '<span class="tab-pin-icon fi fi-ui fi-ui-pin"></span>' : '';
             const dot = file.dirty ? '<span class="tab-dot">●</span>' : '';
             tab.innerHTML = `${icon}<span class="tab-name">${pin}${dot}${CZEngine.escapeHTML(file.name)}</span>
-            <span class="tab-close" data-close="${file.id}">&times;</span>`;
+            <span class="tab-close" data-close="${file.id}"><span class="fi fi-ui fi-ui-close"></span></span>`;
             tabsContainer.appendChild(tab);
         });
         tabsContainer.querySelectorAll('.tab-close').forEach(btn => {
@@ -1499,7 +1499,31 @@ const CZUI = (() => {
                 f.videoUrl = videoSrc;
             } catch (e) { console.warn('[CZUI] Video file handle error:', e); }
         }
-        if (!videoSrc) return;
+        if (!videoSrc) {
+            // No source yet — wait for folder restoration before showing error
+            const controls = $('video-controls');
+            if (controls) controls.style.display = 'none';
+            setTimeout(async () => {
+                // Re-check after folder may have restored the fileHandle
+                if (f.videoUrl) return; // source found in the meantime
+                if (isValidHandle(f.fileHandle)) {
+                    try {
+                        const file = await f.fileHandle.getFile();
+                        f.videoUrl = URL.createObjectURL(file);
+                        showVideoPlayer(f);
+                    } catch (e) {}
+                    return;
+                }
+                // Truly no source — show message
+                if (transcodeBanner) transcodeBanner.classList.remove('hidden');
+                const msg = $('video-transcode-msg');
+                if (msg) msg.textContent = 'Re-open folder to play this video.';
+            }, 1500);
+            return;
+        }
+        // Ensure controls are visible for valid sources
+        const controls = $('video-controls');
+        if (controls) controls.style.display = '';
         // If same video is already loaded, just show the panel — skip re-init
         if (_videoEl.src === videoSrc && !_videoEl.error) {
             // Update time display to reflect current position
@@ -1691,7 +1715,7 @@ const CZUI = (() => {
                 _videoSkipEnabled = !_videoSkipEnabled;
                 skipToggle.classList.toggle('active', _videoSkipEnabled);
                 skipToggle.classList.toggle('inactive', !_videoSkipEnabled);
-                showToggleToast(_videoSkipEnabled ? '⏭ Auto-Skip ON' : '⏭ Auto-Skip OFF');
+                showToggleToast(_videoSkipEnabled ? 'Auto-Skip ON' : 'Auto-Skip OFF');
             };
         }
 

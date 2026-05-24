@@ -323,13 +323,16 @@ body {
     width: 18px;
     height: 18px;
     border-radius: 4px;
-    font-size: 15px;
-    line-height: 0;
-    padding-bottom: 2px;
     opacity: 0;
     transition: 0.15s ease-in-out;
     pointer-events: auto;
-    margin-left: 10px;
+    margin-left: 6px;
+}
+
+.tab-close .fi-ui {
+    width: 16px;
+    height: 16px;
+    background-color: var(--text-muted);
 }
 
 .tab:hover .tab-close,
@@ -337,9 +340,8 @@ body {
     opacity: 1;
 }
 
-.tab-close:hover {
-    background-color: rgba(243, 139, 168, 0.15);
-    color: var(--color-red);
+.tab-close:hover .fi-ui {
+    background-color: var(--color-red);
 }
 
 .action-btns {
@@ -1712,6 +1714,10 @@ body.sidebar-resizing {
     color: rgba(255, 255, 255, 0.35);
 }
 
+.video-ctrl-btn.inactive .fi-ui {
+    background-color: rgba(255, 255, 255, 0.35);
+}
+
 .video-time {
     font-family: var(--font-mono);
     font-size: 12px;
@@ -2272,14 +2278,16 @@ body.sidebar-resizing {
 }
 
 .preview-zoom-btn:hover {
-    background: rgba(var(--surface-rgb), 0.08);
-    color: var(--text-main);
-    border-color: rgba(var(--surface-rgb), 0.1);
+    background: transparent;
+    border-color: transparent;
 }
 
-.preview-close-btn:hover {
-    background: rgba(255, 80, 80, 0.2);
-    color: var(--color-red);
+.preview-zoom-btn:hover .fi-ui {
+    background-color: var(--text-main);
+}
+
+.preview-zoom-btn.preview-close-btn:hover .fi-ui {
+    background-color: var(--color-red);
 }
 
 .preview-zoom-level {
